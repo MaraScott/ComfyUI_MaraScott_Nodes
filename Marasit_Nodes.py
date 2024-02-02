@@ -21,6 +21,7 @@
 
 import os 
 import sys 
+import torch
 
 import folder_paths as comfy_paths
 
@@ -82,8 +83,18 @@ class Marasit_Bus:
         out_positive    = positive  or bus_positive
         out_negative    = negative  or bus_negative
         out_latent      = latent    or bus_latent
-        out_image       = image     or bus_image
-        out_mask        = mask      or bus_mask
+        
+        # Check and handle 'image' input
+        if image is not None and image.numel() > 0:
+            out_image = image
+        else:
+            out_image = bus_image
+
+        # Check and handle 'mask' input
+        if mask is not None and torch.any(mask):
+            out_mask = mask
+        else:
+            out_mask = bus_mask
 
         # Squash all 5 inputs into the output bus tuple.
         out_bus = (out_model, out_clip, out_vae, out_positive, out_negative, out_latent, out_image, out_mask)
@@ -94,6 +105,9 @@ class Marasit_Bus:
             raise ValueError('Either clip or bus containing a clip should be supplied')
         if not out_vae:
             raise ValueError('Either vae or bus containing a vae should be supplied')
+        if not out_mask:
+            out_mask = torch.zeros(1, 1, 1024, 1024)
+
         # We don't insist that a bus contains conditioning.
 
         return (out_bus, out_model, out_clip, out_vae, out_positive, out_negative, out_latent, out_image, out_mask)
