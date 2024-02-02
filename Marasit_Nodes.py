@@ -62,17 +62,18 @@ class Marasit_Bus:
                 "negative": ("CONDITIONING",),
                 "latent": ("LATENT",),
                 "image": ("IMAGE",),
+                "mask": ("MASK",),
             }
         }
-    RETURN_TYPES = ("BUS", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE",)
-    RETURN_NAMES = ("bus", "model", "clip", "vae", "positive", "negative", "latent", "image")
+    RETURN_TYPES = ("BUS", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK",)
+    RETURN_NAMES = ("bus", "model", "clip", "vae", "positive", "negative", "latent", "image", "mask")
     FUNCTION = "bus_fn"
     CATEGORY = "Maras IT/Utilities"
 
-    def bus_fn(self, bus=(None,None,None,None,None,None,None), model=None, clip=None, vae=None, positive=None, negative=None, latent=None, image=None):
+    def bus_fn(self, bus=(None,None,None,None,None,None,None,None), model=None, clip=None, vae=None, positive=None, negative=None, latent=None, image=None, mask=None):
 
         # Unpack the 5 constituents of the bus from the bus tuple.
-        (bus_model, bus_clip, bus_vae, bus_positive, bus_negative, bus_latent, bus_image) = bus
+        (bus_model, bus_clip, bus_vae, bus_positive, bus_negative, bus_latent, bus_image, bus_mask) = bus
 
         # If you pass in specific inputs, they override what comes from the bus.
         out_model       = model     or bus_model
@@ -82,9 +83,10 @@ class Marasit_Bus:
         out_negative    = negative  or bus_negative
         out_latent      = latent    or bus_latent
         out_image       = image     or bus_image
+        out_mask        = mask      or bus_mask
 
         # Squash all 5 inputs into the output bus tuple.
-        out_bus = (out_model, out_clip, out_vae, out_positive, out_negative, out_latent, out_image)
+        out_bus = (out_model, out_clip, out_vae, out_positive, out_negative, out_latent, out_image, out_mask)
 
         if not out_model:
             raise ValueError('Either model or bus containing a model should be supplied')
@@ -94,7 +96,7 @@ class Marasit_Bus:
             raise ValueError('Either vae or bus containing a vae should be supplied')
         # We don't insist that a bus contains conditioning.
 
-        return (out_bus, out_model, out_clip, out_vae, out_positive, out_negative, out_latent, out_image)
+        return (out_bus, out_model, out_clip, out_vae, out_positive, out_negative, out_latent, out_image, out_mask)
     
 
 
