@@ -13,10 +13,10 @@
 ###
 
 import torch
-    
+
 class Marasit_Bus:
     def __init__(self):
-        pass
+        self.default_mask = torch.zeros(1, 1, 1024, 1024)  # Example default mask
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -34,49 +34,42 @@ class Marasit_Bus:
                 "mask": ("MASK",),
             }
         }
-    RETURN_TYPES = ("BUS", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK",)
-    RETURN_NAMES = ("bus", "model", "clip", "vae", "positive", "negative", "latent", "image", "mask")
+
+    _INPUT_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK",)
+    RETURN_TYPES = ("BUS", ) + _INPUT_TYPES
+    _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "latent", "image", "mask")
+    RETURN_NAMES = ("bus",) + _INPUT_NAMES
     FUNCTION = "bus_fn"
     CATEGORY = "Maras IT/Utilities"
-
-    def bus_fn(self, bus=(None,None,None,None,None,None,None,None), model=None, clip=None, vae=None, positive=None, negative=None, latent=None, image=None, mask=None):
-
-        # Unpack the 5 constituents of the bus from the bus tuple.
-        (bus_model, bus_clip, bus_vae, bus_positive, bus_negative, bus_latent, bus_image, bus_mask) = bus
-
-        # If you pass in specific inputs, they override what comes from the bus.
-        out_model       = model     or bus_model
-        out_clip        = clip      or bus_clip
-        out_vae         = vae       or bus_vae
-        out_positive    = positive  or bus_positive
-        out_negative    = negative  or bus_negative
-        out_latent      = latent    or bus_latent
-        
-        # Check and handle 'image' input
-        if image is not None and image.numel() > 0:
-            out_image = image
-        else:
-            out_image = bus_image
-
-        # Check and handle 'mask' input
-        if mask is not None and torch.any(mask):
-            out_mask = mask
-        else:
-            out_mask = bus_mask
-
-        # Squash all 5 inputs into the output bus tuple.
-        out_bus = (out_model, out_clip, out_vae, out_positive, out_negative, out_latent, out_image, out_mask)
-
-        if not out_model:
-            raise ValueError('Either model or bus containing a model should be supplied')
-        if not out_clip:
-            raise ValueError('Either clip or bus containing a clip should be supplied')
-        if not out_vae:
-            raise ValueError('Either vae or bus containing a vae should be supplied')
-        if not out_mask:
-            out_mask = torch.zeros(1, 1, 1024, 1024)
-
-        # We don't insist that a bus contains conditioning.
-
-        return (out_bus, out_model, out_clip, out_vae, out_positive, out_negative, out_latent, out_image, out_mask)
     
+    def bus_fn(self, **kwargs):
+        # Initialize the bus tuple with None values for each parameter
+        bus = kwargs.get('bus', (None,) * len(self._INPUT_NAMES))
+        if len(bus) != len(self._INPUT_NAMES):
+            raise ValueError("The 'bus' tuple must have the same number of elements as '_INPUT_NAMES'")
+
+        outputs = {}
+        for name, bus_value in zip(self._INPUT_NAMES, bus):
+            _input = kwargs.get(name, bus_value)
+            outputs[name] = self._determine_output_value(name, _input, bus_value)
+
+        self._ensure_required_parameters(outputs)
+        self._handle_special_parameters(outputs)
+
+        # Prepare and return the output bus tuple with updated values
+        out_bus = tuple(outputs[name] for name in self._INPUT_NAMES)
+        return (out_bus,) + out_bus
+
+    def _determine_output_value(self, name, _input, bus_value):
+        if name in ('image', 'mask') and isinstance(_input, torch.Tensor):
+            return _input if _input.nelement() > 0 and (name != 'mask' or _input.any()) else bus_value
+        return _input if _input is not None else bus_value
+
+    def _ensure_required_parameters(self, outputs):
+        for param in ('model', 'clip', 'vae'):
+            if not outputs.get(param):
+                raise ValueError(f'Either "{param}" or bus containing a {param} should be supplied')
+
+    def _handle_special_parameters(self, outputs):
+        if outputs.get('mask') is None or torch.numel(outputs['mask']) == 0:
+            outputs['mask'] = self.default_mask
