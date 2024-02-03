@@ -14,7 +14,7 @@ web.init()
 from .py.nodes.bus import Bus_node
 
 MANIFEST = {
-    "name": "Maras IT Nodes",
+    "name": "MarasIT Nodes",
     "version": (1,1,1),
     "author": "davask",
     "project": "https://github.com/davask/ComfyUI-MarasIT-Nodes",
