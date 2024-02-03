@@ -14,7 +14,7 @@
 
 import torch
 
-class Marasit_Bus:
+class Bus_node:
     def __init__(self):
         self.default_mask = torch.zeros(1, 1, 1024, 1024)  # Example default mask
 
@@ -40,7 +40,7 @@ class Marasit_Bus:
     _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "latent", "image", "mask")
     RETURN_NAMES = ("bus",) + _INPUT_NAMES
     FUNCTION = "bus_fn"
-    CATEGORY = "Maras IT/Utilities"
+    CATEGORY = "MarasIT/utils"
     
     def bus_fn(self, **kwargs):
         # Initialize the bus tuple with None values for each parameter
