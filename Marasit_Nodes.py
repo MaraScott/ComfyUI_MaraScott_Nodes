@@ -19,14 +19,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import os 
-import sys 
-import folder_paths as comfy_paths
+from .py.inc import web
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "marasit_nodes_comfyui"))
-sys.path.append(comfy_paths.base_path)
-
-p310_plus = (sys.version_info >= (3, 10))
+web.init()
 
 from .py.nodes.bus import Marasit_Bus
 
