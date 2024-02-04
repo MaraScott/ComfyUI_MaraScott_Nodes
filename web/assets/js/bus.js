@@ -3,33 +3,6 @@ import { app } from "/scripts/app.js";
 const ExtName = "Comfy.MarasIT.BusNode";
 const ExtNodeName = "MarasitBusNode";
 
-const addMenuHandler = (nodeType, cb) => {
-	const getOpts = nodeType.prototype.getExtraMenuOptions;
-	nodeType.prototype.getExtraMenuOptions = function () {
-		const r = getOpts.apply(this, arguments);
-		cb.apply(this, arguments);
-		return r;
-	};
-	nodeType.prototype.onRemoved = function() {
-	};
-	nodeType.prototype.onSelected = function() {
-		this.selected = true;
-	};
-	nodeType.prototype.onDeselected = function() {
-		this.selected = false;
-	};
-};
-
-const action = {
-	addInput: (nodeType, name, type) => {
-		console.log(nodeType.prototype.addInput(name, type));
-		console.log('Input '+name+' added');
-	},
-	removeInput: (nodeType) => {
-		console.log('remove input');
-	}
-};
-
 const ext = {
 	// Unique name for the extension
 	name: ExtName,
@@ -58,22 +31,69 @@ const ext = {
 			return;
 		}
 		// console.log("[MarasIT]", "before register node: ", nodeData.name);
-		addMenuHandler(nodeType, (_, options) => {
-			options.unshift(
-				{
-					content: "Add Input",
-					callback: () => {
-						action.addInput(nodeType, "any", "*");
+
+		const onNodeCreated = nodeType.prototype.onNodeCreated;
+		nodeType.prototype.onNodeCreated = function () {
+			const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+			this.getExtraMenuOptions = function (_, options) {
+				options.unshift(
+					{
+						content: "Add Input",
+						callback: () => {
+							const name = "any";
+							const type = "*";
+							this.addInput(name, type);
+							this.addOutput(name, type);
+							
+							const inputLenth = this.inputs.length-1
+							const outputLenth = this.outputs.length-1
+							const index = this.widgets[this.index].value
+
+							for (let i = inputLenth; i > index+1; i--) {
+								swapInputs(this, i, i-1)
+							}
+							for (let i = outputLenth; i > index+1; i--) {
+								swapOutputs(this, i, i-1)
+							}
+
+							renameNodeInputs(this, name)
+							renameNodeOutputs(this, name)
+
+							this.properties["values"].splice(index+1, 0, [0, 0, 0, 0, 1])
+							this.widgets[this.index].options.max = inputLenth
+
+							this.setDirtyCanvas(true);
+
+							console.log('In/Out put '+name+' added');
+						}
+					},
+					{
+						content: "Remove Last Input",
+						callback: () => {
+							const inputLenth = this.inputs.length-1
+							const outputLenth = this.outputs.length-1
+
+							this.removeInput(inputLenth);
+							this.removeOutput(outputLenth);
+						}
+					},
+				);
+			};
+			this.onRemoved = function() {
+				for (let y in this.widgets) {
+					if (this.widgets[y].canvas) {
+						this.widgets[y].canvas.remove();
 					}
-				},
-				{
-					content: "Remove Last Input",
-					callback: () => {
-						action.removeInput(nodeType);
-					}
-				},
-			);
-		});
+				}
+			};
+			this.onSelected = function() {
+				this.selected = true;
+			};
+			this.onDeselected = function() {
+				this.selected = false;
+			};
+		}
+		
 		// delete ext.beforeRegisterNodeDef;
 
 		// This fires for every node definition so only log once
