@@ -54,26 +54,27 @@ const ext = {
 	},
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		// Run custom logic before a node definition is registered with the graph
-		if (nodeData.name === ExtNodeName) {
-			// console.log("[MarasIT]", "before register node: ", nodeData.name);
-			addMenuHandler(nodeType, (_, options) => {
-				options.unshift(
-					{
-						content: "Add Input",
-						callback: () => {
-							action.addInput(nodeType, "any", "ANY");
-						}
-					},
-					{
-						content: "Remove Last Input",
-						callback: () => {
-							action.removeInput(nodeType);
-						}
-					},
-				);
-			});
-			delete ext.beforeRegisterNodeDef;
+		if (nodeData.name !== ExtNodeName) {
+			return;
 		}
+		// console.log("[MarasIT]", "before register node: ", nodeData.name);
+		addMenuHandler(nodeType, (_, options) => {
+			options.unshift(
+				{
+					content: "Add Input",
+					callback: () => {
+						action.addInput(nodeType, "any", "*");
+					}
+				},
+				{
+					content: "Remove Last Input",
+					callback: () => {
+						action.removeInput(nodeType);
+					}
+				},
+			);
+		});
+		// delete ext.beforeRegisterNodeDef;
 
 		// This fires for every node definition so only log once
 	},
