@@ -14,11 +14,11 @@ web.init()
 from .py.nodes.bus import Bus_node
 
 MANIFEST = {
-    "name": "MarasIT Nodes",
-    "version": (1,1,1),
+    "name": "🐰 MarasIT Nodes",
+    "version": (1,2,0),
     "author": "davask",
     "project": "https://github.com/davask/ComfyUI-MarasIT-Nodes",
-    "description": "A simple Bus node",
+    "description": "This is a revised version of the Bus node from the \"Was Node Suite\" to integrate more input/output.",
 }
 
 # NODE MAPPING

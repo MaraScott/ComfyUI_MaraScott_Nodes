@@ -25,8 +25,8 @@
 
 """
 @author: davask
-@title: 🐰 Mara
-@nickname: 🐰 Mara
+@title: 🐰 MarasIT
+@nickname: 🐰 MarasIT
 @description: This is a revised version of the Bus node from the "Was Node Suite" to integrate more input/output.
 """
 
