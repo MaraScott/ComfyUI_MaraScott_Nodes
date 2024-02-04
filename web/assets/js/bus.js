@@ -21,10 +21,11 @@ const addMenuHandler = (nodeType, cb) => {
 };
 
 const action = {
-	addInput: () => {
-		console.log('add input');
+	addInput: (nodeType, name, type) => {
+		nodeType.prototype.addInput(name, type)
+		console.log('Input '+name+' added');
 	},
-	removeInput: () => {
+	removeInput: (nodeType) => {
 		console.log('remove input');
 	}
 };
@@ -60,13 +61,13 @@ const ext = {
 					{
 						content: "Add Input",
 						callback: () => {
-							action.addInput(this);
+							action.addInput(nodeType, "any", "ANY");
 						}
 					},
 					{
 						content: "Remove Last Input",
 						callback: () => {
-							action.removeInput(this);
+							action.removeInput(nodeType);
 						}
 					},
 				);

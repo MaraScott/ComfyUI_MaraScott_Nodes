@@ -23,6 +23,13 @@
 #
 ###
 
+"""
+@author: davask
+@title: 🐰 Mara
+@nickname: 🐰 Mara
+@description: This is a revised version of the Bus node from the "Was Node Suite" to integrate more input/output.
+"""
+
 import os 
 import sys 
 
