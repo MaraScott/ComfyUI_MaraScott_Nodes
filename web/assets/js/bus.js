@@ -92,6 +92,7 @@ const ext = {
 			this.onDeselected = function() {
 				this.selected = false;
 			};
+			return r;
 		}
 		
 		// delete ext.beforeRegisterNodeDef;
