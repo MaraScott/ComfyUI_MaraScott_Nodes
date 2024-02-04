@@ -1,5 +1,8 @@
 import { app } from "/scripts/app.js";
 
+const ExtName = "Comfy.MarasIT.BusNode";
+const ExtNodeName = "MarasitBusNode";
+
 const addMenuHandler = (nodeType, cb) => {
 	const getOpts = nodeType.prototype.getExtraMenuOptions;
 	nodeType.prototype.getExtraMenuOptions = function () {
@@ -17,7 +20,7 @@ const addMenuHandler = (nodeType, cb) => {
 	};
 };
 
-const helper = {
+const action = {
 	addInput: () => {
 		console.log('add input');
 	},
@@ -28,42 +31,42 @@ const helper = {
 
 const ext = {
 	// Unique name for the extension
-	name: "Comfy.MarasIT.BusNode",
+	name: ExtName,
 	async init(app) {
 		// Any initial setup to run as soon as the page loads
-		console.log("[MarasIT]",ext.name+" Initialization");
+		// console.log("[MarasIT]",ext.name+" Initialization");
 	},
 	async setup(app) {
 		// Any setup to run after the app is created
-		console.log("[MarasIT]",ext.name+" loaded");
+		// console.log("[MarasIT]",ext.name+" loaded");
 	},
 	async addCustomNodeDefs(defs, app) {
 		// Add custom node definitions
 		// These definitions will be configured and registered automatically
 		// defs is a lookup core nodes, add yours into this
-		console.log("[MarasIT]", "add "+ext.name+" definitions", "current nodes:", JSON.stringify(defs['MarasitBusNode']));
+		// console.log("[MarasIT]", "add "+ext.name+" definitions", "current nodes:", JSON.stringify(defs['MarasitBusNode']));
 	},
 	async getCustomWidgets(app) {
 		// Return custom widget types
 		// See ComfyWidgets for widget examples
-		console.log("[MarasIT]", "provide "+ext.name+" widgets");
+		// console.log("[MarasIT]", "provide "+ext.name+" widgets");
 	},
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		// Run custom logic before a node definition is registered with the graph
-		if (nodeData.name === "MarasitBusNode") {
-			console.log("[MarasIT]", "before register node: ", nodeData.name);
+		if (nodeData.name === ExtNodeName) {
+			// console.log("[MarasIT]", "before register node: ", nodeData.name);
 			addMenuHandler(nodeType, (_, options) => {
 				options.unshift(
 					{
 						content: "Add Input",
 						callback: () => {
-							helper.addInput(this);
+							action.addInput(this);
 						}
 					},
 					{
 						content: "Remove Last Input",
 						callback: () => {
-							helper.removeInput(this);
+							action.removeInput(this);
 						}
 					},
 				);
@@ -75,16 +78,19 @@ const ext = {
 	},
 	async registerCustomNodes(app) {
 		// Register any custom node implementations here allowing for more flexability than a custom node def
-		console.log("[MarasIT]", "register "+this.name);
+		// console.log("[MarasIT]", "register "+this.name);
 	},
 	loadedGraphNode(node, app) {
 		// Fires for each node when loading/dragging/etc a workflow json or png
 		// If you break something in the backend and want to patch workflows in the frontend
 		// This is the place to do this
-		console.log("[MarasIT]", "loaded graph node: ", node);
+		if(node.type === ExtNodeName){
+			// console.log("[MarasIT]", "loaded graph node: ", node);
 
-		// This fires for every node on each load so only log once
-		delete ext.loadedGraphNode;
+			// This fires for every node on each load so only log once
+			// delete ext.loadedGraphNode;
+		}
+
 	},
 	nodeCreated(node, app) {
 		// Fires every time a node is constructed
