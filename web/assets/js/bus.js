@@ -22,7 +22,7 @@ const addMenuHandler = (nodeType, cb) => {
 
 const action = {
 	addInput: (nodeType, name, type) => {
-		nodeType.prototype.addInput(name, type)
+		console.log(nodeType.prototype.addInput(name, type));
 		console.log('Input '+name+' added');
 	},
 	removeInput: (nodeType) => {
