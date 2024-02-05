@@ -27,7 +27,7 @@
 @author: davask
 @title: 🐰 MarasIT
 @nickname: 🐰 MarasIT
-@description: This is a revised version of the Bus node from the "Was Node Suite" to integrate more input/output.
+@description: This is a Bus Node with Multi profile and Get/set approach\n[i/INFO:This is a revised version of the Bus node from the [a/Was Node Suite](https://github.com/WASasquatch/was-node-suite-comfyui) to integrate more input/output.\nIt combines [a/Get & Set Node from KJNodes](https://github.com/kijai/ComfyUI-KJNodes)\nSpecial thanks to Jags for helping in developing that node]
 """
 
 import os 

@@ -41,7 +41,7 @@ const ext = {
 					{
 						content: "Add Input",
 						callback: () => {
-							const name = "any";
+							const name = "any_" + this.inputs.length;
 							const type = "*";
 							this.addInput(name, type);
 							this.addOutput(name, type);
