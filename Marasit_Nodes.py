@@ -7,11 +7,7 @@
 #
 ###
 
-from .py.inc import web
-
-web.init()
-
-from .py.nodes.bus import Bus_node
+# from .py.nodes.bus import Bus_node
 
 MANIFEST = {
     "name": "MarasIT Nodes",
@@ -21,14 +17,16 @@ MANIFEST = {
     "description": "A simple Bus node",
 }
 
+WEB_DIRECTORY = "web/assets/js"
+
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
-    "MarasitBusNode": Bus_node,
+    # "MarasitBusNode": Bus_node,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "MarasitBusNode": "Bus Node"
+    # "MarasitBusNode": "Bus Node"
 }
 
 print('\033[34m[Maras IT] \033[92mLoaded\033[0m')
