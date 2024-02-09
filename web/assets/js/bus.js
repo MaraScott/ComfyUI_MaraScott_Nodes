@@ -1,13 +1,33 @@
-import { app } from "../../../scripts/app.js";
-//based on diffus3's SetGet: https://github.com/diffus3/ComfyUI-extensions
+import { app } from "../../scripts/app.js";
+import * as shared from './helper.js'
+import {
+	infoLogger,
+	warnLogger,
+	successLogger,
+	errorLogger,
+	getUnique,
+	removeItemAll,	
+} from './helper.js'
 
-class MarasitBusNode {
+// Definitions for litegraph.js
+// Project: litegraph.js
+// Definitions by: NateScarlet <https://github.com/NateScarlet>
+// https://github.com/NateScarlet/litegraph.js/blob/master/src/litegraph.js
 
-	
+class MarasitBusNode extends LiteGraph.LGraphNode {
+
+	title = "Bus Node - Default"
 	category = "MarasIT/utils"
-	
+
+	// same values as the comfy note
+	color = LGraphCanvas.node_colors.yellow.color
+	bgcolor = LGraphCanvas.node_colors.yellow.bgcolor
+	groupcolor = LGraphCanvas.node_colors.yellow.groupcolor
+
 	bus_type = "default"
-	bus_data = {}
+
+	overiding_bus_inputs = []
+
 	inOutPuts = {
 		"bus": "BUS",
 		"model": "MODEL",
@@ -23,68 +43,74 @@ class MarasitBusNode {
 
 	constructor() {
 
+		super()
+		this.uuid = shared.makeUUID()
+
+		infoLogger(`Constructing Bus Node instance`)
+
+		// - litegraph settings
+		this.collapsable = true
+		this.isVirtualNode = true
+		this.shape = LiteGraph.BOX_SHAPE
+		this.serialize_widgets = true
+
+
 		if (!this.properties) {
 			this.properties = {
-				"previousTitle": "Bus Node - " = this.bus_type
+				"previousTitle": "Bus Node - " + this.bus_type
 			};
 		}
 
-		const node = this;
-
-		for(_name, type in this.inOutPuts) {
-			this.setInOutPut(_name, type)
+		// display initial inputs/outputs
+		for (const name in this.inOutPuts) {
+			this.setInOutPut(name, this.inOutPuts[name])
 		}
 
+		// display name widget
 		this.addWidget(
-			"text", 
-			"Constant", 
-			'', 
+			"text",
+			"Constant",
+			'',
 			(s, t, u, v, x) => {
 				// node.validateName(node.graph);
 				this.title = "Bus Node - " + (this.widgets[0].value ?? this.bus_type);
 				this.update();
 				this.properties.previousTitle = this.widgets[0].value;
-			}, 
+			},
 			{}
 		)
-		
-		this.inputBus = {};
-
-		this.updateBusOutput = function() {
-			// Pass the merged busData as output 'bus'
-			// if (this.outputs.length > 0 && this.outputs[0].name === 'bus') {
-			// 	this.setOutputData(0, this.busData);
-			// }
-
-			// // Populate new input bus into appropriate outputs (model to model, clip to clip, etc.)
-			// for (let i = 1; i < this.outputs.length; i++) {
-			// 	const outputName = this.outputs[i].name;
-			// 	if (this.busData[outputName]) {
-			// 		this.setOutputData(i, this.busData[outputName]);
-			// 	}
-			// }
-		};
-
-		this.clone = function () {
-			const cloned = MarasitBusNode.prototype.clone.apply(this);
-			cloned.size = cloned.computeSize();
-			return cloned;
-		};
-
-		this.onAdded = function(graph) {
-			// this.validateName(graph);
-		}
-
-
-		this.update = function() {
-			if (!node.graph) {
-				return;
-			}
-		}
-
 
 		// This node is purely frontend and does not impact the resulting prompt so should not be serialized
 		this.isVirtualNode = true;
+		console.log("Maras IT Bus Node loaded");
+	}
+
+	update = function () {
+
+		// clean input bus
+		if (this.inputs[0].name === 'bus' && this.outputs[0].name === 'bus' && this.inputs[0].links && this.outputs[0].links && this.graph.links.length > 0) {
+			const bus_inputs = this.graph.links[this.inputs[0].links[0]].data;
+			for (input in bus_inputs) {
+				if (this.overiding_bus_inputs.includes(bus_inputs[input].name)) {
+					delete bus_inputs[input];
+				}
+			}
+			console.log(this.inputs[0], this.outputs[0])
+			// this.setOutputData(this.outputs[0].name, {
+			// 	...bus_inputs,
+			// 	...this.inputs
+			// });
+			// console.log(this.outputs[0]);
+			// for (output in this.outputs[0]) {
+			// 	if(this.outputs[output].name !== 'bus') {
+			// 		this.setOutputData(this.outputs[output].name, output);
+			// 	}
+			// }
+		}
+
+
+
+
 	}
 
 	setInOutPut(_name, type) {
@@ -93,90 +119,39 @@ class MarasitBusNode {
 	}
 
 	// validateName = function(graph) {
-		// let widgetValue = node.widgets[0].value;
-	
-		// if (widgetValue !== '') {
-		// 	let tries = 0;
-		// 	const existingValues = new Set();
-	
-		// 	graph._nodes.forEach(otherNode => {
-		// 		if (otherNode !== this && otherNode.type === 'MarasitBusNode') {
-		// 			existingValues.add(otherNode.widgets[0].value);
-		// 		}
-		// 	});
-	
-		// 	while (existingValues.has(widgetValue)) {
-		// 		widgetValue = node.widgets[0].value + "_" + tries;
-		// 		tries++;
-		// 	}
-	
-		// 	node.widgets[0].value = widgetValue;
-		// 	this.update();
-		// }
+	// let widgetValue = node.widgets[0].value;
+
+	// if (widgetValue !== '') {
+	// 	let tries = 0;
+	// 	const existingValues = new Set();
+
+	// 	graph._nodes.forEach(otherNode => {
+	// 		if (otherNode !== this && otherNode.type === 'MarasitBusNode') {
+	// 			existingValues.add(otherNode.widgets[0].value);
+	// 		}
+	// 	});
+
+	// 	while (existingValues.has(widgetValue)) {
+	// 		widgetValue = node.widgets[0].value + "_" + tries;
+	// 		tries++;
+	// 	}
+
+	// 	node.widgets[0].value = widgetValue;
+	// 	this.update();
+	// }
 	// }
 
-	onDisconnect = function(slot) {
-		if (slotType == 1) {
-			// if(this.inputs[slot].name === ''){
-			// 	this.inputs[slot].type = '*';
-			// 	this.inputs[slot].name = '*';
-			// }
-			// const inputName = this.inputs[slot].name;
-			// delete this.busData[inputName]; // Remove disconnected input data from busData
-			
-		}
-		if (slotType == 2) {
-			// this.outputs[slot].type = '*';
-			// this.outputs[slot].name = '*';						
-		}	
+	clone = function () {
+		const cloned = MarasitBusNode.prototype.clone.apply(this);
+		cloned.size = cloned.computeSize();
+		return cloned;
+	};
+
+	onAdded = function (graph) {
+		// this.validateName(graph);
 	}
 
-	onConnect = function(slotType, slot, node, link_info) {
-		if (link_info && node.graph && slotType == 1) {
-			const fromNode = node.graph._nodes.find((otherNode) => otherNode.id == link_info.origin_id);
-			
-			if (fromNode && fromNode.outputs && fromNode.outputs[link_info.origin_slot]) {
-				if (this.inputs[slot].name !== 'bus') { // Exclude the 'bus' input from merging
-					const outputData = fromNode.outputs[link_info.origin_slot].data;
-					this.busData[inputName] = outputData; // Merge data into busData
-				}
-
-			// 	const type = fromNode.outputs[link_info.origin_slot].type;
-			
-			// 	if (this.title === "Set"){
-			// 		this.title = "Set_" + type;	
-			// 	}
-			// 	if (this.widgets[0].value === '*'){
-			// 		this.widgets[0].value = type	
-			// 	}
-				
-			// 	this.validateName(node.graph);
-			// 	this.inputs[0].type = type;
-			// 	this.inputs[0].name = type;
-				
-				// if (app.ui.settings.getSettingValue("KJNodes.nodeAutoColor")){
-				// 	setColorAndBgColor.call(this, type);	
-				// }
-			} else {
-				alert("Error: Set node input undefined. Most likely you're missing custom nodes");
-			}
-		}
-		if (link_info && node.graph && slotType == 2) {
-			const fromNode = node.graph._nodes.find((otherNode) => otherNode.id == link_info.origin_id);
-			
-			if (fromNode && fromNode.inputs && fromNode.inputs[link_info.origin_slot]) {
-				// const type = fromNode.inputs[link_info.origin_slot].type;
-				
-				// this.outputs[0].type = type;
-				// this.outputs[0].name = type;
-			} else {
-				alert("Error: Get Set node output undefined. Most likely you're missing custom nodes");
-			}
-		}
-
-	}
-
-	onConnectionsChange = function(
+	onConnectionsChange = function (
 		slotType,	//1 = input, 2 = output
 		slot,
 		isChangeConnect,
@@ -184,38 +159,110 @@ class MarasitBusNode {
 		output
 	) {
 
-		console.log({
-			slotType: slotType, 
-			slot: slot, 
-			isChangeConnect: isChangeConnect, 
-			link_info: link_info, 
-			output: output
-		})
 		//On Disconnect
-		if (!isChangeConnect) this.onDisconnect(slotType, slot)
+		if (!isChangeConnect) this.disconnect(slotType, slot)
 		//On Connect
-		if (isChangeConnect) this.onConnect(slotType, slot, node, link_info)
-
-		this.updateBusOutput(); // Update the output bus with the merged data					
+		if (isChangeConnect) this.connect(slotType, slot, this, link_info)
 
 		//Update either way
 		this.update();
+
+	}
+
+	disconnectInput = function (slot) {
+		delete this.inputs[slot];
+		// this.overiding_bus_inputs = removeItemAll(this.inputs[slot].name, this.overiding_bus_inputs)
+	}
+	disconnectOutput = function (slot) {
+	}
+	disconnect = function (slotType, slot) {
+		if (slotType == 1) {
+			this.disconnectInput(slot)
+		}
+		// if (slotType == 2) {
+		// 	this.disconnectOutput(slot)
+		// }
+	}
+
+	connectInput = function (slot, node, link_info) {
+		const connecting_node = node.graph._nodes.find((otherNode) => otherNode.id == link_info.origin_id);
+			
+		// if origina node to connect has outputdata
+		if (connecting_node && connecting_node.outputs && connecting_node.outputs[link_info.origin_slot]) {
+			const link_node_data = connecting_node.outputs[link_info.origin_slot];
+			this.inputs[slot] = link_node_data
+			this.outputs[slot] = link_node_data
+			if(this.inputs[slot].name !== 'bus' && this.overiding_bus_inputs.indexOf(this.inputs[slot].name) !== -1) {
+				this.overiding_bus_inputs = this.overiding_bus_inputs.push(this.inputs[slot].name)
+			}
+
+			// if (app.ui.settings.getSettingValue("KJNodes.nodeAutoColor")){
+			// 	setColorAndBgColor.call(this, type);	
+			// }
+
+		} else {
+			// alert("Error: Set node input undefined. Most likely you're missing custom nodes");
+		}
+	}
+	connectOutput = function (slot, node, link_info) {
+	}
+	connect = function (slotType, slot, node, link_info) {
+		// input
+		if (link_info && node.graph && slotType == 1) {
+			this.connectInput(slot, node, link_info)
+		}
+		// output
+		// if (link_info && node.graph && slotType == 2) {
+		// 	this.connectOutput(slot, node, link_info)
+		// }
+
+	}
+
+	onCreate() {
+		errorLogger('MarasITBusNode onCreate')
+	}
+
+	onNodeCreated() {
+		infoLogger('Node created', this.uuid)
 	}
 
 	onRemoved() {
+		infoLogger('Node removed', this.uuid)
 	}
+
+	// getExtraMenuOptions() {
+	// 	var options = []
+	// 	// {
+	// 	//       content: string;
+	// 	//       callback?: ContextMenuEventListener;
+	// 	//       /** Used as innerHTML for extra child element */
+	// 	//       title?: string;
+	// 	//       disabled?: boolean;
+	// 	//       has_submenu?: boolean;
+	// 	//       submenu?: {
+	// 	//           options: ContextMenuItem[];
+	// 	//       } & IContextMenuOptions;
+	// 	//       className?: string;
+	// 	//   }
+	// 	options.push({
+	// 		content: `Set to ${this.edit_mode_widget.value === 'html' ? 'markdown' : 'html'
+	// 			}`,
+	// 		callback: () => {
+	// 			this.edit_mode_widget.value =
+	// 				this.edit_mode_widget.value === 'html' ? 'markdown' : 'html'
+	// 			this.updateHTML(this.html_widget.value)
+	// 		},
+	// 	})
+
+	// 	return options
+	// }
+
 }
 
 app.registerExtension({
 	name: "Comfy.MarasIT.MarasitBusNode",
 	registerCustomNodes() {
-		LiteGraph.registerNodeType(
-			"MarasitBusNode",
-			Object.assign(MarasitBusNode, {
-				title: "Bus Node - Default",
-			})
-		);
-
-		MarasitBusNode.category = "MarasIT/utils";
+		LiteGraph.registerNodeType("MarasitBusNode", MarasitBusNode)
+		// MarasitBusNode.title_mode = LiteGraph.NO_TITLE
 	},
 });

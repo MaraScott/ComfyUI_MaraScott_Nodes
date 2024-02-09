@@ -9,15 +9,7 @@
 
 # from .py.nodes.bus import Bus_node
 
-MANIFEST = {
-    "name": "MarasIT Nodes",
-    "version": (1,1,1),
-    "author": "davask",
-    "project": "https://github.com/davask/ComfyUI-MarasIT-Nodes",
-    "description": "A simple Bus node",
-}
-
-WEB_DIRECTORY = "web/assets/js"
+WEB_DIRECTORY = "./web/assets/js"
 
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {

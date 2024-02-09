@@ -33,3 +33,11 @@ __ROOT__file__ = __file__
 from .Marasit_Nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, WEB_DIRECTORY
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY']
+
+MANIFEST = {
+    "name": "MarasIT Nodes",
+    "version": (1,3,0),
+    "author": "davask",
+    "project": "https://github.com/davask/ComfyUI-MarasIT-Nodes",
+    "description": "A simple Bus node",
+}
