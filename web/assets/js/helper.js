@@ -111,27 +111,3 @@ export const showAlertWithThrottle = (message, delay) => {
         setTimeout(() => isAlertShown = false, delay);
     }
 }
-
-export function getUnique(arr) {
-    var uniqueObject = {};
-    var uniqueArray = [];
-    for (var i = 0; i < arr.length; i++) {
-        uniqueObject[arr[i]] = 1;
-    }
-    for (var key in uniqueObject) {
-        uniqueArray.push(key);
-    }
-    return uniqueArray;
-}
-
-export function removeItemAll(value, arr) {
-    let i = 0;
-    while (i < arr.length) {
-        if (arr[i] === value) {
-            arr.splice(i, 1);
-        } else {
-            i++;
-        }
-    }
-    return arr;
-};

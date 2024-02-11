@@ -14,6 +14,15 @@
 
 import torch
 
+# Hack: string type that is always equal in not equal comparisons
+class AnyType(str):
+    def __ne__(self, __value: object) -> bool:
+        return False
+
+
+# Our any instance wants to be a wildcard string
+ANY = AnyType("*")
+
 class Bus_node:
     def __init__(self):
         self.default_mask = torch.zeros(1, 1, 1024, 1024)  # Example default mask
@@ -32,12 +41,13 @@ class Bus_node:
                 "latent": ("LATENT",),
                 "image": ("IMAGE",),
                 "mask": ("MASK",),
+                "any": (ANY, {}),
             }
         }
 
-    _INPUT_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK",)
-    RETURN_TYPES = ("BUS", ) + _INPUT_TYPES
-    _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "latent", "image", "mask")
+    _INPUT_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK", ANY,)
+    RETURN_TYPES = ("BUS",) + _INPUT_TYPES
+    _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "latent", "image", "mask", "any",)
     RETURN_NAMES = ("bus",) + _INPUT_NAMES
     FUNCTION = "bus_fn"
     CATEGORY = "MarasIT/utils"
