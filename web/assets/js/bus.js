@@ -161,37 +161,6 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 
 	}
 
-	/**
-	 * Manage menu
-	 */
-
-	getExtraMenuOptions() {
-		var options = []
-		// {
-		//       content: string;
-		//       callback?: ContextMenuEventListener;
-		//       /** Used as innerHTML for extra child element */
-		//       title?: string;
-		//       disabled?: boolean;
-		//       has_submenu?: boolean;
-		//       submenu?: {
-		//           options: ContextMenuItem[];
-		//       } & IContextMenuOptions;
-		//       className?: string;
-		//   }
-		// options.push({
-		// 	content: `Set to ${this.edit_mode_widget.value === 'html' ? 'markdown' : 'html'
-		// 		}`,
-		// 	callback: () => {
-		// 		this.edit_mode_widget.value =
-		// 			this.edit_mode_widget.value === 'html' ? 'markdown' : 'html'
-		// 		this.updateHTML(this.html_widget.value)
-		// 	},
-		// })
-
-		return options
-	}
-
 }
 
 const MarasitBusNode = {
@@ -227,6 +196,81 @@ const MarasitBusNode = {
 				onExecuted?.apply(this, arguments)
 				console.log({arguments: arguments, message: message})
 			}
+
+
+			const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
+			nodeType.prototype.getExtraMenuOptions = function (_, options) {
+				// var options = []
+				// {
+				//       content: string;
+				//       callback?: ContextMenuEventListener;
+				//       /** Used as innerHTML for extra child element */
+				//       title?: string;
+				//       disabled?: boolean;
+				//       has_submenu?: boolean;
+				//       submenu?: {
+				//           options: ContextMenuItem[];
+				//       } & IContextMenuOptions;
+				//       className?: string;
+				//   }
+				options.unshift(
+					{
+						content: "Add Input",
+						callback: () => {
+							for(let _index in _.graph._nodes) {
+								let _node = _.graph._nodes[_index]
+								if(_node.type === "MarasitBusNode" && this.title === _node.title) {
+									_node.index = _node.inputs.length + 1
+									const name = "any_" + _node.index;
+									const type = "*";
+									_node.addInput(name, type);
+									_node.addOutput(name, type);
+
+									console.log(_node, _index, _.graph._nodes[_index]);
+									
+									const inputLenth = _node.inputs.length-1;
+									const outputLenth = _node.outputs.length-1;
+									// const index = _node.widgets[_node.index].value;
+		
+									for (let i = inputLenth; i > _node.index+1; i--) {
+										swapInputs(_node, i, i-1);
+										swapOutputs(_node, i, i-1);
+									}
+		
+									// renameNodeInputs(_node, name);
+									// renameNodeOutputs(_node, name);
+		
+									// _node.properties["values"].splice(_node.index+1, 0, [0, 0, 0, 0, 1]);
+									// _node.widgets[_node.index].options.max = inputLenth;
+		
+									// _node.setDirtyCanvas(true);
+		
+									console.log('In/Out put '+name+' added');
+								}
+							}
+						}
+					},
+					{
+						content: "Remove Last Input",
+						callback: () => {
+
+							for(let _index in _.graph._nodes) {
+								let _node = _.graph._nodes[_index]
+								if(_node.type === "MarasitBusNode" && this.title === _node.title) {
+									const inputLenth = _node.inputs.length-1
+									const outputLenth = _node.outputs.length-1
+
+									_node.removeInput(inputLenth);
+									_node.removeOutput(outputLenth);
+
+								}
+							}
+						}
+					},
+				);
+				// return getExtraMenuOptions?.apply(this, arguments);
+			}
+		
 			// delete MarasitBusNode.beforeRegisterNodeDef;
 		}
 	},
