@@ -13,11 +13,12 @@ import {
  * Definitions by: NateScarlet <https://github.com/NateScarlet>
  * https://github.com/NateScarlet/litegraph.js/blob/master/src/litegraph.js
  * ComfyUI\web\lib\litegraph.core.js
+ * ComfyUI\web\extensions\logging.js.example
  * ComfyUI\custom_nodes\rgthree-comfy\src_web\typings\litegraph.d.ts
  *
  */
 
-class MarasitBusNode extends LiteGraph.LGraphNode {
+class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 
 	title = "Bus Node - default"
 
@@ -53,13 +54,9 @@ class MarasitBusNode extends LiteGraph.LGraphNode {
 
 	constructor() {
 
-		infoLogger(`[Maras IT] Constructing Bus Node instance`)
-
 		super()
 
 		this._init()
-
-		infoLogger(`[Maras IT] Bus Node Instance Constructed`);
 
 	}
 
@@ -197,10 +194,69 @@ class MarasitBusNode extends LiteGraph.LGraphNode {
 
 }
 
-app.registerExtension({
+const MarasitBusNode = {
+	// Unique name for the extension
 	name: "Comfy.MarasIT.MarasitBusNode",
-	registerCustomNodes() {
-		LiteGraph.registerNodeType("MarasitBusNode", MarasitBusNode)
-		// MarasitBusNode.title_mode = LiteGraph.NO_TITLE
+	async init(app) {
+		// Any initial setup to run as soon as the page loads
+		// console.log("[logging "+this.name+"]", "extension init");
 	},
-});
+	async setup(app) {
+		// Any setup to run after the app is created
+		// console.log("[logging "+this.name+"]", "extension setup");
+	},
+	async addCustomNodeDefs(defs, app) {
+		// Add custom node definitions
+		// These definitions will be configured and registered automatically
+		// defs is a lookup core nodes, add yours into this
+		// console.log("[logging "+this.name+"]", "add custom node definitions", "current nodes:", Object.keys(defs));
+	},
+	async getCustomWidgets(app) {
+		// Return custom widget types
+		// See ComfyWidgets for widget examples
+		// console.log("[logging "+this.name+"]", "provide custom widgets");
+	},
+	async beforeRegisterNodeDef(nodeType, nodeData, app) {
+		// Run custom logic before a node definition is registered with the graph
+		if (nodeData.name === 'MarasitBusNode') {
+			console.log("[logging "+this.name+"]", "before register node: ", nodeData, nodeType);
+			// This fires for every node definition so only log once
+
+			const onExecuted = nodeType.prototype.onExecuted
+			nodeType.prototype.onExecuted = function (message) {
+				onExecuted?.apply(this, arguments)
+				console.log({arguments: arguments, message: message})
+			}
+			// delete MarasitBusNode.beforeRegisterNodeDef;
+		}
+	},
+	async registerCustomNodes(app) {
+		// Register any custom node implementations here allowing for more flexability than a custom node def
+		// console.log("[logging "+this.name+"]", "register custom nodes");
+
+		// LiteGraph.registerNodeType("MarasitBusNode-js", Object.assign(MarasitBusLGraphNode, {
+		// 	// title_mode: LiteGraph.NO_TITLE,
+		// 	title: "Bus Node (js)",
+		// 	collapsable: false,
+		// }))
+	},
+	loadedGraphNode(node, app) {
+		// Fires for each node when loading/dragging/etc a workflow json or png
+		// If you break something in the backend and want to patch workflows in the frontend
+		// This is the place to do this
+		// console.log("[logging "+this.name+"]", "loaded graph node: ", node);
+
+		// This fires for every node on each load so only log once
+		delete MarasitBusNode.loadedGraphNode;
+	},
+	nodeCreated(node, app) {
+		// Fires every time a node is constructed
+		// You can modify widgets/add handlers/etc here
+		// console.log("[logging "+this.name+"]", "node created: ", node);
+
+		// This fires for every node so only log once
+		delete MarasitBusNode.nodeCreated;
+	}
+};
+
+app.registerExtension(MarasitBusNode);
