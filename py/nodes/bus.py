@@ -54,25 +54,29 @@ class Bus_node:
     
     def bus_fn(self, **kwargs):
         
-        # Initialize the bus tuple with None values for each parameter
-        inputs = {name: value for name, value in kwargs.items() if name != 'bus'}
-        outputs = inputs.copy()
-        in_bus = kwargs.get('bus', (None,) * len(inputs))
-        # Update outputs based on in_bus values
-        for i, name in enumerate(inputs):
-            if in_bus[i] is not None:  # Only update if in_bus value is not None
-                outputs[name] = in_bus[i]
+        print('START')
+        for name, value in kwargs.items():
+            print(name)
+        print('END')
+        # # Initialize the bus tuple with None values for each parameter
+        # inputs = {name: value for name, value in kwargs.items() if name != 'bus'}
+        # outputs = inputs.copy()
+        # in_bus = kwargs.get('bus', (None,) * len(inputs))
+        # # Update outputs based on in_bus values
+        # for i, name in enumerate(inputs):
+        #     if in_bus[i] is not None:  # Only update if in_bus value is not None
+        #         outputs[name] = in_bus[i]
                 
-        # Update outputs based on inputs and current outputs
-        for name, value in inputs.items():
-            outputs[name] = self._determine_output_value(name, value, outputs[name])
+        # # Update outputs based on inputs and current outputs
+        # for name, value in inputs.items():
+        #     outputs[name] = self._determine_output_value(name, value, outputs[name])
 
-        # self._ensure_required_parameters(outputs)
-        self._handle_special_parameters(outputs)
+        # # self._ensure_required_parameters(outputs)
+        # self._handle_special_parameters(outputs)
 
-        # Prepare and return the output bus tuple with updated values
-        out_bus = tuple(outputs[name] for name in outputs)
-        return (out_bus,) + out_bus
+        # # Prepare and return the output bus tuple with updated values
+        # out_bus = tuple(outputs[name] for name in outputs)
+        # return (out_bus,) + out_bus
 
 
     def _determine_output_value(self, name, _input, value):

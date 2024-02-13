@@ -1,4 +1,5 @@
 import { app } from "../../scripts/app.js";
+import { api } from '../../scripts/api.js'
 import * as shared from './helper.js'
 import {
 	infoLogger,
@@ -60,7 +61,7 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 
 	}
 
-	_init = function() {
+	_init = function () {
 
 		this.uuid = shared.makeUUID()
 
@@ -77,8 +78,8 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 		this._init_widgets();
 
 	}
-	
-	_init_inputs = function() {
+
+	_init_inputs = function () {
 		// display initial inputs/outputs
 		for (const name in this._entries) {
 			this._set_Entries(name, this._entries[name])
@@ -90,12 +91,12 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 		this.addOutput(_name, type)
 	}
 
-	_init_widgets = function() {
+	_init_widgets = function () {
 		// display name widget
 		this.addWidget(
 			"text",
 			"Constant",
-			this.properties.busType??'',
+			this.properties.busType ?? '',
 			(s, t, u, v, x) => {
 				// node.validateName(node.graph);
 				this.properties.busType = this.widgets[0].value ?? this._bus_type;
@@ -118,18 +119,18 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 		output
 	) {
 		if (this.inputs[slot].name === 'bus' && isChangeConnect == 1 && this.graph && link_info) {
-			
+
 			const origin_node = this.graph._nodes.find((otherNode) => otherNode.id == link_info.origin_id);
-			
-			if(typeof origin_node.inputs != 'undefined') {
-				
+
+			if (typeof origin_node.inputs != 'undefined') {
+
 				// assign origin node input values in outputs
 				for (const index in this.inputs) {
 					if (this.inputs[index].name != 'bus' && this.inputs[index].link == null && origin_node.inputs[index].link != null) {
 						// this.inputs[index] = origin_node.inputs[index];
 					}
 				}
-				
+
 				// console.log({
 				// 	id: this.id,
 				// 	slot: slot,
@@ -148,12 +149,12 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 		if (this.inputs[0].name === 'bus' && this.inputs[0].link) {
 			// const origin_node = this.graph._nodes.find((otherNode) => otherNode.id == this.inputs[0].link);
 			// console.log('in', this.title, this.graph._nodes, this.inputs[0].link, origin_node)
-		// 	const bus_inputs = this.graph.links[this.inputs[0].links[0]].data;
-		// 	for (input in bus_inputs) {
-		// 		if (this._inputs_name.includes(bus_inputs[input].name)) {
-		// 			delete bus_inputs[input];
-		// 		}
-		// 	}
+			// 	const bus_inputs = this.graph.links[this.inputs[0].links[0]].data;
+			// 	for (input in bus_inputs) {
+			// 		if (this._inputs_name.includes(bus_inputs[input].name)) {
+			// 			delete bus_inputs[input];
+			// 		}
+			// 	}
 		}
 		if (this.outputs[0].name === 'bus') {
 			// console.log('out', this.title, this.outputs[0])
@@ -216,36 +217,54 @@ const MarasitBusNode = {
 				options.unshift(
 					{
 						content: "Add Input",
-						callback: () => {
-							for(let _index in _.graph._nodes) {
+						callback: async () => {
+							for (let _index in _.graph._nodes) {
 								let _node = _.graph._nodes[_index]
-								if(_node.type === "MarasitBusNode" && this.title === _node.title) {
+								if (_node.type === "MarasitBusNode" && this.title === _node.title) {
 									_node.index = _node.inputs.length + 1
 									const name = "any_" + _node.index;
 									const type = "*";
 									_node.addInput(name, type);
-									_node.setInputData(name, None);
 									_node.addOutput(name, type);
-									_node.setOutputData(name, None);
 
-									const inputLenth = _node.inputs.length-1;
-									const outputLenth = _node.outputs.length-1;
+									const inputLenth = _node.inputs.length - 1;
+									const outputLenth = _node.outputs.length - 1;
 									// const index = _node.widgets[_node.index].value;
-		
-									for (let i = inputLenth; i > _node.index+1; i--) {
-										swapInputs(_node, i, i-1);
-										swapOutputs(_node, i, i-1);
+
+									for (let i = inputLenth; i > _node.index + 1; i--) {
+										swapInputs(_node, i, i - 1);
+										swapOutputs(_node, i, i - 1);
 									}
-		
+
 									// renameNodeInputs(_node, name);
 									// renameNodeOutputs(_node, name);
-		
+
 									// _node.properties["values"].splice(_node.index+1, 0, [0, 0, 0, 0, 1]);
 									// _node.widgets[_node.index].options.max = inputLenth;
-		
+
 									// _node.setDirtyCanvas(true);
-		
-									console.log('In/Out put '+name+' added');
+									try {
+										const res = await api.fetchApi('/marasit/bus')
+										const msg = await res.json()
+										if (!window.MarasIT) {
+											window.MarasIT = {}
+										}
+										await api
+											.fetchApi('/marasit/bus', {
+												method: 'POST',
+												body: JSON.stringify({
+													entries: _node.inputs,
+												}),
+											})
+											.then((response) => { })
+											.catch((error) => {
+												console.error('Error:', error)
+											})
+									} catch (e) {
+										console.error('Error:', error)
+									}
+
+									console.log('In/Out put ' + name + ' added');
 								}
 							}
 						}
@@ -254,11 +273,11 @@ const MarasitBusNode = {
 						content: "Remove Last Input",
 						callback: () => {
 
-							for(let _index in _.graph._nodes) {
+							for (let _index in _.graph._nodes) {
 								let _node = _.graph._nodes[_index]
-								if(_node.type === "MarasitBusNode" && this.title === _node.title) {
-									const inputLenth = _node.inputs.length-1
-									const outputLenth = _node.outputs.length-1
+								if (_node.type === "MarasitBusNode" && this.title === _node.title) {
+									const inputLenth = _node.inputs.length - 1
+									const outputLenth = _node.outputs.length - 1
 
 									_node.removeInput(inputLenth);
 									_node.removeOutput(outputLenth);
@@ -270,7 +289,7 @@ const MarasitBusNode = {
 				);
 				// return getExtraMenuOptions?.apply(this, arguments);
 			}
-		
+
 			// delete MarasitBusNode.beforeRegisterNodeDef;
 		}
 	},
