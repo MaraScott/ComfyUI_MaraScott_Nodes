@@ -53,27 +53,32 @@ class Bus_node:
     CATEGORY = "MarasIT/utils"
     
     def bus_fn(self, **kwargs):
+        
         # Initialize the bus tuple with None values for each parameter
-        bus = kwargs.get('bus', (None,) * len(self._INPUT_NAMES))
-        if len(bus) != len(self._INPUT_NAMES):
-            raise ValueError("The 'bus' tuple must have the same number of elements as '_INPUT_NAMES'")
+        inputs = {name: value for name, value in kwargs.items() if name != 'bus'}
+        outputs = inputs.copy()
+        in_bus = kwargs.get('bus', (None,) * len(inputs))
+        # Update outputs based on in_bus values
+        for i, name in enumerate(inputs):
+            if in_bus[i] is not None:  # Only update if in_bus value is not None
+                outputs[name] = in_bus[i]
+                
+        # Update outputs based on inputs and current outputs
+        for name, value in inputs.items():
+            outputs[name] = self._determine_output_value(name, value, outputs[name])
 
-        outputs = {}
-        for name, bus_value in zip(self._INPUT_NAMES, bus):
-            _input = kwargs.get(name, bus_value)
-            outputs[name] = self._determine_output_value(name, _input, bus_value)
-
-        self._ensure_required_parameters(outputs)
+        # self._ensure_required_parameters(outputs)
         self._handle_special_parameters(outputs)
 
         # Prepare and return the output bus tuple with updated values
-        out_bus = tuple(outputs[name] for name in self._INPUT_NAMES)
+        out_bus = tuple(outputs[name] for name in outputs)
         return (out_bus,) + out_bus
 
-    def _determine_output_value(self, name, _input, bus_value):
+
+    def _determine_output_value(self, name, _input, value):
         if name in ('image', 'mask') and isinstance(_input, torch.Tensor):
-            return _input if _input.nelement() > 0 and (name != 'mask' or _input.any()) else bus_value
-        return _input if _input is not None else bus_value
+            return _input if _input.nelement() > 0 and (name != 'mask' or _input.any()) else value
+        return _input if _input is not None else value
 
     def _ensure_required_parameters(self, outputs):
         for param in ('model', 'clip', 'vae'):
