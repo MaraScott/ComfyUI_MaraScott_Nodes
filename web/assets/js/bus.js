@@ -130,15 +130,15 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 					}
 				}
 				
-				console.log({
-					id: this.id,
-					slot: slot,
-					type: slotType == 1 ? 'input':'output',	//1 = input, 2 = output
-					inputs: this.inputs,
-					outputs: this.outputs,
-					link: link_info,
-					graph: this.graph
-				})
+				// console.log({
+				// 	id: this.id,
+				// 	slot: slot,
+				// 	type: slotType == 1 ? 'input':'output',	//1 = input, 2 = output
+				// 	inputs: this.inputs,
+				// 	outputs: this.outputs,
+				// 	link: link_info,
+				// 	graph: this.graph
+				// })
 
 			}
 
@@ -188,13 +188,13 @@ const MarasitBusNode = {
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		// Run custom logic before a node definition is registered with the graph
 		if (nodeData.name === 'MarasitBusNode') {
-			console.log("[logging "+this.name+"]", "before register node: ", nodeData, nodeType);
+			// console.log("[logging "+this.name+"]", "before register node: ", nodeData, nodeType);
 			// This fires for every node definition so only log once
 
 			const onExecuted = nodeType.prototype.onExecuted
 			nodeType.prototype.onExecuted = function (message) {
 				onExecuted?.apply(this, arguments)
-				console.log({arguments: arguments, message: message})
+				// console.log({arguments: arguments, message: message})
 			}
 
 
@@ -224,10 +224,10 @@ const MarasitBusNode = {
 									const name = "any_" + _node.index;
 									const type = "*";
 									_node.addInput(name, type);
+									_node.setInputData(name, None);
 									_node.addOutput(name, type);
+									_node.setOutputData(name, None);
 
-									console.log(_node, _index, _.graph._nodes[_index]);
-									
 									const inputLenth = _node.inputs.length-1;
 									const outputLenth = _node.outputs.length-1;
 									// const index = _node.widgets[_node.index].value;
