@@ -63,12 +63,11 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 
 	_init = function () {
 
-		this.uuid = shared.makeUUID()
-
 		this.shape = LiteGraph.CARD_SHAPE // BOX_SHAPE | ROUND_SHAPE | CIRCLE_SHAPE | CARD_SHAPE
 
 		if (!this.properties) {
 			this.properties = {
+				"uuid": shared.makeUUID(),
 				"busType": this._bus_type,
 				"previousTitle": "Bus Node - " + this._bus_type
 			};
@@ -164,9 +163,54 @@ class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
 
 }
 
+class MarasitBusNodeHelper {
+
+	constructor() {
+
+		this.uuid = shared.makeUUID()
+		if (!window.MarasIT) {
+			window.MarasIT = {}
+		}
+
+		return this
+
+	}
+
+
+	async setEntryList(node) {
+
+		const route = '/marasit/bus';
+		try {
+			await api
+				.fetchApi(route, {
+					method: 'POST',
+					body: JSON.stringify({
+						inputs: node.inputs.map(input => input.name),
+					}),
+				})
+				.then((response) => { 
+					if (!response.ok) {
+						throw new Error('Network response was not ok');
+					}
+					return response.json()
+				})
+				.then((data) => { 
+					console.log(route, data.message)
+				})
+				.catch((error) => {
+					console.error('Error:', error)
+				})
+		} catch (error) {
+			console.error('Error:', error)
+		}
+	}
+
+}
+
 const MarasitBusNode = {
 	// Unique name for the extension
 	name: "Comfy.MarasIT.MarasitBusNode",
+	helper: new MarasitBusNodeHelper(),
 	async init(app) {
 		// Any initial setup to run as soon as the page loads
 		// console.log("[logging "+this.name+"]", "extension init");
@@ -198,6 +242,18 @@ const MarasitBusNode = {
 				// console.log({arguments: arguments, message: message})
 			}
 
+			/*
+			const onNodeCreated = nodeType.prototype.onNodeCreated;
+			nodeType.prototype.onNodeCreated = function () {
+				const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+
+				if (!this.properties || !("uuid" in this.properties)) {
+					this.addProperty("uuid", shared.makeUUID(), "string");
+				}
+
+				return r;
+			};			
+			*/
 
 			const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
 			nodeType.prototype.getExtraMenuOptions = function (_, options) {
@@ -243,44 +299,29 @@ const MarasitBusNode = {
 									// _node.widgets[_node.index].options.max = inputLenth;
 
 									// _node.setDirtyCanvas(true);
-									try {
-										const res = await api.fetchApi('/marasit/bus')
-										const msg = await res.json()
-										if (!window.MarasIT) {
-											window.MarasIT = {}
-										}
-										await api
-											.fetchApi('/marasit/bus', {
-												method: 'POST',
-												body: JSON.stringify({
-													entries: _node.inputs,
-												}),
-											})
-											.then((response) => { })
-											.catch((error) => {
-												console.error('Error:', error)
-											})
-									} catch (e) {
-										console.error('Error:', error)
-									}
+									console.log('+ entry ' + name);
+									await MarasitBusNode.helper.setEntryList(_node)
 
-									console.log('In/Out put ' + name + ' added');
 								}
 							}
 						}
 					},
 					{
 						content: "Remove Last Input",
-						callback: () => {
+						callback: async () => {
 
 							for (let _index in _.graph._nodes) {
 								let _node = _.graph._nodes[_index]
 								if (_node.type === "MarasitBusNode" && this.title === _node.title) {
 									const inputLenth = _node.inputs.length - 1
 									const outputLenth = _node.outputs.length - 1
+									const name = _node.inputs[inputLenth].name
 
 									_node.removeInput(inputLenth);
 									_node.removeOutput(outputLenth);
+
+									console.log('- entry ' + name);
+									MarasitBusNode.helper.setEntryList(_node)
 
 								}
 							}
