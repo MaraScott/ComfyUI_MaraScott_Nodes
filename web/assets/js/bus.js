@@ -8,6 +8,10 @@ import {
 	errorLogger,
 } from './helper.js'
 
+if (!window.MarasIT) {
+	window.MarasIT = {}
+}
+
 /*
  * Definitions for litegraph.js
  * Project: litegraph.js
@@ -19,160 +23,131 @@ import {
  *
  */
 
-class MarasitBusLGraphNode extends LiteGraph.LGraphNode {
-
-	title = "Bus Node - default"
-
-	category = "MarasIT/utils"
-
-	isVirtualNode = true;
-
-	// same values as the comfy note
-	color = LGraphCanvas.node_colors.yellow.color
-	bgcolor = LGraphCanvas.node_colors.yellow.bgcolor
-	groupcolor = LGraphCanvas.node_colors.yellow.groupcolor
-
-	_bus_type = "default"
-
-	_inputs_name = []
-
-	_entries = {
-		"bus": "BUS",
-		"model": "MODEL",
-		"clip": "CLIP",
-		"vae": "VAE",
-		"positive": "CONDITIONING",
-		"negative": "CONDITIONING",
-		"latent": "LATENT",
-		"image": "IMAGE",
-		"mask": "MASK",
-		"*": "*",
-	}
-
-	/**
-	 * Manage initialization
-	 */
-
-	constructor() {
-
-		super()
-
-		this._init()
-
-	}
-
-	_init = function () {
-
-		this.shape = LiteGraph.CARD_SHAPE // BOX_SHAPE | ROUND_SHAPE | CIRCLE_SHAPE | CARD_SHAPE
-
-		if (!this.properties) {
-			this.properties = {
-				"uuid": shared.makeUUID(),
-				"busType": this._bus_type,
-				"previousTitle": "Bus Node - " + this._bus_type
-			};
-		}
-
-		this._init_inputs();
-		this._init_widgets();
-
-	}
-
-	_init_inputs = function () {
-		// display initial inputs/outputs
-		for (const name in this._entries) {
-			this._set_Entries(name, this._entries[name])
-		}
-	}
-
-	_set_Entries(_name, type) {
-		this.addInput(_name, type)
-		this.addOutput(_name, type)
-	}
-
-	_init_widgets = function () {
-		// display name widget
-		this.addWidget(
-			"text",
-			"Constant",
-			this.properties.busType ?? '',
-			(s, t, u, v, x) => {
-				// node.validateName(node.graph);
-				this.properties.busType = this.widgets[0].value ?? this._bus_type;
-				this.title = "Bus Node - " + this.properties.busType;
-				this.properties.previousTitle = this.title;
-			},
-			{}
-		)
-	}
-
-	/**
-	 * Manage connection
-	 */
-
-	onConnectionsChange = function (
-		slotType,	//1 = input, 2 = output
-		slot,
-		isChangeConnect,
-		link_info,
-		output
-	) {
-		if (this.inputs[slot].name === 'bus' && isChangeConnect == 1 && this.graph && link_info) {
-
-			const origin_node = this.graph._nodes.find((otherNode) => otherNode.id == link_info.origin_id);
-
-			if (typeof origin_node.inputs != 'undefined') {
-
-				// assign origin node input values in outputs
-				for (const index in this.inputs) {
-					if (this.inputs[index].name != 'bus' && this.inputs[index].link == null && origin_node.inputs[index].link != null) {
-						// this.inputs[index] = origin_node.inputs[index];
-					}
-				}
-
-				// console.log({
-				// 	id: this.id,
-				// 	slot: slot,
-				// 	type: slotType == 1 ? 'input':'output',	//1 = input, 2 = output
-				// 	inputs: this.inputs,
-				// 	outputs: this.outputs,
-				// 	link: link_info,
-				// 	graph: this.graph
-				// })
-
-			}
-
-		}
-
-		// clean input bus
-		if (this.inputs[0].name === 'bus' && this.inputs[0].link) {
-			// const origin_node = this.graph._nodes.find((otherNode) => otherNode.id == this.inputs[0].link);
-			// console.log('in', this.title, this.graph._nodes, this.inputs[0].link, origin_node)
-			// 	const bus_inputs = this.graph.links[this.inputs[0].links[0]].data;
-			// 	for (input in bus_inputs) {
-			// 		if (this._inputs_name.includes(bus_inputs[input].name)) {
-			// 			delete bus_inputs[input];
-			// 		}
-			// 	}
-		}
-		if (this.outputs[0].name === 'bus') {
-			// console.log('out', this.title, this.outputs[0])
-		}
-
-	}
-
-}
-
 class MarasitBusNodeHelper {
 
 	constructor() {
 
-		this.uuid = shared.makeUUID()
-		if (!window.MarasIT) {
-			window.MarasIT = {}
+		return this
+
+	}
+
+	initNode(node) {
+
+		node.category = "MarasIT/utils"
+		node.isVirtualNode = true;
+		node.shape = LiteGraph.CARD_SHAPE // BOX_SHAPE | ROUND_SHAPE | CIRCLE_SHAPE | CARD_SHAPE
+		// same values as the comfy note
+		node.color = LGraphCanvas.node_colors.yellow.color
+		node.bgcolor = LGraphCanvas.node_colors.yellow.bgcolor
+		node.groupcolor = LGraphCanvas.node_colors.yellow.groupcolor
+		if (!node.properties || !("uuid" in node.properties)) {
+			node.properties["uuid"] = shared.makeUUID();
+		}
+		if (!node.properties || !("profile" in node.properties)) {
+			node.properties["profile"] = "default";
+		}
+		node.title = "Bus Node - " + node.properties.profile
+		if (!node.properties || !("previousTitle" in node.properties)) {
+			node.properties["previousTitle"] = node.title;
 		}
 
-		return this
+
+	}
+
+	getProfileEntries(node) {
+		const entries = {
+			"default" : {
+				"bus": "BUS",
+				"pipe": "BASIC_PIPE",
+				"model": "MODEL",
+				"clip": "CLIP",
+				"vae": "VAE",
+				"positive": "CONDITIONING",
+				"negative": "CONDITIONING",
+				"latent": "LATENT",
+				"image": "IMAGE",
+				"mask": "MASK",
+				"*": "*",
+			},
+			"basic_pipe" : {
+				"bus": "BUS",
+				"pipe": "BASIC_PIPE",
+				"model": "MODEL",
+				"clip": "CLIP",
+				"vae": "VAE",
+				"positive": "CONDITIONING",
+				"negative": "CONDITIONING",
+			},
+		}
+
+		console.log('setProfileEntriesStartIn', node.properties.profile, entries[node.properties.profile])
+
+		return entries[node.properties.profile]
+	
+	}
+
+	setProfileEntries(node) {
+		// display initial inputs/outputs
+		const entries = MarasitBusNode.helper.getProfileEntries(node)
+		for (const name in entries) {
+			node.addInput(name, entries[name])
+			node.addOutput(name, entries[name])
+		}
+
+	}
+
+	setProfileWidget(node) {
+
+		node.addWidget(
+			"text",
+			"Constant",
+			node.properties.profile ?? '',
+			(s, t, u, v, x) => {
+				node.setProperty('profile', node.widgets[0].value ?? node.properties.profile)
+				node.title = "Bus Node - " + node.properties.profile;
+				node.setProperty('previousTitle', node.title)
+			},
+			{}
+		)
+
+	}
+
+	setPipeWidget(node) {
+
+		const isPipeWidth = () => {
+			console.log('pipe')
+			// app.canvas.setDirty(true)
+		}
+		const setPipeType = () => {
+			console.log('in/out')
+			// app.canvas.setDirty(true)
+		}
+
+		/**
+		 * Defines a widget inside the node, it will be rendered on top of the node, you can control lots of properties
+		 *
+		 * @method addWidget
+		 * @param {String} type the widget type (could be "number","string","combo"
+		 * @param {String} name the text to show on the widget
+		 * @param {String} value the default value
+		 * @param {Function|String} callback function to call when it changes (optionally, it can be the name of the property to modify)
+		 * @param {Object} options the object that contains special properties of this widget 
+		 * @return {Object} the created widget object
+		 */
+		node.addWidget(
+			'toggle',
+			"Pipe",
+			false,
+			isPipeWidth,
+			{"on": "Active", "off": "Inactive"}
+		)
+		node.addWidget(
+			'toggle',
+			"type",
+			false,
+			setPipeType,
+			{"on": "Input", "off": "output"}
+		)
 
 	}
 
@@ -185,16 +160,17 @@ class MarasitBusNodeHelper {
 				.fetchApi(route, {
 					method: 'POST',
 					body: JSON.stringify({
+						profile: node.properties.profile,
 						inputs: node.inputs.map(input => input.name),
 					}),
 				})
-				.then((response) => { 
+				.then((response) => {
 					if (!response.ok) {
 						throw new Error('Network response was not ok');
 					}
 					return response.json()
 				})
-				.then((data) => { 
+				.then((data) => {
 					console.log(route, data.message)
 				})
 				.catch((error) => {
@@ -242,18 +218,18 @@ const MarasitBusNode = {
 				// console.log({arguments: arguments, message: message})
 			}
 
-			/*
 			const onNodeCreated = nodeType.prototype.onNodeCreated;
-			nodeType.prototype.onNodeCreated = function () {
+			nodeType.prototype.onNodeCreated = async function () {
 				const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
 
-				if (!this.properties || !("uuid" in this.properties)) {
-					this.addProperty("uuid", shared.makeUUID(), "string");
-				}
+				MarasitBusNode.helper.initNode(this)
+				MarasitBusNode.helper.setProfileWidget(this)
+				MarasitBusNode.helper.setProfileEntries(this)
+				// MarasitBusNode.helper.setPipeWidget(this)
+				await MarasitBusNode.helper.setEntryList(this)
 
 				return r;
-			};			
-			*/
+			};
 
 			const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
 			nodeType.prototype.getExtraMenuOptions = function (_, options) {
