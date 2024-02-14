@@ -34,7 +34,7 @@ class Bus_node:
         return {
             "required":{},
             "optional": {
-                # "bus" : ("BUS",),
+                "bus" : ("BUS",),
                 # "pipe" : ("BASIC_PIPE",),
                 # "model": ("MODEL",),
                 # "clip": ("CLIP",),
@@ -48,11 +48,13 @@ class Bus_node:
             }
         }
 
-    # _INPUT_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK", ANY,)
-    # RETURN_TYPES = ("BUS", "BASIC_PIPE", ) + _INPUT_TYPES
+    # _INPUT_TYPES = ("BASIC_PIPE", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK", ANY,)
+    # _INPUT_TYPES = ()
+    # RETURN_TYPES = ("BUS",) + _INPUT_TYPES
     RETURN_TYPES = ()
-    # _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "latent", "image", "mask", "any",)
-    # RETURN_NAMES = ("bus", "basic_pipe", ) + _INPUT_NAMES
+    # _INPUT_NAMES = ("basic_pipe", "model", "clip", "vae", "positive", "negative", "latent", "image", "mask", "any",)
+    # _INPUT_NAMES = ()
+    # RETURN_NAMES = ("bus",) + _INPUT_NAMES
     RETURN_NAMES = ()
     FUNCTION = "bus_fn"
     CATEGORY = "MarasIT/utils"
@@ -63,6 +65,7 @@ class Bus_node:
         profile = 'default'
         inputsByNode = os.getenv(f"MarasITBusNode")
         inputsByNode = json.loads(inputsByNode)
+        print(inputsByNode)
         # Initialize the bus tuple with None values for each parameter
         inputs = {}
         for name in inputsByNode:

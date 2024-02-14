@@ -34,7 +34,7 @@ class MarasitBusNodeHelper {
 	initNode(node) {
 
 		node.category = "MarasIT/utils"
-		node.isVirtualNode = true;
+		// node.isVirtualNode = true;
 		node.shape = LiteGraph.CARD_SHAPE // BOX_SHAPE | ROUND_SHAPE | CIRCLE_SHAPE | CARD_SHAPE
 		// same values as the comfy note
 		node.color = LGraphCanvas.node_colors.yellow.color
