@@ -155,7 +155,7 @@ class MarasitBusNodeHelper {
 				.fetchApi(route, {
 					method: 'POST',
 					body: JSON.stringify({
-						id: node._id,
+						id: node.id,
 						profile: node.properties.profile,
 						inputs: node.inputs.map(input => input.name),
 					}),
@@ -222,7 +222,7 @@ const MarasitBusNode = {
 				MarasitBusNode.helper.setProfileWidget(this)
 				MarasitBusNode.helper.setProfileEntries(this)
 				// MarasitBusNode.helper.setPipeWidget(this)
-				console.log(this.properties.profile, this._id)
+				console.log(this.properties.profile, this.id, this)
 				await MarasitBusNode.helper.setEntryList(this)
 
 				return r;
