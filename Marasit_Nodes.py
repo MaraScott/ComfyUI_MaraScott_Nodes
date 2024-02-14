@@ -30,11 +30,13 @@ if hasattr(PromptServer, "instance"):
     async def set_entries(request):
         json_data = await request.json()
         inputs = json_data.get("inputs")
+        profile = json_data.get("profile")
+        inputs.insert(0, f"profile_{profile}")
         print(inputs)
-        os.environ['MarasITBusNode'] = json.dumps(inputs)
+        os.environ[f"MarasITBusNode"] = json.dumps(inputs)
 
         return web.json_response(
-            {"message": f"inputs"}
+            {"message": f"profile: {profile}"}
         )
 
 print('\033[34m[Maras IT] \033[92mLoaded\033[0m')

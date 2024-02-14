@@ -34,42 +34,57 @@ class Bus_node:
         return {
             "required":{},
             "optional": {
-                "bus" : ("BUS",),
-                "model": ("MODEL",),
-                "clip": ("CLIP",),
-                "vae": ("VAE",),
-                "positive": ("CONDITIONING",),
-                "negative": ("CONDITIONING",),
-                "latent": ("LATENT",),
-                "image": ("IMAGE",),
-                "mask": ("MASK",),
-                "any": (ANY, {}),
+                # "bus" : ("BUS",),
+                # "pipe" : ("BASIC_PIPE",),
+                # "model": ("MODEL",),
+                # "clip": ("CLIP",),
+                # "vae": ("VAE",),
+                # "positive": ("CONDITIONING",),
+                # "negative": ("CONDITIONING",),
+                # "latent": ("LATENT",),
+                # "image": ("IMAGE",),
+                # "mask": ("MASK",),
+                # "any": (ANY, {}),
             }
         }
 
-    _INPUT_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK", ANY,)
-    RETURN_TYPES = ("BUS",) + _INPUT_TYPES
-    _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "latent", "image", "mask", "any",)
-    RETURN_NAMES = ("bus",) + _INPUT_NAMES
+    # _INPUT_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK", ANY,)
+    # RETURN_TYPES = ("BUS", "BASIC_PIPE", ) + _INPUT_TYPES
+    RETURN_TYPES = ()
+    # _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "latent", "image", "mask", "any",)
+    # RETURN_NAMES = ("bus", "basic_pipe", ) + _INPUT_NAMES
+    RETURN_NAMES = ()
     FUNCTION = "bus_fn"
     CATEGORY = "MarasIT/utils"
+    DESCRIPTION = "A Universal Bus/Pipe Node"
     
     def bus_fn(self, **kwargs):
         
-        inputsByNode = os.getenv('MarasITBusNode')
+        profile = 'default'
+        inputsByNode = os.getenv(f"MarasITBusNode")
         inputsByNode = json.loads(inputsByNode)
         # Initialize the bus tuple with None values for each parameter
         inputs = {}
         for name in inputsByNode:
-            if name != 'bus':
+            print(name)
+            if name.startswith('profile_'):
+                profile = name.split("profile_")[-1]
+            if name != 'bus' and name != 'pipe' and not name.startswith('profile_'):
                 inputs[name] = None
         outputs = inputs.copy()
         in_bus = kwargs.get('bus', (None,) * len(inputs))
+
         # Update outputs based on in_bus values
         for i, name in enumerate(inputs):
             if in_bus[i] is not None:  # Only update if in_bus value is not None
                 outputs[name] = in_bus[i]
                 
+        in_pipe = kwargs.get('pipe', (None,) * len(inputs))
+        # Update outputs based on in_bus values
+        for i, name in enumerate(inputs):
+            if in_pipe[i] is not None:  # Only update if in_bus value is not None
+                outputs[name] = in_pipe[i]
+
         # Update outputs based on inputs and current outputs
         for name, value in inputs.items():
             inputs[name] = kwargs.get(name, None)
@@ -80,7 +95,7 @@ class Bus_node:
 
         # Prepare and return the output bus tuple with updated values
         out_bus = tuple(outputs[name] for name in outputs)
-        return (out_bus,) + out_bus
+        return (out_bus,) + (out_bus,) + out_bus
 
 
     def _determine_output_value(self, name, _input, value):
