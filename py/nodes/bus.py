@@ -34,7 +34,7 @@ class Bus_node:
         return {
             "required":{},
             "optional": {
-                "bus" : ("BUS",),
+                # "bus" : ("BUS",),
                 # "pipe" : ("BASIC_PIPE",),
                 # "model": ("MODEL",),
                 # "clip": ("CLIP",),

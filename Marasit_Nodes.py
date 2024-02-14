@@ -31,12 +31,13 @@ if hasattr(PromptServer, "instance"):
         json_data = await request.json()
         inputs = json_data.get("inputs")
         profile = json_data.get("profile")
-        inputs.insert(0, f"profile_{profile}")
+        id = json_data.get("id")
+        inputs.insert(0, f"profile_{id}_{profile}")
         print(inputs)
         os.environ[f"MarasITBusNode"] = json.dumps(inputs)
 
         return web.json_response(
-            {"message": f"profile: {profile}"}
+            {"message": f"profile: {profile} | id: {id}"}
         )
 
 print('\033[34m[Maras IT] \033[92mLoaded\033[0m')

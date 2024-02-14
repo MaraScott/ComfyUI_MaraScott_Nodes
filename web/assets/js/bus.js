@@ -40,9 +40,6 @@ class MarasitBusNodeHelper {
 		node.color = LGraphCanvas.node_colors.yellow.color
 		node.bgcolor = LGraphCanvas.node_colors.yellow.bgcolor
 		node.groupcolor = LGraphCanvas.node_colors.yellow.groupcolor
-		if (!node.properties || !("uuid" in node.properties)) {
-			node.properties["uuid"] = shared.makeUUID();
-		}
 		if (!node.properties || !("profile" in node.properties)) {
 			node.properties["profile"] = "default";
 		}
@@ -79,8 +76,6 @@ class MarasitBusNodeHelper {
 				"negative": "CONDITIONING",
 			},
 		}
-
-		console.log('setProfileEntriesStartIn', node.properties.profile, entries[node.properties.profile])
 
 		return entries[node.properties.profile]
 	
@@ -160,6 +155,7 @@ class MarasitBusNodeHelper {
 				.fetchApi(route, {
 					method: 'POST',
 					body: JSON.stringify({
+						id: node._id,
 						profile: node.properties.profile,
 						inputs: node.inputs.map(input => input.name),
 					}),
@@ -226,6 +222,7 @@ const MarasitBusNode = {
 				MarasitBusNode.helper.setProfileWidget(this)
 				MarasitBusNode.helper.setProfileEntries(this)
 				// MarasitBusNode.helper.setPipeWidget(this)
+				console.log(this.properties.profile, this._id)
 				await MarasitBusNode.helper.setEntryList(this)
 
 				return r;
