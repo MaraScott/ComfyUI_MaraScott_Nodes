@@ -8,7 +8,7 @@ A special thanks to Fern for his support.
 
 Here a very simple workflow
 
-![Bus Node WorkFlow Example](bus-node-workflow-example.png)
+![Bus Node WorkFlow Example](./docs/img/bus-node-workflow-example.png)
 
 What does it intend to do ?
 
