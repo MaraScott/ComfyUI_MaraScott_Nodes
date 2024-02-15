@@ -50,7 +50,7 @@ if hasattr(PromptServer, "instance"):
             json.dump(inputs, file)
 
         return web.json_response(
-            {"message": f"profile: {profile} | id: {id}"}
+            {"message": f"profile: {profile} | id: {nid}"}
         )
 
 print('\033[34m[Maras IT] \033[92mLoaded\033[0m')
