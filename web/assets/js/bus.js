@@ -51,15 +51,34 @@ class MarasitBusNodeHelper {
 
 	}
 
-	getProfileEntries(node) {
-		const entries = {
+	async getProfileEntries(node) {
+
+		const AVAILABLE_INPUT_TYPES = {
+			"bus": "BUS",
+			"pipe (basic)": "BASIC_PIPE",
+			"pipe (detailer)": "DETAILER_PIPE",
+			"model": "MODEL",
+			"clip": "CLIP",
+			"vae": "VAE",
+			"positive (text)": "STRING",
+			"positive": "CONDITIONING",
+			"negative (text)": "STRING",
+			"negative": "CONDITIONING",
+			"latent": "LATENT",
+			"image": "IMAGE",
+			"mask": "MASK",
+			"*": "*",
+		}
+		const default_entries = {
 			"default" : {
 				"bus": "BUS",
-				"pipe": "BASIC_PIPE",
+				"pipe (basic)": "BASIC_PIPE",
 				"model": "MODEL",
 				"clip": "CLIP",
 				"vae": "VAE",
+				"positive (text)": "STRING",
 				"positive": "CONDITIONING",
+				"negative (text)": "STRING",
 				"negative": "CONDITIONING",
 				"latent": "LATENT",
 				"image": "IMAGE",
@@ -68,7 +87,7 @@ class MarasitBusNodeHelper {
 			},
 			"basic_pipe" : {
 				"bus": "BUS",
-				"pipe": "BASIC_PIPE",
+				"pipe (basic)": "BASIC_PIPE",
 				"model": "MODEL",
 				"clip": "CLIP",
 				"vae": "VAE",
@@ -77,33 +96,55 @@ class MarasitBusNodeHelper {
 			},
 		}
 
-		return entries[node.properties.profile]
+		const profile = node.properties.profile;
+		let entries = default_entries[node.properties.profile]
+		const url = `/extensions/MarasIT/profiles/profile_${profile}.json`;
+		try {
+			const response = await fetch(url);
+			if (!response.ok) {
+				console.log(`Failed to load profile entries from ${url}, switching back to default profile setup`);
+			}
+			console.log("previous", entries)
+			entries = await response.json();
+			console.log("fromfile", entries)
+		} catch (error) {
+			console.error('Error loading profile entries:', error);
+		}
+
+		return entries;
 	
 	}
 
-	setProfileEntries(node) {
+	async setProfileEntries(node) {
 		// display initial inputs/outputs
-		const entries = MarasitBusNode.helper.getProfileEntries(node)
+		const entries = await MarasitBusNode.helper.getProfileEntries(node)
 		for (const name in entries) {
-			node.addInput(name, entries[name])
-			node.addOutput(name, entries[name])
+			if(node.findInputSlot(name) == -1) {
+				node.addInput(name, entries[name])
+				node.addOutput(name, entries[name])
+			}
 		}
 
 	}
 
 	setProfileWidget(node) {
 
-		node.addWidget(
-			"text",
-			"Constant",
-			node.properties.profile ?? '',
-			(s, t, u, v, x) => {
-				node.setProperty('profile', node.widgets[0].value ?? node.properties.profile)
-				node.title = "Bus Node - " + node.properties.profile;
-				node.setProperty('previousTitle', node.title)
-			},
-			{}
-		)
+		const widgetName = "Profile"
+		const isProfileWidgetExists = !(node.widgets && node.widgets.length > 0 && node.widgets.every(widget => widget.name !== widgetName))
+		console.log(node.widgets, isProfileWidgetExists, !node.widget || !isProfileWidgetExists, node?.widgets?.every(widget => widget.name !== widgetName))
+		if(!node.widgets || !isProfileWidgetExists) {
+			node.addWidget(
+				"text",
+				widgetName,
+				node.properties.profile ?? '',
+				(s, t, u, v, x) => {
+					node.setProperty('profile', node.widgets[0].value ?? node.properties.profile)
+					node.title = "Bus Node - " + node.properties.profile;
+					node.setProperty('previousTitle', node.title)
+				},
+				{}
+			)
+		}
 
 	}
 
@@ -150,30 +191,44 @@ class MarasitBusNodeHelper {
 	async setEntryList(node) {
 
 		const route = '/marasit/bus';
-		try {
-			await api
-				.fetchApi(route, {
-					method: 'POST',
-					body: JSON.stringify({
-						id: node.id,
-						profile: node.properties.profile,
-						inputs: node.inputs.map(input => input.name),
-					}),
-				})
-				.then((response) => {
-					if (!response.ok) {
-						throw new Error('Network response was not ok');
+		if(node.inputs && node.inputs.length > 0) {
+			try {
+				const inputs = node.inputs.reduce((acc, input) => {
+					let inputName = input.name;
+					if (inputName === "pipe") {
+						inputName += " (basic)";  // Append " (basic)" to the "pipe" input name
 					}
-					return response.json()
-				})
-				.then((data) => {
-					console.log(route, data.message)
-				})
-				.catch((error) => {
-					console.error('Error:', error)
-				})
-		} catch (error) {
-			console.error('Error:', error)
+				
+					// Add the input name and type to the accumulator object
+					acc[inputName] = input.type;
+				
+					return acc;
+				}, {});
+				await api
+					.fetchApi(route, {
+						method: 'POST',
+						body: JSON.stringify({
+							session_id: 'unique',
+							node_id: node.properties.uuid,
+							profile: node.properties.profile,
+							inputs: inputs,
+						}),
+					})
+					.then((response) => {
+						if (!response.ok) {
+							throw new Error('Network response was not ok');
+						}
+						return response.json()
+					})
+					.then((data) => {
+						console.log(route, data.message)
+					})
+					.catch((error) => {
+						console.error('Error:', error)
+					})
+			} catch (error) {
+				console.error('Error:', error)
+			}
 		}
 	}
 
@@ -220,11 +275,9 @@ const MarasitBusNode = {
 
 				MarasitBusNode.helper.initNode(this)
 				MarasitBusNode.helper.setProfileWidget(this)
-				MarasitBusNode.helper.setProfileEntries(this)
-				// MarasitBusNode.helper.setPipeWidget(this)
-				console.log(this.properties.profile, this.id, this)
-				await MarasitBusNode.helper.setEntryList(this)
-
+				await MarasitBusNode.helper.setProfileEntries(this)
+				MarasitBusNode.helper.setEntryList(this)
+	
 				return r;
 			};
 
@@ -317,14 +370,21 @@ const MarasitBusNode = {
 		// 	collapsable: false,
 		// }))
 	},
-	loadedGraphNode(node, app) {
+	async loadedGraphNode(node, app) {
 		// Fires for each node when loading/dragging/etc a workflow json or png
 		// If you break something in the backend and want to patch workflows in the frontend
 		// This is the place to do this
-		// console.log("[logging "+this.name+"]", "loaded graph node: ", node);
+		if(node.type == "MarasitBusNode") {
+			node.setProperty('uuid', node.id)
+			MarasitBusNode.helper.initNode(node)
+			MarasitBusNode.helper.setProfileWidget(node)
+			await MarasitBusNode.helper.setProfileEntries(node)
+			// MarasitBusNode.helper.setPipeWidget(node)
+			MarasitBusNode.helper.setEntryList(node)
+		}
 
 		// This fires for every node on each load so only log once
-		delete MarasitBusNode.loadedGraphNode;
+		// delete MarasitBusNode.loadedGraphNode;
 	},
 	nodeCreated(node, app) {
 		// Fires every time a node is constructed
