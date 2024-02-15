@@ -104,9 +104,7 @@ class MarasitBusNodeHelper {
 			if (!response.ok) {
 				console.log(`Failed to load profile entries from ${url}, switching back to default profile setup`);
 			}
-			console.log("previous", entries)
 			entries = await response.json();
-			console.log("fromfile", entries)
 		} catch (error) {
 			console.error('Error loading profile entries:', error);
 		}
@@ -131,7 +129,6 @@ class MarasitBusNodeHelper {
 
 		const widgetName = "Profile"
 		const isProfileWidgetExists = !(node.widgets && node.widgets.length > 0 && node.widgets.every(widget => widget.name !== widgetName))
-		console.log(node.widgets, isProfileWidgetExists, !node.widget || !isProfileWidgetExists, node?.widgets?.every(widget => widget.name !== widgetName))
 		if(!node.widgets || !isProfileWidgetExists) {
 			node.addWidget(
 				"text",
