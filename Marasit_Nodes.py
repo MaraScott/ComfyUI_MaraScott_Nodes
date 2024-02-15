@@ -28,8 +28,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 }
 
 if hasattr(PromptServer, "instance"):
-    @PromptServer.instance.routes.post("/marasit/bus")
-    async def set_entries(request):
+    @PromptServer.instance.routes.post("/marasit/bus/node/update")
+    async def setNodeProfileEntries(request):
         json_data = await request.json()
         inputs = json_data.get("inputs")
         profile = json_data.get("profile")
@@ -42,17 +42,42 @@ if hasattr(PromptServer, "instance"):
         with open(filepath, 'w') as file:
             json.dump(profile, file)
 
-        print(len(inputs))
-        print(len(inputs) > 0)
-        if len(inputs) > 0:
-            filename = f"profile_{profile}.json"
-            filepath = os.path.join(__PROFILES_DIR__, filename)
+        filename = f"profile_{profile}.json"
+        filepath = os.path.join(__PROFILES_DIR__, filename)
+
+        if len(inputs) == 0:
+            # Load inputs from the file
+            if os.path.exists(filepath):
+                with open(filepath, 'r') as file:
+                    inputs = json.load(file)
+            else:
+                raise FileNotFoundError(f"The file {filepath} does not exist.")
+        else:
             # Write the data to the file
             with open(filepath, 'w') as file:
                 json.dump(inputs, file)
 
         return web.json_response(
-            {"message": f"profile: {profile} | id: {nid}"}
+            {"message": f"Node id {nid} and profile {profile} have been set"}
         )
+        
+    @PromptServer.instance.routes.post("/marasit/bus/node/remove")
+    async def removeNodeProfile(request):
+        json_data = await request.json()
+        sid = json_data.get("session_id")
+        nid = json_data.get("node_id")
+
+        filename = f"session_{sid}_node_{nid}.json"
+        filepath = os.path.join(__SESSIONS_DIR__, filename)
+        
+        if os.path.exists(filepath):  # Check if the file exists to avoid errors
+            os.remove(filepath)
+            message = f"Node id {nid} has been removed"
+        else:
+            message = f"Node id {nid} has not been removed cause the file {filename} do not exists"
+
+        return web.json_response(
+            {"message": message}
+        )        
 
 print('\033[34m[Maras IT] \033[92mLoaded\033[0m')

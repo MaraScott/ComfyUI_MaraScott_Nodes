@@ -94,17 +94,19 @@ class Bus_node:
         # Initialize the bus tuple with None values for each parameter
         inputs = {}
         for name in inputsByProfile.keys():
-            if name != 'bus' and name != 'pipe':
+            if name != 'bus' and not name.startswith('pipe'):
                 inputs[name] = None
         outputs = inputs.copy()
         in_bus = kwargs.get('bus', (None,) * len(inputs))
 
+        # print(in_bus)
         # Update outputs based on in_bus values
         for i, name in enumerate(inputs):
             if in_bus[i] is not None:  # Only update if in_bus value is not None
                 outputs[name] = in_bus[i]
                 
-        in_pipe = kwargs.get('pipe', (None,) * len(inputs))
+        in_pipe = kwargs.get('pipe (basic)', (None,) * len(inputs))
+        # print(in_pipe)
         # Update outputs based on in_bus values
         for i, name in enumerate(inputs):
             if in_pipe[i] is not None:  # Only update if in_bus value is not None
