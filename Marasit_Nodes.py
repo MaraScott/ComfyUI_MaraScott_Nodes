@@ -7,7 +7,9 @@
 #
 ###
 
+from . import __SESSIONS_DIR__, __PROFILES_DIR__
 from .py.nodes.bus import Bus_node
+
 import os
 import json
 from aiohttp import web
@@ -31,10 +33,21 @@ if hasattr(PromptServer, "instance"):
         json_data = await request.json()
         inputs = json_data.get("inputs")
         profile = json_data.get("profile")
-        id = json_data.get("id")
-        inputs.insert(0, f"profile_{id}_{profile}")
-        print(inputs)
-        os.environ[f"MarasITBusNode"] = json.dumps(inputs)
+        sid = json_data.get("session_id")
+        nid = json_data.get("node_id")
+
+
+        filename = f"session_{sid}_node_{nid}.json"
+        filepath = os.path.join(__SESSIONS_DIR__, filename)
+        # Write the data to the file
+        with open(filepath, 'w') as file:
+            json.dump(profile, file)
+
+        filename = f"profile_{profile}.json"
+        filepath = os.path.join(__PROFILES_DIR__, filename)
+        # Write the data to the file
+        with open(filepath, 'w') as file:
+            json.dump(inputs, file)
 
         return web.json_response(
             {"message": f"profile: {profile} | id: {id}"}

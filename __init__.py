@@ -23,12 +23,31 @@
 #
 ###
 
+import os 
 import sys 
 
 python = sys.executable
 p310_plus = (sys.version_info >= (3, 10))
 
 __ROOT__file__ = __file__
+
+# Directory where you want to save the file
+base_dir = os.path.abspath(os.path.dirname(__ROOT__file__))
+web_dir = os.path.join(base_dir, "..", "..", "web", "extensions", "MarasIT")
+web_dir = os.path.realpath(web_dir)
+if not os.path.exists(web_dir):
+    os.makedirs(web_dir)
+__WEB_DIR__ = web_dir
+
+sessions_dir = os.path.join(web_dir, "sessions")
+if not os.path.exists(sessions_dir):
+    os.makedirs(sessions_dir)
+__SESSIONS_DIR__ = sessions_dir
+
+profiles_dir = os.path.join(web_dir, "profiles")
+if not os.path.exists(profiles_dir):
+    os.makedirs(profiles_dir)
+__PROFILES_DIR__ = profiles_dir
 
 from .Marasit_Nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, WEB_DIRECTORY
 

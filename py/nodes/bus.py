@@ -12,6 +12,8 @@
 #
 ###
 
+from ... import __SESSIONS_DIR__, __PROFILES_DIR__
+
 import os
 import json
 import torch
@@ -32,6 +34,7 @@ class Bus_node:
     @classmethod
     def INPUT_TYPES(cls):
         return {
+            "hidden": {"id":"UNIQUE_ID"},
             "required":{},
             "optional": {
                 # "bus" : ("BUS",),
@@ -62,17 +65,36 @@ class Bus_node:
     
     def bus_fn(self, **kwargs):
         
+        session_id = "unique"  # As mentioned, session_id is always "unique"
+        node_id = kwargs.get('id', None)
         profile = 'default'
-        inputsByNode = os.getenv(f"MarasITBusNode")
-        inputsByNode = json.loads(inputsByNode)
-        print(inputsByNode)
+
+        # Constructing the file path for session_unique_node_{nid}.json
+        filename = f"session_{session_id}_node_{node_id}.json"
+        filepath = os.path.join(__SESSIONS_DIR__, filename)
+
+        # Load inputs from the file
+        if os.path.exists(filepath):
+            with open(filepath, 'r') as file:
+                profileByNode = json.load(file)
+        else:
+            raise FileNotFoundError(f"The file {filepath} does not exist.")
+
+        # Constructing the file path for session_unique_node_{nid}.json
+        filename = f"profile_{profileByNode}.json"
+        filepath = os.path.join(__PROFILES_DIR__, filename)
+
+        # Load inputs from the file
+        if os.path.exists(filepath):
+            with open(filepath, 'r') as file:
+                inputsByProfile = json.load(file)
+        else:
+            raise FileNotFoundError(f"The file {filepath} does not exist.")
+
         # Initialize the bus tuple with None values for each parameter
         inputs = {}
-        for name in inputsByNode:
-            print(name)
-            if name.startswith('profile_'):
-                profile = name.split("profile_")[-1]
-            if name != 'bus' and name != 'pipe' and not name.startswith('profile_'):
+        for name in inputsByProfile.keys():
+            if name != 'bus' and name != 'pipe':
                 inputs[name] = None
         outputs = inputs.copy()
         in_bus = kwargs.get('bus', (None,) * len(inputs))
@@ -98,6 +120,7 @@ class Bus_node:
 
         # Prepare and return the output bus tuple with updated values
         out_bus = tuple(outputs[name] for name in outputs)
+        
         return (out_bus,) + (out_bus,) + out_bus
 
 
