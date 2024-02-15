@@ -36,8 +36,8 @@ if hasattr(PromptServer, "instance"):
         sid = json_data.get("session_id")
         nid = json_data.get("node_id")
 
-
         filename = f"session_{sid}_node_{nid}.json"
+        print(filename)
         filepath = os.path.join(__SESSIONS_DIR__, filename)
         # Write the data to the file
         with open(filepath, 'w') as file:
