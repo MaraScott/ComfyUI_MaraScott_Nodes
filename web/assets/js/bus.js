@@ -191,27 +191,24 @@ class MarasitBusNodeHelper {
 		let inputs = [];
 		try {
 			if(node.inputs && node.inputs.length > 0 && typeof node.properties.uuid != 'undefined') {
-				inputs = node.inputs.reduce((acc, input) => {
-					let inputName = input.name;
-					if (inputName === "pipe") {
-						inputName += " (basic)";  // Append " (basic)" to the "pipe" input name
-					}
-				
+				inputs = node.inputs.reduce((acc, input) => {				
 					// Add the input name and type to the accumulator object
-					acc[inputName] = input.type;
+					acc[input.name] = input.type;
 				
 					return acc;
 				}, {});
 			}
+			const params = {
+				session_id: 'unique',
+				node_id: node.id,
+				profile: node.properties.profile,
+				inputs: inputs,
+			};
+			console.log(params)
 			await api
 				.fetchApi(route, {
 					method: 'POST',
-					body: JSON.stringify({
-						session_id: 'unique',
-						node_id: node.properties.uuid,
-						profile: node.properties.profile,
-						inputs: inputs,
-					}),
+					body: JSON.stringify(params),
 				})
 				.then((response) => {
 					if (!response.ok) {
@@ -249,7 +246,6 @@ class MarasitBusNodeHelper {
 			MarasitBusNode.helper.initNode(this)
 			MarasitBusNode.helper.setProfileWidget(this)
 			await MarasitBusNode.helper.setProfileEntries(this)
-			console.log("[logging "+this.name+"]", "on Node Created", {"id": this.id, "properties": this.properties});
 			await MarasitBusNode.helper.setEntryList(this)
 
 			return r;
