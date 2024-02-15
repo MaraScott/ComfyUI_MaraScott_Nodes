@@ -76,10 +76,10 @@ class MarasitBusNodeHelper {
 				"model": "MODEL",
 				"clip": "CLIP",
 				"vae": "VAE",
-				"positive (text)": "STRING",
 				"positive": "CONDITIONING",
-				"negative (text)": "STRING",
 				"negative": "CONDITIONING",
+				"positive (text)": "STRING",
+				"negative (text)": "STRING",
 				"latent": "LATENT",
 				"image": "IMAGE",
 				"mask": "MASK",
@@ -185,9 +185,9 @@ class MarasitBusNodeHelper {
 	}
 
 
-	async setEntryList(node) {
+	async setNodeProfileEntries(node) {
 
-		const route = '/marasit/bus';
+		const route = '/marasit/bus/node/update';
 		let inputs = [];
 		try {
 			if(node.inputs && node.inputs.length > 0 && typeof node.properties.uuid != 'undefined') {
@@ -204,7 +204,39 @@ class MarasitBusNodeHelper {
 				profile: node.properties.profile,
 				inputs: inputs,
 			};
-			console.log(params)
+
+			await api
+				.fetchApi(route, {
+					method: 'POST',
+					body: JSON.stringify(params),
+				})
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error('Network response was not ok');
+					}
+					return response.json()
+				})
+				.then((data) => {
+					console.log("[MarasIT] " + data.message)
+				})
+				.catch((error) => {
+					console.error('Error:', error)
+				})
+		} catch (error) {
+			console.error('Error:', error)
+		}
+	}
+
+	async removeNodeProfile(node) {
+
+		const route = '/marasit/bus/node/remove';
+		let inputs = [];
+		try {
+			const params = {
+				session_id: 'unique',
+				node_id: node.id
+			};
+
 			await api
 				.fetchApi(route, {
 					method: 'POST',
@@ -231,7 +263,7 @@ class MarasitBusNodeHelper {
 		const onExecuted = nodeType.prototype.onExecuted
 		nodeType.prototype.onExecuted = function (message) {
 			onExecuted?.apply(this, arguments)
-			console.log("[logging "+this.name+"]", "on Executed", {"id": this.id, "properties": this.properties});
+			console.log("[MarasIT - logging "+this.name+"]", "on Executed", {"id": this.id, "properties": this.properties});
 		}
 
 	}
@@ -246,7 +278,7 @@ class MarasitBusNodeHelper {
 			MarasitBusNode.helper.initNode(this)
 			MarasitBusNode.helper.setProfileWidget(this)
 			await MarasitBusNode.helper.setProfileEntries(this)
-			await MarasitBusNode.helper.setEntryList(this)
+			await MarasitBusNode.helper.setNodeProfileEntries(this)
 
 			return r;
 		}
@@ -255,19 +287,19 @@ class MarasitBusNodeHelper {
 
 	async addInputMenuItem(_this, _, options) {
 		for (let _index in _.graph._nodes) {
+			_this.index = _this.inputs.length + 1
+			const name = "any_" + _this.index;
+			const type = "*";
+			const inputLenth = _this.inputs.length - 1;
+			const outputLenth = _this.outputs.length - 1;
 			let _node = _.graph._nodes[_index]
+			// const index = _this.widgets[_this.index].value;
 			if (_node.type === "MarasitBusNode" && _this.title === _node.title) {
-				_node.index = _node.inputs.length + 1
-				const name = "any_" + _node.index;
-				const type = "*";
 				_node.addInput(name, type);
 				_node.addOutput(name, type);
 
-				const inputLenth = _node.inputs.length - 1;
-				const outputLenth = _node.outputs.length - 1;
-				// const index = _node.widgets[_node.index].value;
 
-				for (let i = inputLenth; i > _node.index + 1; i--) {
+				for (let i = inputLenth; i > _this.index + 1; i--) {
 					swapInputs(_node, i, i - 1);
 					swapOutputs(_node, i, i - 1);
 				}
@@ -280,7 +312,7 @@ class MarasitBusNodeHelper {
 
 				// _node.setDirtyCanvas(true);
 				console.log('+ entry ' + name);
-				await MarasitBusNode.helper.setEntryList(_node)
+				await MarasitBusNode.helper.setNodeProfileEntries(_node)
 
 			}
 		}
@@ -288,17 +320,31 @@ class MarasitBusNodeHelper {
 
 	async removeLastInputMenuItem(_this, _, options) {
 		for (let _index in _.graph._nodes) {
+			const inputLenth = _this.inputs.length - 1
+			const outputLenth = _this.outputs.length - 1
+			const name = _this.inputs[inputLenth].name
 			let _node = _.graph._nodes[_index]
+			let _inputLenth = inputLenth
+			let _outputLenth = outputLenth
 			if (_node.type === "MarasitBusNode" && _this.title === _node.title) {
-				const inputLenth = _node.inputs.length - 1
-				const outputLenth = _node.outputs.length - 1
-				const name = _node.inputs[inputLenth].name
-
+	
 				_node.removeInput(inputLenth);
 				_node.removeOutput(outputLenth);
 
+				_inputLenth = _node.inputs.length - 1
+				_outputLenth = _node.outputs.length - 1
+
+				while(_inputLenth >= inputLenth) {
+					_node.removeInput(_inputLenth);
+					_inputLenth = _node.inputs.length - 1
+				}
+				while(_outputLenth >= outputLenth) {
+					_node.removeOutput(_outputLenth);
+					_outputLenth = _node.outputs.length - 1
+				}
+	
 				console.log('- entry ' + name);
-				await MarasitBusNode.helper.setEntryList(_node)
+				await MarasitBusNode.helper.setNodeProfileEntries(_node)
 
 			}
 		}
@@ -308,7 +354,7 @@ class MarasitBusNodeHelper {
 		const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
 		nodeType.prototype.getExtraMenuOptions = function (_, options) {
 
-			console.log("[logging "+this.name+"]", "on Extra Menu Options", {"id": this.id, "properties": this.properties});
+			console.log("[MarasIT - logging "+this.name+"]", "on Extra Menu Options", {"id": this.id, "properties": this.properties});
 
 			// var options = []
 			// {
@@ -345,7 +391,63 @@ class MarasitBusNodeHelper {
 			);
 			// return getExtraMenuOptions?.apply(this, arguments);
 		}
+	}
+
+	onConnectionsChange(nodeType) {
+
+		const onConnectionsChange = nodeType.prototype.onConnectionsChange
+		nodeType.prototype.onConnectionsChange = function (
+			slotType,	//1 = input, 2 = output
+			slot,
+			isChangeConnect,
+			link_info,
+			output
+		) {
+			const r = onConnectionsChange ? onConnectionsChange.apply(this, arguments):undefined
+
+			//On Disconnect
+			if (!isChangeConnect && this.inputs[slot].type == '*' && this.outputs[slot].type == '*') {
+				console.log('disconnect', slotType, slot, link_info, output, this.inputs[slot].type, this.outputs[slot].type)
+				this.inputs[slot].name = "*"
+				this.outputs[slot].name = "*"
+			}
+			//On Connect
+			if (isChangeConnect && slotType == 1 && this.inputs[slot].type == '*' && this.outputs[slot].type == '*') {
+				this.inputs[slot].name = "*"
+				this.outputs[slot].name = "*"
+
+				if(link_info?.origin_id !== undefined && link_info.origin_id > -1) {
+					const link_info_node = this.graph._nodes.find(
+						(otherNode) => otherNode.id == link_info.origin_id
+					)
+					if(link_info_node?.outputs !== undefined && link_info?.origin_slot !== undefined) {
+						const link_node_input = link_info_node.outputs[link_info.origin_slot]
+						if(link_node_input?.type !== undefined && link_node_input.type != "*") {
+							this.inputs[slot].name = "* (" + link_node_input.type.toLowerCase()+")"
+							this.outputs[slot].name = "* (" + link_node_input.type.toLowerCase()+")"
+						}
+					}
+				}
+			}
+			if (isChangeConnect && slotType == 2 && this.inputs[slot].type == '*' && this.inputs[slot].name == '*' && this.outputs[slot].type == '*') {
+
+				if(link_info?.type !== undefined && link_info.type != "*") {
+					this.inputs[slot].name = "(" + link_info.type.toLowerCase()+") *"
+					this.outputs[slot].name = "(" + link_info.type.toLowerCase()+") *"
+				}
+
+			}
+
+			MarasitBusNode.helper.setNodeProfileEntries(this)
+
+			return r;
+		}
+
 	}	
+	
+	onRemoved() {
+		MarasitBusNode.helper.removeNodeProfile(this)
+	}
 
 }
 
@@ -355,27 +457,27 @@ const MarasitBusNode = {
 	helper: new MarasitBusNodeHelper(),
 	async init(app) {
 		// Any initial setup to run as soon as the page loads
-		// console.log("[logging "+this.name+"]", "extension init");
+		// console.log("[MarasIT - logging "+this.name+"]", "extension init");
 	},
 	 // !TODO should I find a way to define defs based on profile ?
 	addCustomNodeDefs(defs, app) {
 		// Add custom node definitions
 		// These definitions will be configured and registered automatically
 		// defs is a lookup core nodes, add yours into this
-		// console.log("[logging "+this.name+"]", "add custom node definitions", "current nodes:", Object.keys(defs));
+		// console.log("[MarasIT - logging "+this.name+"]", "add custom node definitions", "current nodes:", Object.keys(defs));
 	},
 	async getCustomWidgets(app) {
 		// Return custom widget types
 		// See ComfyWidgets for widget examples
-		// console.log("[logging "+this.name+"]", "provide custom widgets");
+		// console.log("[MarasIT - logging "+this.name+"]", "provide custom widgets");
 	},
 	async registerCustomNodes(app) {
 		// Register any custom node implementations here allowing for more flexability than a custom node def
-		console.log("[logging "+this.name+"]", "register custom nodes");
+		console.log("[MarasIT - logging "+this.name+"]", "register custom nodes");
 	},
 	async setup(app) {
 		// Any setup to run after the app is created
-		// console.log("[logging "+this.name+"]", "extension setup");
+		// console.log("[MarasIT - logging "+this.name+"]", "extension setup");
 	},
 	async loadedGraphNode(node, app) {
 		// Fires for each node when loading/dragging/etc a workflow json or png
@@ -385,12 +487,12 @@ const MarasitBusNode = {
 
 			node.setProperty('uuid', node.id)
 
-			console.log("[logging "+this.name+"]", "Loaded Graph", {"id": node.id, "properties": node.properties});
+			// console.log("[MarasIT - logging "+this.name+"]", "Loaded Graph", {"id": node.id, "properties": node.properties});
 			MarasitBusNode.helper.initNode(node)
 			MarasitBusNode.helper.setProfileWidget(node)
 			await MarasitBusNode.helper.setProfileEntries(node)
 			// MarasitBusNode.helper.setPipeWidget(node)
-			await MarasitBusNode.helper.setEntryList(node)
+			await MarasitBusNode.helper.setNodeProfileEntries(node)
 
 		}
 
@@ -401,7 +503,7 @@ const MarasitBusNode = {
 	nodeCreated(node, app) {
 		// Fires every time a node is constructed
 		// You can modify widgets/add handlers/etc here
-		// console.log("[logging "+this.name+"]", "node created: ", {...node});
+		// console.log("[MarasIT - logging "+this.name+"]", "node created: ", {...node});
 
 		// This fires for every node so only log once
 		// delete MarasitBusNode.nodeCreated;
@@ -410,12 +512,14 @@ const MarasitBusNode = {
 		// Run custom logic before a node definition is registered with the graph
 		
 		if (nodeData.name === 'MarasitBusNode') {
-			console.log("[logging "+this.name+"]", "before register node: ", nodeData);
+			// console.log("[MarasIT - logging "+this.name+"]", "before register node: ", nodeData);
 			// This fires for every node definition so only log once
 
 			MarasitBusNode.helper.onExecuted(nodeType)
 			MarasitBusNode.helper.onNodeCreated(nodeType)
 			MarasitBusNode.helper.getExtraMenuOptions(nodeType)
+			MarasitBusNode.helper.onConnectionsChange(nodeType)
+			MarasitBusNode.helper.onRemoved()
 
 
 
