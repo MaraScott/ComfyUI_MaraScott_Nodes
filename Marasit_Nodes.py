@@ -10,6 +10,7 @@
 from . import __SESSIONS_DIR__, __PROFILES_DIR__
 from .py.nodes.UniversalBusNode import UniversalBusNode, UniversalBusNodeProfiles
 from .py.nodes.BusNode import BusNode
+from .py.nodes.PipeNodeBasic import PipeNodeBasic
 
 import os
 import json
@@ -21,13 +22,15 @@ WEB_DIRECTORY = "./web/assets/js"
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
     "MarasitBusNode": BusNode,
-    "MarasitUniversalBusNode": UniversalBusNode,
+    "MarasitPipeNodeBasic": PipeNodeBasic,
+    # "MarasitUniversalBusNode": UniversalBusNode,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
     "MarasitBusNode": "Bus Node",
-    "MarasitUniversalBusNode": "Universal Bus Node"
+    "MarasitPipeNodeBasic": "Basic Pipe",
+    # "MarasitUniversalBusNode": "Universal Bus Node"
 }
 
 if hasattr(PromptServer, "instance"):
@@ -64,6 +67,23 @@ if hasattr(PromptServer, "instance"):
             {"message": f"Node id {nid} and profile {profile} have been set"}
         )
         
+    @PromptServer.instance.routes.post("/marasit/bus/profile")
+    async def setDefaultProfile(request):
+        json_data = await request.json()
+        profile = json_data.get("profile")
+
+        filename = f"profile_{profile}.json"
+        filepath = os.path.join(__PROFILES_DIR__, filename)
+
+        inputs = UniversalBusNodeProfiles.default
+        # Write the data to the file
+        with open(filepath, 'w') as file:
+            json.dump(inputs, file)
+
+        return web.json_response(
+            {"message": f"Profile {profile} has been set/reset"}
+        )
+
     @PromptServer.instance.routes.post("/marasit/bus/node/remove")
     async def removeNodeProfile(request):
         json_data = await request.json()
