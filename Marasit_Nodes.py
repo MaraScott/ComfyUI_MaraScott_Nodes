@@ -8,7 +8,7 @@
 ###
 
 from . import __SESSIONS_DIR__, __PROFILES_DIR__
-from .py.nodes.bus import Bus_node
+from .py.nodes.bus import UniversalBusNode, UniversalBusNodeProfiles
 
 import os
 import json
@@ -19,12 +19,12 @@ WEB_DIRECTORY = "./web/assets/js"
 
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
-    "MarasitBusNode": Bus_node,
+    "MarasitUniversalBusNode": UniversalBusNode,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "MarasitBusNode": "Bus Node"
+    "MarasitUniversalBusNode": "Universal Bus Node"
 }
 
 if hasattr(PromptServer, "instance"):
@@ -51,7 +51,7 @@ if hasattr(PromptServer, "instance"):
                 with open(filepath, 'r') as file:
                     inputs = json.load(file)
             else:
-                raise FileNotFoundError(f"The file {filepath} does not exist.")
+                inputs = UniversalBusNodeProfiles.default
         else:
             # Write the data to the file
             with open(filepath, 'w') as file:

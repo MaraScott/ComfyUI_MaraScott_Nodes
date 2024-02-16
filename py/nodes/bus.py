@@ -27,7 +27,34 @@ class AnyType(str):
 # Our any instance wants to be a wildcard string
 ANY = AnyType("*")
 
-class Bus_node:
+class UniversalBusNodeProfiles:
+    default = {
+        "bus": "BUS",
+        "pipe (basic)": "BASIC_PIPE",
+        "model": "MODEL",
+        "clip": "CLIP",
+        "vae": "VAE",
+        "positive": "CONDITIONING",
+        "negative": "CONDITIONING",
+        "positive (text)": "STRING",
+        "negative (text)": "STRING",
+        "latent": "LATENT",
+        "image": "IMAGE",
+        "mask": "MASK",
+        "*": "*",
+    }
+    basic_pipe = {
+        "bus": "BUS",
+        "pipe (basic)": "BASIC_PIPE",
+        "model": "MODEL",
+        "clip": "CLIP",
+        "vae": "VAE",
+        "positive": "CONDITIONING",
+        "negative": "CONDITIONING",
+    }
+    
+
+class UniversalBusNode:
     def __init__(self):
         self.default_mask = torch.zeros(1, 1, 1024, 1024)  # Example default mask
 
@@ -60,7 +87,7 @@ class Bus_node:
     # RETURN_NAMES = ("bus",) + _INPUT_NAMES
     RETURN_NAMES = ()
     FUNCTION = "bus_fn"
-    CATEGORY = "MarasIT/utils"
+    CATEGORY = "marasit/utils"
     DESCRIPTION = "A Universal Bus/Pipe Node"
     
     def bus_fn(self, **kwargs):
