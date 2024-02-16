@@ -43,7 +43,7 @@ class MarasitUniversalBusNodeHelper {
 		if (!node.properties || !("profile" in node.properties)) {
 			node.properties["profile"] = "default";
 		}
-		node.title = "Bus Node - " + node.properties.profile
+		node.title = "Universal Bus - " + node.properties.profile
 		if (!node.properties || !("previousTitle" in node.properties)) {
 			node.properties["previousTitle"] = node.title;
 		}
@@ -136,7 +136,7 @@ class MarasitUniversalBusNodeHelper {
 				node.properties.profile ?? '',
 				(s, t, u, v, x) => {
 					node.setProperty('profile', node.widgets[0].value ?? node.properties.profile)
-					node.title = "Bus Node - " + node.properties.profile;
+					node.title = "Universal Bus - " + node.properties.profile;
 					node.setProperty('previousTitle', node.title)
 				},
 				{}

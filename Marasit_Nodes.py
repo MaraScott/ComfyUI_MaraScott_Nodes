@@ -8,7 +8,8 @@
 ###
 
 from . import __SESSIONS_DIR__, __PROFILES_DIR__
-from .py.nodes.bus import UniversalBusNode, UniversalBusNodeProfiles
+from .py.nodes.UniversalBusNode import UniversalBusNode, UniversalBusNodeProfiles
+from .py.nodes.BusNode import BusNode
 
 import os
 import json
@@ -19,11 +20,13 @@ WEB_DIRECTORY = "./web/assets/js"
 
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
+    "MarasitBusNode": BusNode,
     "MarasitUniversalBusNode": UniversalBusNode,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
+    "MarasitBusNode": "Bus Node",
     "MarasitUniversalBusNode": "Universal Bus Node"
 }
 
