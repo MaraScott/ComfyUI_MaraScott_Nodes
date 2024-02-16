@@ -106,7 +106,7 @@ class MarasitBusNodeHelper {
 			}
 			entries = await response.json();
 		} catch (error) {
-			console.error('Error loading profile entries:', error);
+			console.error('Error loading profile entries:', url, error);
 		}
 
 		return entries;
@@ -217,7 +217,7 @@ class MarasitBusNodeHelper {
 					return response.json()
 				})
 				.then((data) => {
-					console.log("[MarasIT] " + data.message)
+					// console.log("[MarasIT] " + data.message)
 				})
 				.catch((error) => {
 					console.error('Error:', error)
@@ -249,7 +249,7 @@ class MarasitBusNodeHelper {
 					return response.json()
 				})
 				.then((data) => {
-					console.log(route, data.message)
+					// console.log('[MarasIT] '+ data.message)
 				})
 				.catch((error) => {
 					console.error('Error:', error)
@@ -464,7 +464,7 @@ const MarasitBusNode = {
 		// Add custom node definitions
 		// These definitions will be configured and registered automatically
 		// defs is a lookup core nodes, add yours into this
-		// console.log("[MarasIT - logging "+this.name+"]", "add custom node definitions", "current nodes:", Object.keys(defs));
+		// console.log("[MarasIT - logging "+this.name+"]", "add custom node definitions", "current nodes:", defs['MarasitBusNode'],JSON.stringify(Object.keys(defs)));
 	},
 	async getCustomWidgets(app) {
 		// Return custom widget types
