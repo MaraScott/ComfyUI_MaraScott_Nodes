@@ -23,7 +23,7 @@ class PipeNodeBasic:
         return {
             "required":{},
             "optional": {
-                "pipe" : ("BASIC_PIPE",),
+                "pipe (basic)" : ("BASIC_PIPE",),
                 "model": ("MODEL",),
                 "clip": ("CLIP",),
                 "vae": ("VAE",),

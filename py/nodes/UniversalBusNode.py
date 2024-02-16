@@ -36,8 +36,8 @@ class UniversalBusNodeProfiles:
         "vae": "VAE",
         "positive": "CONDITIONING",
         "negative": "CONDITIONING",
-        "positive (text)": "STRING",
-        "negative (text)": "STRING",
+        "text (positive)": "STRING",
+        "text (negative)": "STRING",
         "latent": "LATENT",
         "image": "IMAGE",
         "mask": "MASK",
@@ -71,8 +71,8 @@ class UniversalBusNode:
                 # "vae": ("VAE",),
                 # "positive": ("CONDITIONING",),
                 # "negative": ("CONDITIONING",),
-                # "positive (text)": ("STRING",),
-                # "negative (text)": ("STRING",),
+                # "text (positive)": ("STRING",),
+                # "text (negative)": ("STRING",),
                 # "latent": ("LATENT",),
                 # "image": ("IMAGE",),
                 # "mask": ("MASK",),
@@ -158,6 +158,8 @@ class UniversalBusNode:
     def _determine_output_value(self, name, _input, value):
         if name in ('image', 'mask') and isinstance(_input, torch.Tensor):
             return _input if _input.nelement() > 0 and (name != 'mask' or _input.any()) else value
+        if name.startswith('text') :
+            return _input if _input is not None else value if value is not None else ''
         return _input if _input is not None else value
 
     def _ensure_required_parameters(self, outputs):
