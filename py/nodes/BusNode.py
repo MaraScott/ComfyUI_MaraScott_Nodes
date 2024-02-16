@@ -38,8 +38,8 @@ class BusNode:
                 "vae": ("VAE",),
                 "positive": ("CONDITIONING",),
                 "negative": ("CONDITIONING",),
-                "positive (text)": ("STRING",),
-                "negative (text)": ("STRING",),
+                "text (positive)": ("STRING",),
+                "text (negative)": ("STRING",),
                 "latent": ("LATENT",),
                 "image": ("IMAGE",),
                 "mask": ("MASK",),
@@ -51,7 +51,7 @@ class BusNode:
 
     _INPUT_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "STRING", "STRING", "LATENT", "IMAGE", "MASK", ANY, ANY, ANY,)
     RETURN_TYPES = ("BUS", ) + _INPUT_TYPES
-    _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "positive (text)", "negative (text)", "latent", "image", "mask", "* (1)", "* (2)", "* (3)")
+    _INPUT_NAMES = ("model", "clip", "vae", "positive", "negative", "text (positive)", "text (negative)", "latent", "image", "mask", "* (1)", "* (2)", "* (3)")
     RETURN_NAMES = ("bus",) + _INPUT_NAMES
     FUNCTION = "bus_fn"
     CATEGORY = "MarasIT/utils"
@@ -83,6 +83,8 @@ class BusNode:
     def _determine_output_value(self, name, _input, bus_value):
         if name in ('image', 'mask') and isinstance(_input, torch.Tensor):
             return _input if _input.nelement() > 0 and (name != 'mask' or _input.any()) else bus_value
+        if name.startswith('text') :
+            return _input if _input is not None else bus_value if bus_value is not None else ''        
         return _input if _input is not None else bus_value
 
     def _ensure_required_parameters(self, outputs):

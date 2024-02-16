@@ -23,14 +23,14 @@ WEB_DIRECTORY = "./web/assets/js"
 NODE_CLASS_MAPPINGS = {
     "MarasitBusNode": BusNode,
     "MarasitPipeNodeBasic": PipeNodeBasic,
-    # "MarasitUniversalBusNode": UniversalBusNode,
+    "MarasitUniversalBusNode": UniversalBusNode
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "MarasitBusNode": "Bus Node",
-    "MarasitPipeNodeBasic": "Basic Pipe",
-    # "MarasitUniversalBusNode": "Universal Bus Node"
+    "MarasitBusNode": "Bus Node - Simple",
+    "MarasitPipeNodeBasic": "Pipe Node - Basic",
+    "MarasitUniversalBusNode": "Universal Bus Node"
 }
 
 if hasattr(PromptServer, "instance"):
