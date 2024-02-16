@@ -67,7 +67,7 @@ class MarasitUniversalBusNodeHelper {
 			"latent": "LATENT",
 			"image": "IMAGE",
 			"mask": "MASK",
-			"*": "*",
+			"* (13)": "*",
 		}
 		const default_entries = {
 			"default" : {
@@ -83,7 +83,7 @@ class MarasitUniversalBusNodeHelper {
 				"latent": "LATENT",
 				"image": "IMAGE",
 				"mask": "MASK",
-				"*": "*",
+				"* (13)": "*",
 			},
 			"basic_pipe" : {
 				"bus": "BUS",
@@ -103,6 +103,7 @@ class MarasitUniversalBusNodeHelper {
 			const response = await fetch(url);
 			if (!response.ok) {
 				console.log(`Failed to load profile entries from ${url}, switching back to default profile setup`);
+				MarasitUniversalBusNode.helper.setDefaultProfile()			
 			}
 			entries = await response.json();
 		} catch (error) {
@@ -184,6 +185,30 @@ class MarasitUniversalBusNodeHelper {
 
 	}
 
+	async setDefaultProfile(profile = 'default') {
+		const route = '/marasit/bus/profile';
+		const params = {
+			profile: profile,
+		};
+
+		await api
+			.fetchApi(route, {
+				method: 'POST',
+				body: JSON.stringify(params),
+			})
+			.then((response) => {
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				return response.json()
+			})
+			.then((data) => {
+				console.log("[MarasIT] " + data.message)
+			})
+			.catch((error) => {
+				console.error('Error:', error)
+			})
+	}
 
 	async setNodeProfileEntries(node) {
 
@@ -288,7 +313,7 @@ class MarasitUniversalBusNodeHelper {
 	async addInputMenuItem(_this, _, options) {
 		for (let _index in _.graph._nodes) {
 			_this.index = _this.inputs.length + 1
-			const name = "any_" + _this.index;
+			const name = "* (" + _this.index + ")";
 			const type = "*";
 			const inputLenth = _this.inputs.length - 1;
 			const outputLenth = _this.outputs.length - 1;
@@ -354,7 +379,7 @@ class MarasitUniversalBusNodeHelper {
 		const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
 		nodeType.prototype.getExtraMenuOptions = function (_, options) {
 
-			console.log("[MarasIT - logging "+this.name+"]", "on Extra Menu Options", {"id": this.id, "properties": this.properties});
+			// console.log("[MarasIT - logging "+this.name+"]", "on Extra Menu Options", {"id": this.id, "properties": this.properties});
 
 			// var options = []
 			// {
@@ -444,10 +469,6 @@ class MarasitUniversalBusNodeHelper {
 		}
 
 	}	
-	
-	onRemoved() {
-		MarasitUniversalBusNode.helper.removeNodeProfile(this)
-	}
 
 }
 
@@ -519,13 +540,17 @@ const MarasitUniversalBusNode = {
 			MarasitUniversalBusNode.helper.onNodeCreated(nodeType)
 			MarasitUniversalBusNode.helper.getExtraMenuOptions(nodeType)
 			MarasitUniversalBusNode.helper.onConnectionsChange(nodeType)
-			MarasitUniversalBusNode.helper.onRemoved()
 
 
 
 			// delete MarasitUniversalBusNode.beforeRegisterNodeDef;
 		}
+	},
+
+	onRemoved() {
+		MarasitUniversalBusNode.helper.removeNodeProfile(this)
 	}
+
 };
 
 app.registerExtension(MarasitUniversalBusNode);

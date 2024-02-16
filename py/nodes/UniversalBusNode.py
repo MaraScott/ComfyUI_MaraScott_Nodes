@@ -41,7 +41,7 @@ class UniversalBusNodeProfiles:
         "latent": "LATENT",
         "image": "IMAGE",
         "mask": "MASK",
-        "*": "*",
+        "* (13)": "*",
     }
     basic_pipe = {
         "bus": "BUS",
@@ -65,16 +65,18 @@ class UniversalBusNode:
             "required":{},
             "optional": {
                 # "bus" : ("BUS",),
-                # "pipe" : ("BASIC_PIPE",),
+                # "pipe (basic)" : ("BASIC_PIPE",),
                 # "model": ("MODEL",),
                 # "clip": ("CLIP",),
                 # "vae": ("VAE",),
                 # "positive": ("CONDITIONING",),
                 # "negative": ("CONDITIONING",),
+                # "positive (text)": ("STRING",),
+                # "negative (text)": ("STRING",),
                 # "latent": ("LATENT",),
                 # "image": ("IMAGE",),
                 # "mask": ("MASK",),
-                # "any": (ANY, {}),
+                # "* (13)": ("*",),
             }
         }
 
@@ -86,11 +88,11 @@ class UniversalBusNode:
     # _INPUT_NAMES = ()
     # RETURN_NAMES = ("bus",) + _INPUT_NAMES
     RETURN_NAMES = ()
-    FUNCTION = "bus_fn"
+    FUNCTION = "universal_bus_fn"
     CATEGORY = "marasit/utils"
     DESCRIPTION = "A Universal Bus/Pipe Node"
     
-    def bus_fn(self, **kwargs):
+    def universal_bus_fn(self, **kwargs):
         
         session_id = "unique"  # As mentioned, session_id is always "unique"
         node_id = kwargs.get('id', None)
@@ -116,7 +118,7 @@ class UniversalBusNode:
             with open(filepath, 'r') as file:
                 inputsByProfile = json.load(file)
         else:
-            raise FileNotFoundError(f"The file {filepath} does not exist.")
+            inputsByProfile = UniversalBusNodeProfiles.default
 
         # Initialize the bus tuple with None values for each parameter
         inputs = {}
