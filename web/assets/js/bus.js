@@ -473,7 +473,7 @@ const MarasitBusNode = {
 	},
 	async registerCustomNodes(app) {
 		// Register any custom node implementations here allowing for more flexability than a custom node def
-		console.log("[MarasIT - logging "+this.name+"]", "register custom nodes");
+		// console.log("[MarasIT - logging "+this.name+"]", "register custom nodes");
 	},
 	async setup(app) {
 		// Any setup to run after the app is created
