@@ -33,7 +33,7 @@ __ROOT__file__ = __file__
 
 # Directory where you want to save the file
 base_dir = os.path.abspath(os.path.dirname(__ROOT__file__))
-web_dir = os.path.join(base_dir, "..", "..", "web", "extensions", "MarasIT")
+web_dir = os.path.join(base_dir, "..", "..", "web", "extensions", "marasit")
 web_dir = os.path.realpath(web_dir)
 if not os.path.exists(web_dir):
     os.makedirs(web_dir)

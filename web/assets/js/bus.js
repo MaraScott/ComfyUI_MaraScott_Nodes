@@ -8,8 +8,8 @@ import {
 	errorLogger,
 } from './helper.js'
 
-if (!window.MarasIT) {
-	window.MarasIT = {}
+if (!window.marasit) {
+	window.marasit = {}
 }
 
 /*
@@ -23,7 +23,7 @@ if (!window.MarasIT) {
  *
  */
 
-class MarasitBusNodeHelper {
+class MarasitUniversalBusNodeHelper {
 
 	constructor() {
 
@@ -33,7 +33,7 @@ class MarasitBusNodeHelper {
 
 	initNode(node) {
 
-		node.category = "MarasIT/utils"
+		node.category = "marasit/utils"
 		// node.isVirtualNode = true;
 		node.shape = LiteGraph.CARD_SHAPE // BOX_SHAPE | ROUND_SHAPE | CIRCLE_SHAPE | CARD_SHAPE
 		// same values as the comfy note
@@ -60,10 +60,10 @@ class MarasitBusNodeHelper {
 			"model": "MODEL",
 			"clip": "CLIP",
 			"vae": "VAE",
-			"positive (text)": "STRING",
 			"positive": "CONDITIONING",
-			"negative (text)": "STRING",
 			"negative": "CONDITIONING",
+			"positive (text)": "STRING",
+			"negative (text)": "STRING",
 			"latent": "LATENT",
 			"image": "IMAGE",
 			"mask": "MASK",
@@ -98,7 +98,7 @@ class MarasitBusNodeHelper {
 
 		const profile = node.properties.profile;
 		let entries = default_entries[node.properties.profile]
-		const url = `/extensions/MarasIT/profiles/profile_${profile}.json`;
+		const url = `/extensions/marasit/profiles/profile_${profile}.json`;
 		try {
 			const response = await fetch(url);
 			if (!response.ok) {
@@ -115,7 +115,7 @@ class MarasitBusNodeHelper {
 
 	async setProfileEntries(node) {
 		// display initial inputs/outputs
-		const entries = await MarasitBusNode.helper.getProfileEntries(node)
+		const entries = await MarasitUniversalBusNode.helper.getProfileEntries(node)
 		for (const name in entries) {
 			if(node.findInputSlot(name) == -1) {
 				node.addInput(name, entries[name])
@@ -275,10 +275,10 @@ class MarasitBusNodeHelper {
 			const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
 
 			
-			MarasitBusNode.helper.initNode(this)
-			MarasitBusNode.helper.setProfileWidget(this)
-			await MarasitBusNode.helper.setProfileEntries(this)
-			await MarasitBusNode.helper.setNodeProfileEntries(this)
+			MarasitUniversalBusNode.helper.initNode(this)
+			MarasitUniversalBusNode.helper.setProfileWidget(this)
+			await MarasitUniversalBusNode.helper.setProfileEntries(this)
+			await MarasitUniversalBusNode.helper.setNodeProfileEntries(this)
 
 			return r;
 		}
@@ -294,7 +294,7 @@ class MarasitBusNodeHelper {
 			const outputLenth = _this.outputs.length - 1;
 			let _node = _.graph._nodes[_index]
 			// const index = _this.widgets[_this.index].value;
-			if (_node.type === "MarasitBusNode" && _this.title === _node.title) {
+			if (_node.type === "MarasitUniversalBusNode" && _this.title === _node.title) {
 				_node.addInput(name, type);
 				_node.addOutput(name, type);
 
@@ -312,7 +312,7 @@ class MarasitBusNodeHelper {
 
 				// _node.setDirtyCanvas(true);
 				console.log('+ entry ' + name);
-				await MarasitBusNode.helper.setNodeProfileEntries(_node)
+				await MarasitUniversalBusNode.helper.setNodeProfileEntries(_node)
 
 			}
 		}
@@ -326,7 +326,7 @@ class MarasitBusNodeHelper {
 			let _node = _.graph._nodes[_index]
 			let _inputLenth = inputLenth
 			let _outputLenth = outputLenth
-			if (_node.type === "MarasitBusNode" && _this.title === _node.title) {
+			if (_node.type === "MarasitUniversalBusNode" && _this.title === _node.title) {
 	
 				_node.removeInput(inputLenth);
 				_node.removeOutput(outputLenth);
@@ -344,7 +344,7 @@ class MarasitBusNodeHelper {
 				}
 	
 				console.log('- entry ' + name);
-				await MarasitBusNode.helper.setNodeProfileEntries(_node)
+				await MarasitUniversalBusNode.helper.setNodeProfileEntries(_node)
 
 			}
 		}
@@ -372,11 +372,11 @@ class MarasitBusNodeHelper {
 
 			// Add input callback
 			const addInputCallback = async () => {
-				await MarasitBusNode.helper.addInputMenuItem(this, _, options);
+				await MarasitUniversalBusNode.helper.addInputMenuItem(this, _, options);
 			};
 			// Remove input callback
 			const removeLastInputCallback = async () => {
-				await MarasitBusNode.helper.removeLastInputMenuItem(this, _, options);
+				await MarasitUniversalBusNode.helper.removeLastInputMenuItem(this, _, options);
 			};
 
 			options.unshift(
@@ -438,7 +438,7 @@ class MarasitBusNodeHelper {
 
 			}
 
-			MarasitBusNode.helper.setNodeProfileEntries(this)
+			MarasitUniversalBusNode.helper.setNodeProfileEntries(this)
 
 			return r;
 		}
@@ -446,15 +446,15 @@ class MarasitBusNodeHelper {
 	}	
 	
 	onRemoved() {
-		MarasitBusNode.helper.removeNodeProfile(this)
+		MarasitUniversalBusNode.helper.removeNodeProfile(this)
 	}
 
 }
 
-const MarasitBusNode = {
+const MarasitUniversalBusNode = {
 	// Unique name for the extension
-	name: "Comfy.MarasIT.MarasitBusNode",
-	helper: new MarasitBusNodeHelper(),
+	name: "Comfy.MarasIT.UniversalBusNode",
+	helper: new MarasitUniversalBusNodeHelper(),
 	async init(app) {
 		// Any initial setup to run as soon as the page loads
 		// console.log("[MarasIT - logging "+this.name+"]", "extension init");
@@ -464,7 +464,7 @@ const MarasitBusNode = {
 		// Add custom node definitions
 		// These definitions will be configured and registered automatically
 		// defs is a lookup core nodes, add yours into this
-		// console.log("[MarasIT - logging "+this.name+"]", "add custom node definitions", "current nodes:", defs['MarasitBusNode'],JSON.stringify(Object.keys(defs)));
+		// console.log("[MarasIT - logging "+this.name+"]", "add custom node definitions", "current nodes:", defs['MarasitUniversalBusNode'],JSON.stringify(Object.keys(defs)));
 	},
 	async getCustomWidgets(app) {
 		// Return custom widget types
@@ -483,21 +483,21 @@ const MarasitBusNode = {
 		// Fires for each node when loading/dragging/etc a workflow json or png
 		// If you break something in the backend and want to patch workflows in the frontend
 		// This is the place to do this
-		if(node.type == "MarasitBusNode") {
+		if(node.type == "MarasitUniversalBusNode") {
 
 			node.setProperty('uuid', node.id)
 
 			// console.log("[MarasIT - logging "+this.name+"]", "Loaded Graph", {"id": node.id, "properties": node.properties});
-			MarasitBusNode.helper.initNode(node)
-			MarasitBusNode.helper.setProfileWidget(node)
-			await MarasitBusNode.helper.setProfileEntries(node)
-			// MarasitBusNode.helper.setPipeWidget(node)
-			await MarasitBusNode.helper.setNodeProfileEntries(node)
+			MarasitUniversalBusNode.helper.initNode(node)
+			MarasitUniversalBusNode.helper.setProfileWidget(node)
+			await MarasitUniversalBusNode.helper.setProfileEntries(node)
+			// MarasitUniversalBusNode.helper.setPipeWidget(node)
+			await MarasitUniversalBusNode.helper.setNodeProfileEntries(node)
 
 		}
 
 		// This fires for every node on each load so only log once
-		// delete MarasitBusNode.loadedGraphNode;
+		// delete MarasitUniversalBusNode.loadedGraphNode;
 	},
 	// this is the python node created
 	nodeCreated(node, app) {
@@ -506,26 +506,26 @@ const MarasitBusNode = {
 		// console.log("[MarasIT - logging "+this.name+"]", "node created: ", {...node});
 
 		// This fires for every node so only log once
-		// delete MarasitBusNode.nodeCreated;
+		// delete MarasitUniversalBusNode.nodeCreated;
 	},
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		// Run custom logic before a node definition is registered with the graph
 		
-		if (nodeData.name === 'MarasitBusNode') {
+		if (nodeData.name === 'MarasitUniversalBusNode') {
 			// console.log("[MarasIT - logging "+this.name+"]", "before register node: ", nodeData);
 			// This fires for every node definition so only log once
 
-			MarasitBusNode.helper.onExecuted(nodeType)
-			MarasitBusNode.helper.onNodeCreated(nodeType)
-			MarasitBusNode.helper.getExtraMenuOptions(nodeType)
-			MarasitBusNode.helper.onConnectionsChange(nodeType)
-			MarasitBusNode.helper.onRemoved()
+			MarasitUniversalBusNode.helper.onExecuted(nodeType)
+			MarasitUniversalBusNode.helper.onNodeCreated(nodeType)
+			MarasitUniversalBusNode.helper.getExtraMenuOptions(nodeType)
+			MarasitUniversalBusNode.helper.onConnectionsChange(nodeType)
+			MarasitUniversalBusNode.helper.onRemoved()
 
 
 
-			// delete MarasitBusNode.beforeRegisterNodeDef;
+			// delete MarasitUniversalBusNode.beforeRegisterNodeDef;
 		}
 	}
 };
 
-app.registerExtension(MarasitBusNode);
+app.registerExtension(MarasitUniversalBusNode);
