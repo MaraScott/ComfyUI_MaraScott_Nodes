@@ -14,82 +14,42 @@
 
 from ... import __SESSIONS_DIR__, __PROFILES_DIR__
 
+from ..inc.nodes import Configuration as _CONF
+from ..inc.profiles.default import Node as ProfileNodeDefault
+from ..inc.profiles.pipe_basic import Node as ProfileNodePipeBasic
+
 import os
 import json
 import torch
 
-# Hack: string type that is always equal in not equal comparisons
-class AnyType(str):
-    def __ne__(self, __value: object) -> bool:
-        return False
-
-
-# Our any instance wants to be a wildcard string
-ANY = AnyType("*")
-
-class UniversalBusNodeProfiles:
-    default = {
-        "bus": "BUS",
-        "pipe (basic)": "BASIC_PIPE",
-        "model": "MODEL",
-        "clip": "CLIP",
-        "vae": "VAE",
-        "positive": "CONDITIONING",
-        "negative": "CONDITIONING",
-        "text (positive)": "STRING",
-        "text (negative)": "STRING",
-        "latent": "LATENT",
-        "image": "IMAGE",
-        "mask": "MASK",
-        "* (13)": "*",
-    }
-    basic_pipe = {
-        "bus": "BUS",
-        "pipe (basic)": "BASIC_PIPE",
-        "model": "MODEL",
-        "clip": "CLIP",
-        "vae": "VAE",
-        "positive": "CONDITIONING",
-        "negative": "CONDITIONING",
-    }
-    
-
 class UniversalBusNode:
-    def __init__(self):
-        self.default_mask = torch.zeros(1, 1, 1024, 1024)  # Example default mask
 
     @classmethod
+    # def INPUT_TYPES(cls):
+    #     return {
+    #         "hidden": {"id":"UNIQUE_ID"},
+    #         "required":{},
+    #         "optional": {
+    #             "bus": ("BUS",),
+    #             **ProfileNodeDefault.ENTRIES,
+    #         }
+    #     }
+
+    # RETURN_TYPES = ("BUS", ) + ProfileNodeDefault.INPUT_TYPES
+    # RETURN_NAMES = ("bus",) + ProfileNodeDefault.INPUT_NAMES
     def INPUT_TYPES(cls):
         return {
             "hidden": {"id":"UNIQUE_ID"},
             "required":{},
-            "optional": {
-                # "bus" : ("BUS",),
-                # "pipe (basic)" : ("BASIC_PIPE",),
-                # "model": ("MODEL",),
-                # "clip": ("CLIP",),
-                # "vae": ("VAE",),
-                # "positive": ("CONDITIONING",),
-                # "negative": ("CONDITIONING",),
-                # "text (positive)": ("STRING",),
-                # "text (negative)": ("STRING",),
-                # "latent": ("LATENT",),
-                # "image": ("IMAGE",),
-                # "mask": ("MASK",),
-                # "* (13)": ("*",),
-            }
+            "optional": {}
         }
 
-    # _INPUT_TYPES = ("BASIC_PIPE", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "MASK", ANY,)
-    # _INPUT_TYPES = ()
-    # RETURN_TYPES = ("BUS",) + _INPUT_TYPES
     RETURN_TYPES = ()
-    # _INPUT_NAMES = ("basic_pipe", "model", "clip", "vae", "positive", "negative", "latent", "image", "mask", "any",)
-    # _INPUT_NAMES = ()
-    # RETURN_NAMES = ("bus",) + _INPUT_NAMES
     RETURN_NAMES = ()
+
+    OUTPUT_NODE = _CONF.OUTPUT_NODE
+    CATEGORY = _CONF.CATEGORY
     FUNCTION = "universal_bus_fn"
-    CATEGORY = "marasit/utils"
     DESCRIPTION = "A Universal Bus/Pipe Node"
     
     def universal_bus_fn(self, **kwargs):
@@ -118,7 +78,10 @@ class UniversalBusNode:
             with open(filepath, 'r') as file:
                 inputsByProfile = json.load(file)
         else:
-            inputsByProfile = UniversalBusNodeProfiles.default
+            inputsByProfile = {
+                "bus": "BUS",
+                **ProfileNodeDefault.ENTRIES,
+            }
 
         # Initialize the bus tuple with None values for each parameter
         inputs = {}
@@ -144,29 +107,12 @@ class UniversalBusNode:
         # Update outputs based on inputs and current outputs
         for name, value in inputs.items():
             inputs[name] = kwargs.get(name, None)
-            outputs[name] = self._determine_output_value(name, inputs[name], outputs[name])
+            outputs[name] = _CONF.determine_output_value(name, inputs[name], outputs[name])
 
-        # self._ensure_required_parameters(outputs)
-        self._handle_special_parameters(outputs)
+        # _CONF.ensure_required_parameters(outputs)
+        _CONF.handle_special_parameters(outputs)
 
         # Prepare and return the output bus tuple with updated values
         out_bus = tuple(outputs[name] for name in outputs)
         
         return (out_bus,) + (out_bus,) + out_bus
-
-
-    def _determine_output_value(self, name, _input, value):
-        if name in ('image', 'mask') and isinstance(_input, torch.Tensor):
-            return _input if _input.nelement() > 0 and (name != 'mask' or _input.any()) else value
-        if name.startswith('text') :
-            return _input if _input is not None else value if value is not None else ''
-        return _input if _input is not None else value
-
-    def _ensure_required_parameters(self, outputs):
-        for param in ('model', 'clip', 'vae'):
-            if not outputs.get(param):
-                raise ValueError(f'Either "{param}" or bus containing a {param} should be supplied')
-
-    def _handle_special_parameters(self, outputs):
-        if outputs.get('mask') is None or torch.numel(outputs['mask']) == 0:
-            outputs['mask'] = self.default_mask
