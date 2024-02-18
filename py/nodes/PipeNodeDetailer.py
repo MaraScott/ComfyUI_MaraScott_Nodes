@@ -10,6 +10,8 @@
 #       The term 'bus' comes from computer hardware, see https://en.wikipedia.org/wiki/pipe_(computing)
 #       Largely inspired by Was Node Suite - Bus Node 
 #
+#       Inspired by ComfyUI\custom_nodes\ComfyUI-Impact-Pack\modules\impact\pipe.py Class ToDetailerPipe
+#
 ###
 
 from ..inc.nodes import Configuration as _CONF
