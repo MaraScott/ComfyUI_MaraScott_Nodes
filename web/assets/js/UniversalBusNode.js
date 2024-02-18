@@ -499,7 +499,7 @@ const MarasitUniversalBusNode = {
 		// Run custom logic before a node definition is registered with the graph
 		
 		if (nodeData.name === 'MarasitUniversalBusNode') {
-			// console.log("[MarasIT - logging "+this.name+"]", "before register node: ", nodeData);
+			console.log("[MarasIT - logging "+this.name+"]", "before register node: ", nodeData);
 			// This fires for every node definition so only log once
 
 			MarasitUniversalBusNode.helper.onExecuted(nodeType)
