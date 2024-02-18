@@ -38,9 +38,12 @@ class Configuration:
                 entries[name] = type_
             else:
                 if name.startswith("text"):
-                    entries[name] = (type_, {"forceInput": True})
+                    entries[name] = (type_, {"forceInput": True, "multiline": True})
+                elif name == "width" or name == "height":
+                    entries[name] = (type_, {"default": 1024, "min": 1, "max": 8192, "forceInput": True})
                 else:
                     entries[name] = (type_,)
+                    
         return entries
     
     def determine_output_value(name = '', input_value = None, preset_value = None):

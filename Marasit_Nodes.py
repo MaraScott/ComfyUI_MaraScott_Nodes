@@ -12,6 +12,7 @@ from .py.nodes.UniversalBusNode import UniversalBusNode
 from .py.inc.profiles.default import Node as default
 from .py.inc.profiles.pipe_basic import Node as pipe_basic
 from .py.inc.profiles.pipe_detailer import Node as pipe_Detailer
+from .py.nodes.Bus_node import Bus_node
 from .py.nodes.BusNode import BusNode
 from .py.nodes.PipeNodeBasic import PipeNodeBasic
 from .py.nodes.BusPipeNode import BusPipeNode
@@ -26,18 +27,20 @@ WEB_DIRECTORY = "./web/assets/js"
 
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
-    "MarasitBusNode": BusNode,
-    "MarasitBusPipeNode": BusPipeNode,
-    "MarasitPipeNodeBasic": PipeNodeBasic,
-    # "MarasitUniversalBusNode": UniversalBusNode
+    "MarasitBusNode": Bus_node,
+    # "MarasitBusNode": BusNode,
+    # "MarasitBusPipeNode": BusPipeNode,
+    # "MarasitPipeNodeBasic": PipeNodeBasic,
+    "MarasitUniversalBusNode": UniversalBusNode
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "MarasitBusNode": "Bus Node - Simple",
-    "MarasitBusPipeNode": "Bus/Pipe Node",
-    "MarasitPipeNodeBasic": "BasicPipe Node",
-    # "MarasitUniversalBusNode": "Universal Bus Node"
+    "MarasitBusNode": "Bus Node (OBSOLETE - use the universal bus instead)",
+    # "MarasitBusNode": "Bus Node - Simple",
+    # "MarasitBusPipeNode": "Bus/Pipe Node",
+    # "MarasitPipeNodeBasic": "BasicPipe Node",
+    "MarasitUniversalBusNode": "Universal Bus Node"
 }
 
 if hasattr(PromptServer, "instance"):
