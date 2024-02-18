@@ -8,13 +8,17 @@
 ###
 
 from . import __SESSIONS_DIR__, __PROFILES_DIR__
-from .py.nodes.UniversalBusNode import UniversalBusNode, UniversalBusNodeProfiles
+from .py.nodes.UniversalBusNode import UniversalBusNode
+from .py.inc.profiles.default import Node as default
+from .py.inc.profiles.pipe_basic import Node as pipe_basic
+from .py.inc.profiles.pipe_detailer import Node as pipe_Detailer
 from .py.nodes.BusNode import BusNode
 from .py.nodes.PipeNodeBasic import PipeNodeBasic
 
 import os
 import json
 from aiohttp import web
+import importlib
 from server import PromptServer
 
 WEB_DIRECTORY = "./web/assets/js"
@@ -34,6 +38,18 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 }
 
 if hasattr(PromptServer, "instance"):
+    @PromptServer.instance.routes.post("/marasit/bus/profile")
+    async def getNodeProfileEntries(request):
+        json_data = await request.json()
+        profile = json_data.get("profile")
+        module_path = 'ComfyUI-MarasIT-Nodes.py.inc.profiles.' + profile  # Adjust the module path as needed
+        module = importlib.import_module(module_path)
+        NodeClass = getattr(module, 'Node')
+        return web.json_response(
+            {"entries": NodeClass.ENTRIES_JS}
+        )
+        
+
     @PromptServer.instance.routes.post("/marasit/bus/node/update")
     async def setNodeProfileEntries(request):
         json_data = await request.json()
@@ -57,7 +73,7 @@ if hasattr(PromptServer, "instance"):
                 with open(filepath, 'r') as file:
                     inputs = json.load(file)
             else:
-                inputs = UniversalBusNodeProfiles.default
+                inputs = default.ENTRIES
         else:
             # Write the data to the file
             with open(filepath, 'w') as file:
@@ -75,7 +91,7 @@ if hasattr(PromptServer, "instance"):
         filename = f"profile_{profile}.json"
         filepath = os.path.join(__PROFILES_DIR__, filename)
 
-        inputs = UniversalBusNodeProfiles.default
+        inputs = default.ENTRIES
         # Write the data to the file
         with open(filepath, 'w') as file:
             json.dump(inputs, file)

@@ -53,65 +53,22 @@ class MarasitUniversalBusNodeHelper {
 
 	async getProfileEntries(node) {
 
-		const AVAILABLE_INPUT_TYPES = {
-			"bus": "BUS",
-			"pipe (basic)": "BASIC_PIPE",
-			"pipe (detailer)": "DETAILER_PIPE",
-			"model": "MODEL",
-			"clip": "CLIP",
-			"vae": "VAE",
-			"positive": "CONDITIONING",
-			"negative": "CONDITIONING",
-			"text (positive)": "STRING",
-			"text (negative)": "STRING",
-			"latent": "LATENT",
-			"image": "IMAGE",
-			"mask": "MASK",
-			"* (13)": "*",
-		}
-		const default_entries = {
-			"default" : {
-				"bus": "BUS",
-				"pipe (basic)": "BASIC_PIPE",
-				"model": "MODEL",
-				"clip": "CLIP",
-				"vae": "VAE",
-				"positive": "CONDITIONING",
-				"negative": "CONDITIONING",
-				"text (positive)": "STRING",
-				"text (negative)": "STRING",
-				"latent": "LATENT",
-				"image": "IMAGE",
-				"mask": "MASK",
-				"* (13)": "*",
-			},
-			"basic_pipe" : {
-				"bus": "BUS",
-				"pipe (basic)": "BASIC_PIPE",
-				"model": "MODEL",
-				"clip": "CLIP",
-				"vae": "VAE",
-				"positive": "CONDITIONING",
-				"negative": "CONDITIONING",
-			},
-		}
+		const profile = (node && node.properties && node.properties.profile) || 'default';
 
-		const profile = node.properties.profile;
-		let entries = default_entries[node.properties.profile]
+		let entries = await MarasitUniversalBusNode.helper.setDefaultProfile(profile)
+
 		const url = `/extensions/marasit/profiles/profile_${profile}.json`;
 		try {
 			const response = await fetch(url);
 			if (!response.ok) {
 				console.log(`Failed to load profile entries from ${url}, switching back to default profile setup`);
-				MarasitUniversalBusNode.helper.setDefaultProfile()			
+			} else {
+				entries = await response.json();
 			}
-			entries = await response.json();
 		} catch (error) {
 			console.error('Error loading profile entries:', url, error);
 		}
-
 		return entries;
-	
 	}
 
 	async setProfileEntries(node) {
@@ -203,7 +160,7 @@ class MarasitUniversalBusNodeHelper {
 				return response.json()
 			})
 			.then((data) => {
-				console.log("[MarasIT] " + data.message)
+				return data.entries;
 			})
 			.catch((error) => {
 				console.error('Error:', error)
@@ -540,8 +497,7 @@ const MarasitUniversalBusNode = {
 			MarasitUniversalBusNode.helper.onNodeCreated(nodeType)
 			MarasitUniversalBusNode.helper.getExtraMenuOptions(nodeType)
 			MarasitUniversalBusNode.helper.onConnectionsChange(nodeType)
-
-
+			// await MarasitUniversalBusNode.helper.setProfileEntries(nodeType.prototype)
 
 			// delete MarasitUniversalBusNode.beforeRegisterNodeDef;
 		}
