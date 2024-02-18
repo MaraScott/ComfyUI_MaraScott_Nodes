@@ -45,9 +45,9 @@ class PipeNodeBasic:
             _input = kwargs.get(name, pipe_value)
             outputs[name] = _CONF.determine_output_value(name, _input, pipe_value)
 
-        _CONF.ensure_required_parameters(outputs)
+        # _CONF.ensure_required_parameters(outputs)
         _CONF.handle_special_parameters(outputs)
 
         # Prepare and return the output bus tuple with updated values
-        out_bus = tuple(outputs[name] for name in ProfileNodePipeBasic.INPUT_NAMES)
-        return (out_bus,) + out_bus
+        out_pipe = tuple(outputs[name] for name in ProfileNodePipeBasic.INPUT_NAMES)
+        return (out_pipe,) + out_pipe
