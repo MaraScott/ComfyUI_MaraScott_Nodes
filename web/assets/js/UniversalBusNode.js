@@ -82,6 +82,15 @@ class MarasitUniversalBusNodeHelper {
 		}
 
 	}
+	async setDefaultProfileEntries(node) {
+		// display initial inputs/outputs
+		const entries = await MarasitUniversalBusNode.helper.getProfileEntries(node)
+		for (const name in entries) {
+			node.addInput(name, entries[name])
+			node.addOutput(name, entries[name])
+		}
+
+	}
 
 	setProfileWidget(node) {
 
@@ -497,7 +506,7 @@ const MarasitUniversalBusNode = {
 			MarasitUniversalBusNode.helper.onNodeCreated(nodeType)
 			MarasitUniversalBusNode.helper.getExtraMenuOptions(nodeType)
 			MarasitUniversalBusNode.helper.onConnectionsChange(nodeType)
-			// await MarasitUniversalBusNode.helper.setProfileEntries(nodeType.prototype)
+			// await MarasitUniversalBusNode.helper.setDefaultProfileEntries(this)
 
 			// delete MarasitUniversalBusNode.beforeRegisterNodeDef;
 		}

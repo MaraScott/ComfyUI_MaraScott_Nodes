@@ -25,18 +25,6 @@ import torch
 class UniversalBusNode:
 
     @classmethod
-    # def INPUT_TYPES(cls):
-    #     return {
-    #         "hidden": {"id":"UNIQUE_ID"},
-    #         "required":{},
-    #         "optional": {
-    #             "bus": ("BUS",),
-    #             **ProfileNodeDefault.ENTRIES,
-    #         }
-    #     }
-
-    # RETURN_TYPES = ("BUS", ) + ProfileNodeDefault.INPUT_TYPES
-    # RETURN_NAMES = ("bus",) + ProfileNodeDefault.INPUT_NAMES
     def INPUT_TYPES(cls):
         return {
             "hidden": {"id":"UNIQUE_ID"},

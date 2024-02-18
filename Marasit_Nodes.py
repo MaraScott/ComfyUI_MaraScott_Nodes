@@ -14,6 +14,7 @@ from .py.inc.profiles.pipe_basic import Node as pipe_basic
 from .py.inc.profiles.pipe_detailer import Node as pipe_Detailer
 from .py.nodes.BusNode import BusNode
 from .py.nodes.PipeNodeBasic import PipeNodeBasic
+from .py.nodes.BusPipeNode import BusPipeNode
 
 import os
 import json
@@ -26,15 +27,17 @@ WEB_DIRECTORY = "./web/assets/js"
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
     "MarasitBusNode": BusNode,
+    "MarasitBusPipeNode": BusPipeNode,
     "MarasitPipeNodeBasic": PipeNodeBasic,
-    "MarasitUniversalBusNode": UniversalBusNode
+    # "MarasitUniversalBusNode": UniversalBusNode
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
     "MarasitBusNode": "Bus Node - Simple",
-    "MarasitPipeNodeBasic": "Pipe Node - Basic",
-    "MarasitUniversalBusNode": "Universal Bus Node"
+    "MarasitBusPipeNode": "Bus/Pipe Node",
+    "MarasitPipeNodeBasic": "BasicPipe Node",
+    # "MarasitUniversalBusNode": "Universal Bus Node"
 }
 
 if hasattr(PromptServer, "instance"):
