@@ -49,9 +49,9 @@ if not os.path.exists(profiles_dir):
     os.makedirs(profiles_dir)
 __PROFILES_DIR__ = profiles_dir
 
-from .Marasit_Nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS #, WEB_DIRECTORY
+from .Marasit_Nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, WEB_DIRECTORY
 
-__all__ = [ 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS' ]
+__all__ = [ 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY' ]
 
 MANIFEST = {
     "name": "MarasIT Nodes",
