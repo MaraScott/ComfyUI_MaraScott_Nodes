@@ -13,9 +13,9 @@
 ###
 
 from ..inc.nodes import Configuration as _CONF
-from ..inc.profiles.default import Node as ProfileNodeDefault
+from ..inc.profiles.any import Node as ProfileNodeAny
 
-class BusNode:
+class AnyBusNode:
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -24,25 +24,25 @@ class BusNode:
             "required":{},
             "optional": {
                 "bus": ("BUS",),
-                **ProfileNodeDefault.ENTRIES,
+                **ProfileNodeAny.ENTRIES,
             }
         }
 
-    RETURN_TYPES = ("BUS", ) + ProfileNodeDefault.INPUT_TYPES
-    RETURN_NAMES = ("bus",) + ProfileNodeDefault.INPUT_NAMES
+    RETURN_TYPES = ("BUS", ) + ProfileNodeAny.INPUT_TYPES
+    RETURN_NAMES = ("bus",) + ProfileNodeAny.INPUT_NAMES
     OUTPUT_NODE = _CONF.OUTPUT_NODE
     CATEGORY = _CONF.CATEGORY
-    DESCRIPTION = "A Simple Bus Node"
+    DESCRIPTION = "An \"ANY\" Bus Node"
     FUNCTION = "bus_fn"
     
     def bus_fn(self, **kwargs):
         # Initialize the bus tuple with None values for each parameter
-        bus = kwargs.get('bus', (None,) * len(ProfileNodeDefault.INPUT_NAMES))
-        if len(bus) != len(ProfileNodeDefault.INPUT_NAMES):
+        bus = kwargs.get('bus', (None,) * len(ProfileNodeAny.INPUT_NAMES))
+        if len(bus) != len(ProfileNodeAny.INPUT_NAMES):
             raise ValueError("The 'bus' tuple must have the same number of elements as '_INPUT_NAMES'")
 
         outputs = {}
-        for name, bus_value in zip(ProfileNodeDefault.INPUT_NAMES, bus):
+        for name, bus_value in zip(ProfileNodeAny.INPUT_NAMES, bus):
             _input = kwargs.get(name, bus_value)
             outputs[name] = _CONF.determine_output_value(name, _input, bus_value)
 
@@ -50,5 +50,5 @@ class BusNode:
         _CONF.handle_special_parameters(outputs)
 
         # Prepare and return the output bus tuple with updated values
-        out_bus = tuple(outputs[name] for name in ProfileNodeDefault.INPUT_NAMES)
+        out_bus = tuple(outputs[name] for name in ProfileNodeAny.INPUT_NAMES)
         return (out_bus,) + out_bus

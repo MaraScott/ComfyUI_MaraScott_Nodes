@@ -6,9 +6,7 @@
 from ..nodes import Configuration as _CONF
 
 class Node:
-    
-    _TYPES = _CONF.TYPES
-    
+        
     INPUT_TYPES = (
         "MODEL", 
         "CLIP", 
@@ -16,9 +14,9 @@ class Node:
         "LATENT", 
         "IMAGE", 
         "MASK", 
-        _TYPES['ANY'], 
-        _TYPES['ANY'], 
-        _TYPES['ANY'],
+        _CONF.TYPES['ANY'], 
+        _CONF.TYPES['ANY'], 
+        _CONF.TYPES['ANY'],
         "CONDITIONING", 
         "CONDITIONING", 
         "STRING", 
