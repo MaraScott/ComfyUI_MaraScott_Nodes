@@ -81,7 +81,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 			// console.log('onNodeCreated')
 			MarasitAnyBusNode.LGraph.initNode(this)
-			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, null, null)				
+			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, null, null)
 			// MarasitAnyBusNode.LGraph.setProfileWidget(this)
 
 			return r;
@@ -126,7 +126,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 	syncNodeProfile(node, isChangeConnect, slotType, slot) {
 
-		if(!node.graph || !this.syncProfile) return
+		if (!node.graph || !this.syncProfile) return
 		let profile_nodes = []
 		let profile_nodes_list = []
 		for (let i in node.graph._nodes) {
@@ -138,30 +138,30 @@ class MarasitAnyBusNodeLiteGraph {
 		}
 		const unified_profile_node_inputs = profile_nodes.reduce((acc, node, nodeIndex) => {
 			if (nodeIndex === 0) {
-			  // For the first node, just initialize the accumulator with its inputs
-			  return node.inputs.map(input => ({...input}));
+				// For the first node, just initialize the accumulator with its inputs
+				return node.inputs.map(input => ({ ...input }));
 			} else {
-			  // For subsequent nodes, merge their inputs with the accumulator by index
-			  node.inputs.forEach((input, index) => {
-				// Merge properties from the current node's input into the corresponding input in the accumulator
-				if(slot == index) console.log(
-					isChangeConnect, slotType, "|", 
-					slot, index, "|", 
-					node.inputs[index].type, node.inputs[index].name, "|", 
-					acc[index].type, acc[index].name, "|", 
-					input.type, input.name, "|"
-				)
-				if(!isChangeConnect) {
-					acc[index] = node.inputs[index]
-				} else if(input.type !== "*") {
-					acc[index] = input;
-				}
-			  });
-			  return acc;
+				// For subsequent nodes, merge their inputs with the accumulator by index
+				node.inputs.forEach((input, index) => {
+					// Merge properties from the current node's input into the corresponding input in the accumulator
+					// if (slot == index) console.log(
+					// 	isChangeConnect, slotType, "|",
+					// 	slot, index, "|",
+					// 	node.inputs[index].type, node.inputs[index].name, "|",
+					// 	acc[index].type, acc[index].name, "|",
+					// 	input.type, input.name, "|"
+					// )
+					if (!isChangeConnect) {
+						acc[index] = node.inputs[index]
+					} else if (input.type !== "*") {
+						acc[index] = input;
+					}
+				});
+				return acc;
 			}
-		  }, []);
-		  
-		for ( let i in profile_nodes) {
+		}, []);
+
+		for (let i in profile_nodes) {
 			for (let _slot = 1; _slot < unified_profile_node_inputs.length; _slot++) {
 				profile_nodes[i].inputs[_slot].name = unified_profile_node_inputs[_slot].name.toLowerCase()
 				profile_nodes[i].inputs[_slot].type = unified_profile_node_inputs[_slot].type
@@ -208,6 +208,69 @@ class MarasitAnyBusNodeLiteGraph {
 
 				} else {
 
+					let _backward_node = []
+					let _backward_node_list = []
+					for (let i in this.graph._nodes) {
+						let _node = this.graph._nodes[i]
+						if (_node.type == "MarasitAnyBusNode" && _backward_node_list.indexOf(_node.id) == -1) {
+							_backward_node_list.push(_node.id);
+							if(_node.inputs[slot].link != null) _backward_node.push(_node);
+						}
+					}
+
+					// bus network
+					let _backward_bus_node_link = null
+					let backward_bus_nodes = []
+					let backward_bus_node_connections = {}
+					for(let i in _backward_node_list){
+						backward_bus_nodes.push(this.graph._nodes.find(
+							(otherNode) => otherNode.id == _backward_node_list[i]
+						))
+					}
+					for(let i in backward_bus_nodes){
+						_backward_bus_node_link = backward_bus_nodes[i].inputs[0].link
+						if(_backward_bus_node_link != null) {
+							_backward_bus_node_link = this.graph.links.find(
+								(otherLink) => otherLink?.id == _backward_bus_node_link
+							)
+							backward_bus_node_connections[backward_bus_nodes[i].id] = _backward_bus_node_link.origin_id
+						}
+					}
+
+					let currentNode = this.id
+					const backward_path = [currentNode]; // Initialize the path with the starting node
+					while (backward_bus_node_connections[currentNode] !== undefined) {
+						currentNode = backward_bus_node_connections[currentNode]; // Move to the parent node
+						backward_path.push(currentNode); // Add the parent node to the path
+					}
+					let previousNode = null;
+					let previousInput = null;
+					for(let i = 1; i < backward_path.length; i++) {
+						backward_path[i] = this.graph._nodes.find(
+							(otherNode) => otherNode.id == backward_path[i]
+						)
+						if(backward_path[i].inputs[slot].link != null) {
+							// input
+							previousNode = this.graph.links.find(
+								(otherLink) => otherLink?.id == backward_path[i].inputs[slot].link
+							)
+							previousInput = this.graph._nodes.find(
+								(otherNode) => otherNode.id == previousNode.origin_id
+							)
+							const anyPrefix = "* " + AnyIndexLabel.toString().padStart(2, '0')
+							const origin_name = previousInput.outputs[previousNode.origin_slot].name
+							let newName = origin_name
+							if (origin_name.indexOf(anyPrefix) === -1) {
+								newName = anyPrefix + " - " + origin_name
+							}
+							this.inputs[slot].name = newName
+							this.inputs[slot].type = previousInput.outputs[previousNode.origin_slot].type
+							this.outputs[slot].name = this.inputs[slot].name
+							this.outputs[slot].type = this.inputs[slot].type
+						}
+					}
+
+					// input
 					this.inputs[slot].name = "* " + AnyIndexLabel.toString().padStart(2, '0')
 					this.inputs[slot].type = "*"
 					this.outputs[slot].name = this.inputs[slot].name
@@ -250,7 +313,7 @@ class MarasitAnyBusNodeLiteGraph {
 					const anyPrefix = "* " + AnyIndexLabel.toString().padStart(2, '0')
 					const origin_name = link_info_node.outputs[link_info.origin_slot].name
 					let newName = origin_name
-					if (origin_name.indexOf(anyPrefix) === -1 ) {
+					if (origin_name.indexOf(anyPrefix) === -1) {
 						newName = anyPrefix + " - " + origin_name
 					}
 					this.inputs[slot].name = newName
@@ -259,7 +322,7 @@ class MarasitAnyBusNodeLiteGraph {
 					this.outputs[slot].type = this.inputs[slot].type
 
 					MarasitAnyBusNode.LGraph.syncProfile = true
-					
+
 				}
 
 			}
@@ -269,7 +332,7 @@ class MarasitAnyBusNodeLiteGraph {
 				// this.inputs[slot].name = ":) ("+slot.toString().padStart(2, '0')+")"
 			}
 
-			MarasitAnyBusNode.LGraph.syncNodeProfile(this, isChangeConnect, slotType, slot)				
+			MarasitAnyBusNode.LGraph.syncNodeProfile(this, isChangeConnect, slotType, slot)
 
 			return r;
 		}
@@ -281,7 +344,7 @@ class MarasitAnyBusNodeLiteGraph {
 		nodeType.prototype.onRemoved = function () {
 			console.log('onRemoved')
 			onRemoved?.apply(this, arguments);
-		};		
+		};
 	}
 
 
