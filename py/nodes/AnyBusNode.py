@@ -43,7 +43,7 @@ class AnyBusNode:
 
         outputs = {}
         for name, bus_value in zip(ProfileNodeAny.INPUT_NAMES, bus):
-            _input = kwargs.get(name, bus_value)
+            _input = _CONF.get_kwarg_with_prefix(kwargs, name, bus_value)
             outputs[name] = _CONF.determine_output_value(name, _input, bus_value)
 
         # _CONF.ensure_required_parameters(outputs)
