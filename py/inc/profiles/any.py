@@ -7,31 +7,11 @@ from ..nodes import Configuration as _CONF
 
 class Node:
     
-    INPUT_TYPES = (
-        _CONF.TYPES['ANY'], 
-        _CONF.TYPES['ANY'], 
-        _CONF.TYPES['ANY'],
-        _CONF.TYPES['ANY'],
-        _CONF.TYPES['ANY'],
-        _CONF.TYPES['ANY'],
-        _CONF.TYPES['ANY'],
-        _CONF.TYPES['ANY'],
-        _CONF.TYPES['ANY'],
-        _CONF.TYPES['ANY'],
-    )
+    INPUT_ANY_QTY = 12
 
-    INPUT_NAMES = (
-        "* (01)", 
-        "* (02)", 
-        "* (03)",
-        "* (04)", 
-        "* (05)", 
-        "* (06)",
-        "* (07)", 
-        "* (08)", 
-        "* (09)",
-        "* (10)",
-    )
+    INPUT_NAMES = tuple("* {:02d}".format(i) for i in range(1, INPUT_ANY_QTY + 1))
     
+    INPUT_TYPES = (_CONF.TYPES['ANY'],) * len(INPUT_NAMES)
+
     ENTRIES = _CONF.generate_entries(INPUT_NAMES, INPUT_TYPES)
     ENTRIES_JS = _CONF.generate_entries(INPUT_NAMES, INPUT_TYPES, 'js')    

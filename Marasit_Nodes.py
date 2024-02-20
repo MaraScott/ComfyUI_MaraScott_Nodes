@@ -33,17 +33,17 @@ NODE_CLASS_MAPPINGS = {
     # "MarasitBusNode": BusNode,
     # "MarasitBusPipeNode": BusPipeNode,
     # "MarasitPipeNodeBasic": PipeNodeBasic,
-    "MarasitUniversalBusNode": UniversalBusNode
+    # "MarasitUniversalBusNode": UniversalBusNode
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
     "MarasitBusNode": "Bus Node (OBSOLETE - use the universal bus instead)",
-    "MarasitAnyBusNode": "Bus Node - ANY Only",
+    "MarasitAnyBusNode": "AnyBus Node",
     # "MarasitBusNode": "Bus Node - Simple",
     # "MarasitBusPipeNode": "Bus/Pipe Node",
     # "MarasitPipeNodeBasic": "BasicPipe Node",
-    "MarasitUniversalBusNode": "Universal Bus Node"
+    # "MarasitUniversalBusNode": "Universal Bus Node"
 }
 
 if hasattr(PromptServer, "instance"):
