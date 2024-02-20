@@ -161,6 +161,22 @@ class MarasitAnyBusNodeLiteGraph {
 			}
 		}, []);
 
+		// const forward_bus_node_connections = []
+		// for(let i in profile_nodes){
+		// 	const forward_node_links = profile_nodes[i].outputs[0].links
+		// 	if(forward_node_links && forward_node_links.length > 0) {
+		// 		for (let i in forward_node_links) {
+		// 			forward_node_links[i] = node.graph.links.find(
+		// 				(otherLink) => otherLink?.id == forward_node_links[i]
+		// 			)
+		// 			if(!forward_node_links[i]) delete forward_node_links[i]
+		// 		}
+		// 		forward_bus_node_connections[profile_nodes[i].id] = forward_node_links 
+		// 	}
+		// }
+
+		// console.log(forward_bus_node_connections);
+
 		for (let i in profile_nodes) {
 			for (let _slot = 1; _slot < unified_profile_node_inputs.length; _slot++) {
 				profile_nodes[i].inputs[_slot].name = unified_profile_node_inputs[_slot].name.toLowerCase()
@@ -208,6 +224,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 				} else {
 
+					let previousInputAssigned = false
 					let _backward_node = []
 					let _backward_node_list = []
 					for (let i in this.graph._nodes) {
@@ -267,14 +284,18 @@ class MarasitAnyBusNodeLiteGraph {
 							this.inputs[slot].type = previousInput.outputs[previousNode.origin_slot].type
 							this.outputs[slot].name = this.inputs[slot].name
 							this.outputs[slot].type = this.inputs[slot].type
+							previousInputAssigned = true
+							break;
 						}
 					}
 
 					// input
-					this.inputs[slot].name = "* " + AnyIndexLabel.toString().padStart(2, '0')
-					this.inputs[slot].type = "*"
-					this.outputs[slot].name = this.inputs[slot].name
-					this.outputs[slot].type = this.inputs[slot].type
+					if(!previousInputAssigned) {
+						this.inputs[slot].name = "* " + AnyIndexLabel.toString().padStart(2, '0')
+						this.inputs[slot].type = "*"
+						this.outputs[slot].name = this.inputs[slot].name
+						this.outputs[slot].type = this.inputs[slot].type
+					}
 					MarasitAnyBusNode.LGraph.syncProfile = true
 				}
 
@@ -316,12 +337,14 @@ class MarasitAnyBusNodeLiteGraph {
 					if (origin_name.indexOf(anyPrefix) === -1) {
 						newName = anyPrefix + " - " + origin_name
 					}
-					this.inputs[slot].name = newName
-					this.inputs[slot].type = link_info_node.outputs[link_info.origin_slot].type
-					this.outputs[slot].name = this.inputs[slot].name
-					this.outputs[slot].type = this.inputs[slot].type
+					if(this.inputs[slot].name == anyPrefix && this.inputs[slot].type == "*") {
+						this.inputs[slot].name = newName
+						this.inputs[slot].type = link_info_node.outputs[link_info.origin_slot].type
+						this.outputs[slot].name = this.inputs[slot].name
+						this.outputs[slot].type = this.inputs[slot].type
+						MarasitAnyBusNode.LGraph.syncProfile = true
+					}
 
-					MarasitAnyBusNode.LGraph.syncProfile = true
 
 				}
 
@@ -342,7 +365,7 @@ class MarasitAnyBusNodeLiteGraph {
 	onRemoved(nodeType) {
 		const onRemoved = nodeType.prototype.onRemoved;
 		nodeType.prototype.onRemoved = function () {
-			console.log('onRemoved')
+			// console.log('onRemoved')
 			onRemoved?.apply(this, arguments);
 		};
 	}
