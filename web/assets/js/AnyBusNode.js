@@ -30,6 +30,9 @@ class MarasitAnyBusNodeLiteGraph {
 	BACKWARDSYNC = 3
 	FORWARDSYNC = 4
 
+	DEFAULT_PROFILE = 'undefined'
+	PROFILE_NAME = 'Profile'
+
 	constructor() {
 
 		this.syncProfile = this.NOSYNC
@@ -51,20 +54,37 @@ class MarasitAnyBusNodeLiteGraph {
 		node.groupcolor = LGraphCanvas.node_colors.green.groupcolor
 		node.groupcolor = LGraphCanvas.node_colors.green.groupcolor
 		node.size[0] = 150 // width
+		if (!node.properties || !(this.PROFILE_NAME in node.properties)) {
+			node.properties[this.PROFILE_NAME] = node.DEFAULT_PROFILE;
+		}
+		node.title = "AnyBus - " + node.properties.profile
 
 	}
 
+	getWidget(node, name) {
+	}
+	
+	setWidgetValue(node, name, value) {
+		const nodeWidget = node.widgets.find((w) => w.name === name);
+		console.log(node.id, name, value, nodeWidget)
+		nodeWidget.value = value
+		node.setProperty(this.PROFILE_NAME, node.widgets[0].value ?? node.properties.profile)
+		node.title = "AnyBus - " + node.properties.profile;
+		node.setDirtyCanvas(true)
+	}	
 	setProfileWidget(node) {
 
-		const widgetName = "Profile"
+		const widgetName = this.PROFILE_NAME
 		const isProfileWidgetExists = !(node.widgets && node.widgets.length > 0 && node.widgets.every(widget => widget.name !== widgetName))
 		if (!node.widgets || !isProfileWidgetExists) {
 			node.addWidget(
 				"text",
 				widgetName,
 				node.properties.profile ?? '',
-				(s, t, u, v, x) => {
-					// do something
+				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
+					this.setWidgetValue(node, this.PROFILE_NAME, value ?? node.properties.profile)
+					this.syncProfile = this.FULLSYNC;
+					this.syncNodeProfile(node, null,  null, null)
 				},
 				{}
 			)
@@ -90,7 +110,7 @@ class MarasitAnyBusNodeLiteGraph {
 			// console.log('onNodeCreated')
 			MarasitAnyBusNode.LGraph.initNode(this)
 			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, null, null)
-			// MarasitAnyBusNode.LGraph.setProfileWidget(this)
+			MarasitAnyBusNode.LGraph.setProfileWidget(this)
 
 			return r;
 		}
@@ -210,10 +230,9 @@ class MarasitAnyBusNodeLiteGraph {
 			}
 		}
 		const lastBuseNodeIds = this.getFlowsLastBuses(nodes_paths)
-		console.log(lastBuseNodeIds)
-		let profile = 'default'
 		for (let i in lastBuseNodeIds) {
-			bus_flows[profile] = node.graph.getNodeById(lastBuseNodeIds[i])
+			let _node = node.graph.getNodeById(lastBuseNodeIds[i])
+			bus_flows[lastBuseNodeIds[i]] = this.setBusFlows(_node)
 		}
 
 		return bus_flows
@@ -263,18 +282,22 @@ class MarasitAnyBusNodeLiteGraph {
 
 	syncNodeProfile(node, isChangeConnect, slotType, slot) {
 
-		if (!node.graph || this.syncProfile == this.NOSYNC) return
+		let _this = {...this}
+		if (!node.graph || _this.syncProfile == this.NOSYNC) return
 		// let profile = node.properties.profile
-		let profile = 'default'
-		const budsNodes = this.getBusFlows(node)
+		const profile = node.properties.profile
+		let busNodes = []
+		const busNodePaths = this.getBusFlows(node)
+		for(let i in busNodePaths) {
+			if(busNodePaths[i].indexOf(node.id) > -1) busNodes = busNodePaths[i] 
+		}
 
-		console.log(budsNodes, node.id)
-		if(this.syncProfile == this.BACKWARDSYNC) {
+		if(_this.syncProfile == this.BACKWARDSYNC) {
+			
+			busNodes?.reverse()
 
-			budsNodes[profile].reverse()
 
-
-			// const unified_profile_node_inputs = budsNodes[profile].reduce((acc, node, nodeIndex) => {
+			// const unified_profile_node_inputs = busNodes[profile].reduce((acc, node, nodeIndex) => {
 			// 	if (nodeIndex === 0) {
 			// 		// For the first node, just initialize the accumulator with its inputs
 			// 		return node.inputs.map(input => ({ ...input }));
@@ -301,12 +324,22 @@ class MarasitAnyBusNodeLiteGraph {
 	
 		}
 
-		if(this.syncProfile == this.FORWARDSYNC) {
-			budsNodes[profile].reverse()
+		if(_this.syncProfile == this.FORWARDSYNC) {
+			busNodes?.reverse()
+			console.log(profile,_this.syncProfile, busNodes)
+
 		}
 
-		if(this.syncProfile == this.FULLSYNC) {
-			budsNodes[profile].reverse()
+		if(_this.syncProfile == this.FULLSYNC) {
+			console.log(profile, _this.syncProfile, busNodes)
+			busNodes?.reverse()
+			for(let i in busNodes) {
+				let _node = node.graph.getNodeById(busNodes[i])
+				console.log(profile, _node.id, _node.properties.profile)
+				this.setWidgetValue(_node, this.PROFILE_NAME, profile)
+			}
+	
+	
 		}
 
 		// console.log(forward_bus_node_connections);
