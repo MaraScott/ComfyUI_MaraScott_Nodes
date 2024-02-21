@@ -25,9 +25,17 @@ if (!window.marasit) {
 
 class MarasitAnyBusNodeLiteGraph {
 
+	NOSYNC = 0
+	FULLSYNC = 1
+	BACKWARDSYNC = 3
+	FORWARDSYNC = 4
+
 	constructor() {
 
-		this.syncProfile = false
+		this.syncProfile = this.NOSYNC
+		this.firstAnyIndex = 1;
+		this.AnyIndexLabel = 0
+
 		return this
 
 	}
@@ -124,68 +132,237 @@ class MarasitAnyBusNodeLiteGraph {
 		}
 	}
 
-	syncNodeProfile(node, isChangeConnect, slotType, slot) {
+	setBusFlows(node) {
 
-		if (!node.graph || !this.syncProfile) return
-		let profile_nodes = []
-		let profile_nodes_list = []
+		let _backward_node = []
+		let _backward_node_list = []
 		for (let i in node.graph._nodes) {
 			let _node = node.graph._nodes[i]
-			if (_node.type == "MarasitAnyBusNode" && profile_nodes_list.indexOf(_node.id) == -1) {
-				profile_nodes_list.push(_node.id);
-				profile_nodes.push(_node);
+			if (_node.type == "MarasitAnyBusNode" && _backward_node_list.indexOf(_node.id) == -1) {
+				_backward_node_list.push(_node.id);
+				if (_node.inputs[0].link != null) _backward_node.push(_node);
 			}
 		}
-		const unified_profile_node_inputs = profile_nodes.reduce((acc, node, nodeIndex) => {
-			if (nodeIndex === 0) {
-				// For the first node, just initialize the accumulator with its inputs
-				return node.inputs.map(input => ({ ...input }));
-			} else {
-				// For subsequent nodes, merge their inputs with the accumulator by index
-				node.inputs.forEach((input, index) => {
-					// Merge properties from the current node's input into the corresponding input in the accumulator
-					// if (slot == index) console.log(
-					// 	isChangeConnect, slotType, "|",
-					// 	slot, index, "|",
-					// 	node.inputs[index].type, node.inputs[index].name, "|",
-					// 	acc[index].type, acc[index].name, "|",
-					// 	input.type, input.name, "|"
-					// )
-					if (!isChangeConnect) {
-						acc[index] = node.inputs[index]
-					} else if (input.type !== "*") {
-						acc[index] = input;
-					}
-				});
-				return acc;
-			}
-		}, []);
 
-		// const forward_bus_node_connections = []
-		// for(let i in profile_nodes){
-		// 	const forward_node_links = profile_nodes[i].outputs[0].links
-		// 	if(forward_node_links && forward_node_links.length > 0) {
-		// 		for (let i in forward_node_links) {
-		// 			forward_node_links[i] = node.graph.links.find(
-		// 				(otherLink) => otherLink?.id == forward_node_links[i]
-		// 			)
-		// 			if(!forward_node_links[i]) delete forward_node_links[i]
-		// 		}
-		// 		forward_bus_node_connections[profile_nodes[i].id] = forward_node_links 
-		// 	}
-		// }
+		// bus network
+		let _backward_bus_node_link = null
+		let backward_bus_nodes = []
+		let backward_bus_node_connections = {}
+		for (let i in _backward_node_list) {
+			backward_bus_nodes.push(node.graph._nodes.find(
+				(otherNode) => otherNode.id == _backward_node_list[i]
+			))
+		}
+		for (let i in backward_bus_nodes) {
+			_backward_bus_node_link = backward_bus_nodes[i].inputs[0].link
+			if (_backward_bus_node_link != null) {
+				_backward_bus_node_link = node.graph.links.find(
+					(otherLink) => otherLink?.id == _backward_bus_node_link
+				)
+				backward_bus_node_connections[backward_bus_nodes[i].id] = _backward_bus_node_link.origin_id
+			}
+		}
+
+		let currentNode = node.id
+		const backward_path = [currentNode]; // Initialize the path with the starting node
+		while (backward_bus_node_connections[currentNode] !== undefined) {
+			currentNode = backward_bus_node_connections[currentNode]; // Move to the parent node
+			backward_path.push(currentNode); // Add the parent node to the path
+		}
+
+		return backward_path;
+
+	}
+
+	getFlowsLastBuses(nodes) {
+		// Find all parent nodes
+		let parents = Object.values(nodes);
+		const leafs = Object.keys(nodes);
+		let leafSet = new Set(leafs);
+
+		let lastLeaves = leafs.filter(leaf => {
+			// Check if the leaf is not a parent to any other node
+			return !parents.includes(parseInt(leaf));
+		});
+		
+		return lastLeaves;
+	}	
+
+	getBusFlows(node) {
+
+		let bus_flows = {}
+		let nodes_list = []
+		let nodes_paths = {}
+		for (let i in node.graph._nodes) {
+			let _node = node.graph._nodes[i]
+			let _previous_node = null
+			if (_node.type == "MarasitAnyBusNode" && nodes_list.indexOf(_node.id) == -1) {
+				nodes_list.push(_node.id);
+				let _previousNode_id = null;
+				if (_node.inputs[0].link != null) {
+					const _previousNode_link = node.graph.links.find(
+						(otherLink) => otherLink?.id == _node.inputs[0].link
+					)		
+					_previousNode_id = _previousNode_link.origin_id
+				}
+
+				nodes_paths[_node.id] = _previousNode_id
+			}
+		}
+		const lastBuseNodeIds = this.getFlowsLastBuses(nodes_paths)
+		console.log(lastBuseNodeIds)
+		let profile = 'default'
+		for (let i in lastBuseNodeIds) {
+			bus_flows[profile] = node.graph.getNodeById(lastBuseNodeIds[i])
+		}
+
+		return bus_flows
+	}
+
+	getInputBusFlow(node, slot) {
+
+		let _backward_node = []
+		let _backward_node_list = []
+		for (let i in node.graph._nodes) {
+			let _node = node.graph._nodes[i]
+			if (_node.type == "MarasitAnyBusNode" && _backward_node_list.indexOf(_node.id) == -1) {
+				_backward_node_list.push(_node.id);
+				if (_node.inputs[slot].link != null) _backward_node.push(_node);
+			}
+		}
+
+		// bus network
+		let _backward_bus_node_link = null
+		let backward_bus_nodes = []
+		let backward_bus_node_connections = {}
+		for (let i in _backward_node_list) {
+			backward_bus_nodes.push(node.graph._nodes.find(
+				(otherNode) => otherNode.id == _backward_node_list[i]
+			))
+		}
+		for (let i in backward_bus_nodes) {
+			_backward_bus_node_link = backward_bus_nodes[i].inputs[0].link
+			if (_backward_bus_node_link != null) {
+				_backward_bus_node_link = node.graph.links.find(
+					(otherLink) => otherLink?.id == _backward_bus_node_link
+				)
+				backward_bus_node_connections[backward_bus_nodes[i].id] = _backward_bus_node_link.origin_id
+			}
+		}
+
+		let currentNode = node.id
+		const backward_path = [currentNode]; // Initialize the path with the starting node
+		while (backward_bus_node_connections[currentNode] !== undefined) {
+			currentNode = backward_bus_node_connections[currentNode]; // Move to the parent node
+			backward_path.push(currentNode); // Add the parent node to the path
+		}
+
+		return backward_path;
+
+	}
+
+	syncNodeProfile(node, isChangeConnect, slotType, slot) {
+
+		if (!node.graph || this.syncProfile == this.NOSYNC) return
+		// let profile = node.properties.profile
+		let profile = 'default'
+		const budsNodes = this.getBusFlows(node)
+
+		console.log(budsNodes, node.id)
+		if(this.syncProfile == this.BACKWARDSYNC) {
+
+			budsNodes[profile].reverse()
+
+
+			// const unified_profile_node_inputs = budsNodes[profile].reduce((acc, node, nodeIndex) => {
+			// 	if (nodeIndex === 0) {
+			// 		// For the first node, just initialize the accumulator with its inputs
+			// 		return node.inputs.map(input => ({ ...input }));
+			// 	} else {
+			// 		// For subsequent nodes, merge their inputs with the accumulator by index
+			// 		node.inputs.forEach((input, index) => {
+			// 			// Merge properties from the current node's input into the corresponding input in the accumulator
+			// 			// if (slot == index) console.log(
+			// 			// 	isChangeConnect, slotType, "|",
+			// 			// 	slot, index, "|",
+			// 			// 	node.inputs[index].type, node.inputs[index].name, "|",
+			// 			// 	acc[index].type, acc[index].name, "|",
+			// 			// 	input.type, input.name, "|"
+			// 			// )
+			// 			if (!isChangeConnect) {
+			// 				acc[index] = node.inputs[index]
+			// 			} else if (input.type !== "*") {
+			// 				acc[index] = input;
+			// 			}
+			// 		});
+			// 		return acc;
+			// 	}
+			// }, []);
+	
+		}
+
+		if(this.syncProfile == this.FORWARDSYNC) {
+			budsNodes[profile].reverse()
+		}
+
+		if(this.syncProfile == this.FULLSYNC) {
+			budsNodes[profile].reverse()
+		}
 
 		// console.log(forward_bus_node_connections);
 
-		for (let i in profile_nodes) {
-			for (let _slot = 1; _slot < unified_profile_node_inputs.length; _slot++) {
-				profile_nodes[i].inputs[_slot].name = unified_profile_node_inputs[_slot].name.toLowerCase()
-				profile_nodes[i].inputs[_slot].type = unified_profile_node_inputs[_slot].type
-				profile_nodes[i].outputs[_slot].name = profile_nodes[i].inputs[_slot].name
-				profile_nodes[i].outputs[_slot].type = profile_nodes[i].inputs[_slot].type
+		// for (let i in profile_nodes) {
+		// 	for (let _slot = 1; _slot < unified_profile_node_inputs.length; _slot++) {
+		// 		profile_nodes[i].inputs[_slot].name = unified_profile_node_inputs[_slot].name.toLowerCase()
+		// 		profile_nodes[i].inputs[_slot].type = unified_profile_node_inputs[_slot].type
+		// 		profile_nodes[i].outputs[_slot].name = profile_nodes[i].inputs[_slot].name
+		// 		profile_nodes[i].outputs[_slot].type = profile_nodes[i].inputs[_slot].type
+		// 	}
+		// }
+		this.syncProfile = this.NOSYNC
+	}
+
+	assignBackwardInputValue(node, slot) {
+
+		const backward_path = this.getInputBusFlow(node, slot)
+
+		let previousLink = null;
+		let previousNode = null;
+		let previousConnectedNode = null;
+		for (let i = 1; i < backward_path.length; i++) {
+			backward_path[i] = node.graph._nodes.find(
+				(otherNode) => otherNode.id == backward_path[i]
+			)
+			if (backward_path[i].inputs[slot].link != null) {
+				// input
+				previousLink = node.graph.links.find(
+					(otherLink) => otherLink?.id == backward_path[i].inputs[slot].link
+				)
+				previousConnectedNode = node.graph._nodes.find(
+					(otherNode) => otherNode.id == previousLink.id
+				)
+				if(previousConnectedNode == undefined) continue
+
+				previousNode = node.graph._nodes.find(
+					(otherNode) => otherNode.id == previousLink.origin_id
+				)
+
+				const anyPrefix = "* " + slot.toString().padStart(2, '0')
+				const origin_name = previousNode.outputs[previousLink.origin_slot].name
+				let newName = origin_name
+				if (origin_name.indexOf(anyPrefix) === -1) {
+					newName = anyPrefix + " - " + origin_name
+				}
+				console.log(node.id, slot, previousConnectedNode.id, slot, previousNode.id, previousLink.origin_slot)
+				previousConnectedNode.inputs[slot].name = newName
+				previousConnectedNode.inputs[slot].type = previousNode.outputs[previousLink.origin_slot].type
+				previousConnectedNode.outputs[slot].name = previousConnectedNode.inputs[slot].name
+				previousConnectedNode.outputs[slot].type = previousConnectedNode.inputs[slot].type
+				return true
+				break;
 			}
 		}
-		this.syncProfile = false
+		return false
 	}
 
 	onConnectionsChange(nodeType) {
@@ -200,20 +377,19 @@ class MarasitAnyBusNodeLiteGraph {
 		) {
 			const r = onConnectionsChange ? onConnectionsChange.apply(this, arguments) : undefined
 
-			MarasitAnyBusNode.LGraph.syncProfile = false
-			const busIndex = 0;
-			const firstAnyIndex = 1;
-			const AnyIndexLabel = slot + 1 - firstAnyIndex
+			MarasitAnyBusNode.LGraph.syncProfile = this.NOSYNC
+			MarasitAnyBusNode.LGraph.firstAnyIndex = 1;
+			MarasitAnyBusNode.LGraph.AnyIndexLabel = slot + 1 - MarasitAnyBusNode.LGraph.firstAnyIndex
 			//On Disconnect
 			if (!isChangeConnect && slotType == 1 && typeof link_info != 'undefined') {
 
-				if (slot < firstAnyIndex) {
+				if (slot < MarasitAnyBusNode.LGraph.firstAnyIndex) {
 					// bus
 					if (slot == 0 && this.inputs) {
-						for (let _slot = firstAnyIndex; _slot < this.inputs.length; _slot++) {
+						for (let _slot = MarasitAnyBusNode.LGraph.firstAnyIndex; _slot < this.inputs.length; _slot++) {
 							if (this.inputs[_slot].link == null) {
 
-								this.inputs[_slot].name = "* " + (_slot + 1 - firstAnyIndex).toString().padStart(2, '0')
+								this.inputs[_slot].name = "* " + (_slot + 1 - MarasitAnyBusNode.LGraph.firstAnyIndex).toString().padStart(2, '0')
 								this.inputs[_slot].type = "*"
 								this.outputs[_slot].name = this.inputs[_slot].name
 								this.outputs[_slot].type = this.inputs[_slot].type
@@ -224,79 +400,16 @@ class MarasitAnyBusNodeLiteGraph {
 
 				} else {
 
-					let previousInputAssigned = false
-					let _backward_node = []
-					let _backward_node_list = []
-					for (let i in this.graph._nodes) {
-						let _node = this.graph._nodes[i]
-						if (_node.type == "MarasitAnyBusNode" && _backward_node_list.indexOf(_node.id) == -1) {
-							_backward_node_list.push(_node.id);
-							if(_node.inputs[slot].link != null) _backward_node.push(_node);
-						}
-					}
-
-					// bus network
-					let _backward_bus_node_link = null
-					let backward_bus_nodes = []
-					let backward_bus_node_connections = {}
-					for(let i in _backward_node_list){
-						backward_bus_nodes.push(this.graph._nodes.find(
-							(otherNode) => otherNode.id == _backward_node_list[i]
-						))
-					}
-					for(let i in backward_bus_nodes){
-						_backward_bus_node_link = backward_bus_nodes[i].inputs[0].link
-						if(_backward_bus_node_link != null) {
-							_backward_bus_node_link = this.graph.links.find(
-								(otherLink) => otherLink?.id == _backward_bus_node_link
-							)
-							backward_bus_node_connections[backward_bus_nodes[i].id] = _backward_bus_node_link.origin_id
-						}
-					}
-
-					let currentNode = this.id
-					const backward_path = [currentNode]; // Initialize the path with the starting node
-					while (backward_bus_node_connections[currentNode] !== undefined) {
-						currentNode = backward_bus_node_connections[currentNode]; // Move to the parent node
-						backward_path.push(currentNode); // Add the parent node to the path
-					}
-					let previousNode = null;
-					let previousInput = null;
-					for(let i = 1; i < backward_path.length; i++) {
-						backward_path[i] = this.graph._nodes.find(
-							(otherNode) => otherNode.id == backward_path[i]
-						)
-						if(backward_path[i].inputs[slot].link != null) {
-							// input
-							previousNode = this.graph.links.find(
-								(otherLink) => otherLink?.id == backward_path[i].inputs[slot].link
-							)
-							previousInput = this.graph._nodes.find(
-								(otherNode) => otherNode.id == previousNode.origin_id
-							)
-							const anyPrefix = "* " + AnyIndexLabel.toString().padStart(2, '0')
-							const origin_name = previousInput.outputs[previousNode.origin_slot].name
-							let newName = origin_name
-							if (origin_name.indexOf(anyPrefix) === -1) {
-								newName = anyPrefix + " - " + origin_name
-							}
-							this.inputs[slot].name = newName
-							this.inputs[slot].type = previousInput.outputs[previousNode.origin_slot].type
-							this.outputs[slot].name = this.inputs[slot].name
-							this.outputs[slot].type = this.inputs[slot].type
-							previousInputAssigned = true
-							break;
-						}
-					}
+					const previousInputAssigned = MarasitAnyBusNode.LGraph.assignBackwardInputValue(this, slot)
 
 					// input
-					if(!previousInputAssigned) {
-						this.inputs[slot].name = "* " + AnyIndexLabel.toString().padStart(2, '0')
+					if (!previousInputAssigned) {
+						this.inputs[slot].name = "* " + MarasitAnyBusNode.LGraph.AnyIndexLabel.toString().padStart(2, '0')
 						this.inputs[slot].type = "*"
 						this.outputs[slot].name = this.inputs[slot].name
 						this.outputs[slot].type = this.inputs[slot].type
 					}
-					MarasitAnyBusNode.LGraph.syncProfile = true
+					MarasitAnyBusNode.LGraph.syncProfile = this.FULLSYNC
 				}
 
 			}
@@ -311,10 +424,11 @@ class MarasitAnyBusNodeLiteGraph {
 					(otherNode) => otherNode.id == link_info.origin_id
 				)
 
-				if (slot < firstAnyIndex) {
+				if (slot < MarasitAnyBusNode.LGraph.firstAnyIndex) {
 					// bus
 					if (slot == 0 && link_info_node.outputs && link_info_node.type == "MarasitAnyBusNode") {
-						for (let _slot = firstAnyIndex; _slot < link_info_node.outputs.length; _slot++) {
+						for (let _slot = MarasitAnyBusNode.LGraph.firstAnyIndex; _slot < link_info_node.outputs.length; _slot++) {
+							const previousInputAssigned = MarasitAnyBusNode.LGraph.assignBackwardInputValue(this, _slot)
 							if (link_info_node.outputs[_slot].type != this.inputs[_slot].type) {
 								this.disconnectInput(_slot)
 								this.disconnectOutput(_slot)
@@ -323,26 +437,36 @@ class MarasitAnyBusNodeLiteGraph {
 							this.inputs[_slot].type = link_info_node.outputs[_slot].type
 							this.outputs[_slot].name = this.inputs[_slot].name
 							this.outputs[_slot].type = this.inputs[_slot].type
-
 						}
+						MarasitAnyBusNode.LGraph.syncProfile = this.FULLSYNC
 					} else {
 						this.disconnectInput(slot)
 					}
 
 				} else {
 
-					const anyPrefix = "* " + AnyIndexLabel.toString().padStart(2, '0')
+					const anyPrefix = "* " + MarasitAnyBusNode.LGraph.AnyIndexLabel.toString().padStart(2, '0')
 					const origin_name = link_info_node.outputs[link_info.origin_slot].name
 					let newName = origin_name
 					if (origin_name.indexOf(anyPrefix) === -1) {
 						newName = anyPrefix + " - " + origin_name
 					}
-					if(this.inputs[slot].name == anyPrefix && this.inputs[slot].type == "*") {
+					if (this.inputs[slot].name == anyPrefix && this.inputs[slot].type == "*") {
 						this.inputs[slot].name = newName
 						this.inputs[slot].type = link_info_node.outputs[link_info.origin_slot].type
 						this.outputs[slot].name = this.inputs[slot].name
 						this.outputs[slot].type = this.inputs[slot].type
-						MarasitAnyBusNode.LGraph.syncProfile = true
+
+						let sync = this.NOSYNC
+						console.log(this.outputs[slot])
+						if (this.inputs[slot].link != null && this.outputs[slot]?.links?.length > 0) {
+							sync = this.FULLSYNC
+						} else if (this.inputs[slot].link != null){
+							sync = this.BACKWARDSYNC
+						} else if (this.outputs[slot].link != null) {
+							sync = this.FORWARDSYNC
+						}
+						MarasitAnyBusNode.LGraph.syncProfile = sync
 					}
 
 
