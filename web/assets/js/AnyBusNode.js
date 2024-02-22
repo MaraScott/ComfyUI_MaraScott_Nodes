@@ -57,7 +57,7 @@ class MarasitAnyBusNodeLiteGraph {
 		if (!node.properties || !(this.PROFILE_NAME in node.properties)) {
 			node.properties[this.PROFILE_NAME] = node.DEFAULT_PROFILE;
 		}
-		node.title = "AnyBus - " + node.properties.profile
+		node.title = "AnyBus - " + node.properties[this.PROFILE_NAME]
 
 	}
 
@@ -66,10 +66,9 @@ class MarasitAnyBusNodeLiteGraph {
 	
 	setWidgetValue(node, name, value) {
 		const nodeWidget = node.widgets.find((w) => w.name === name);
-		console.log(node.id, name, value, nodeWidget)
 		nodeWidget.value = value
-		node.setProperty(this.PROFILE_NAME, node.widgets[0].value ?? node.properties.profile)
-		node.title = "AnyBus - " + node.properties.profile;
+		node.setProperty(this.PROFILE_NAME, nodeWidget.value ?? node.properties[this.PROFILE_NAME])
+		node.title = "AnyBus - " + node.properties[this.PROFILE_NAME];
 		node.setDirtyCanvas(true)
 	}	
 	setProfileWidget(node) {
@@ -80,9 +79,9 @@ class MarasitAnyBusNodeLiteGraph {
 			node.addWidget(
 				"text",
 				widgetName,
-				node.properties.profile ?? '',
+				node.properties[this.PROFILE_NAME],
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-					this.setWidgetValue(node, this.PROFILE_NAME, value ?? node.properties.profile)
+					this.setWidgetValue(node, this.PROFILE_NAME, value)
 					this.syncProfile = this.FULLSYNC;
 					this.syncNodeProfile(node, null,  null, null)
 				},
@@ -284,8 +283,8 @@ class MarasitAnyBusNodeLiteGraph {
 
 		let _this = {...this}
 		if (!node.graph || _this.syncProfile == this.NOSYNC) return
-		// let profile = node.properties.profile
-		const profile = node.properties.profile
+		// let profile = node.properties[this.PROFILE_NAME]
+		const profile = node.properties[this.PROFILE_NAME]
 		let busNodes = []
 		const busNodePaths = this.getBusFlows(node)
 		for(let i in busNodePaths) {
@@ -331,12 +330,12 @@ class MarasitAnyBusNodeLiteGraph {
 		}
 
 		if(_this.syncProfile == this.FULLSYNC) {
-			console.log(profile, _this.syncProfile, busNodes)
 			busNodes?.reverse()
 			for(let i in busNodes) {
-				let _node = node.graph.getNodeById(busNodes[i])
-				console.log(profile, _node.id, _node.properties.profile)
-				this.setWidgetValue(_node, this.PROFILE_NAME, profile)
+				if(busNodes[i] !== node.id) {
+					let _node = node.graph.getNodeById(busNodes[i])
+					this.setWidgetValue(_node, this.PROFILE_NAME, node.properties[this.PROFILE_NAME])					
+				}
 			}
 	
 	
@@ -491,7 +490,6 @@ class MarasitAnyBusNodeLiteGraph {
 						this.outputs[slot].type = this.inputs[slot].type
 
 						let sync = this.NOSYNC
-						console.log(this.outputs[slot])
 						if (this.inputs[slot].link != null && this.outputs[slot]?.links?.length > 0) {
 							sync = this.FULLSYNC
 						} else if (this.inputs[slot].link != null){
