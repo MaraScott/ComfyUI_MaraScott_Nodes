@@ -33,10 +33,13 @@ class MarasitAnyBusNodeLiteGraph {
 	DEFAULT_PROFILE = 'undefined'
 	PROFILE_NAME = 'Profile'
 
+	FIRST_ANY_INDEX = 1
+
 	constructor() {
 
 		this.syncProfile = this.NOSYNC
-		this.firstAnyIndex = 1;
+		this.busNodeForSync = null
+		this.firstAnyIndex = this.FIRST_ANY_INDEX;
 		this.AnyIndexLabel = 0
 
 		return this
@@ -61,16 +64,40 @@ class MarasitAnyBusNodeLiteGraph {
 
 	}
 
-	getWidget(node, name) {
+	getNodeWidgetByName(node, name) {
+		return node.widgets.find((w) => w.name === name);
+	}
+	
+	setInputValue(node) {
+
+		for (let slot = this.FIRST_ANY_INDEX; slot < MarasitAnyBusNode.LGraph.busNodeForSync.inputs.length; slot++) {
+			const isNodeInputDifferent = node.inputs[slot].type != "*" && node.inputs[slot].type != MarasitAnyBusNode.LGraph.busNodeForSync.inputs[slot].type
+			if(isNodeInputDifferent) {
+				const preSyncMode = MarasitAnyBusNode.LGraph.syncProfile;
+				MarasitAnyBusNode.LGraph.syncProfile = this.NOSYNC;
+				node.disconnectInput(slot)
+				node.disconnectOutput(slot)
+				MarasitAnyBusNode.LGraph.syncProfile = this.preSyncMode;
+			} 
+			if (MarasitAnyBusNode.LGraph.busNodeForSync.id != node.id) {
+				console.log(MarasitAnyBusNode.LGraph.busNodeForSync.id, MarasitAnyBusNode.LGraph.busNodeForSync.inputs[slot], node.id, node.inputs[slot])
+				node.inputs[slot].name = MarasitAnyBusNode.LGraph.busNodeForSync.inputs[slot].name.toLowerCase()
+				node.inputs[slot].type = MarasitAnyBusNode.LGraph.busNodeForSync.inputs[slot].type
+				node.outputs[slot].name = node.inputs[slot].name
+				node.outputs[slot].type = node.inputs[slot].type
+			}
+		}
+
 	}
 	
 	setWidgetValue(node, name, value) {
-		const nodeWidget = node.widgets.find((w) => w.name === name);
+		const nodeWidget = this.getNodeWidgetByName(node, name);
 		nodeWidget.value = value
 		node.setProperty(this.PROFILE_NAME, nodeWidget.value ?? node.properties[this.PROFILE_NAME])
 		node.title = "AnyBus - " + node.properties[this.PROFILE_NAME];
 		node.setDirtyCanvas(true)
 	}	
+
 	setProfileWidget(node) {
 
 		const widgetName = this.PROFILE_NAME
@@ -82,8 +109,8 @@ class MarasitAnyBusNodeLiteGraph {
 				node.properties[this.PROFILE_NAME],
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
 					this.setWidgetValue(node, this.PROFILE_NAME, value)
-					this.syncProfile = this.FULLSYNC;
-					this.syncNodeProfile(node, null,  null, null)
+					MarasitAnyBusNode.LGraph.syncProfile = this.FULLSYNC;
+					this.syncNodeProfile(node, true, null)
 				},
 				{}
 			)
@@ -108,7 +135,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 			// console.log('onNodeCreated')
 			MarasitAnyBusNode.LGraph.initNode(this)
-			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, null, null)
+			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, null)
 			MarasitAnyBusNode.LGraph.setProfileWidget(this)
 
 			return r;
@@ -279,79 +306,59 @@ class MarasitAnyBusNodeLiteGraph {
 
 	}
 
-	syncNodeProfile(node, isChangeConnect, slotType, slot) {
+	syncBusNodes(node, busNodes, isChangeWidget, isChangeConnect) {
 
-		let _this = {...this}
-		if (!node.graph || _this.syncProfile == this.NOSYNC) return
+		MarasitAnyBusNode.LGraph.busNodeForSync = {...node};
+
+		for(let i in busNodes) {
+			let _node = node.graph.getNodeById(busNodes[i])
+			if(_node.id !== node.id) {
+				if(isChangeWidget) this.setWidgetValue(_node, this.PROFILE_NAME, node.properties[this.PROFILE_NAME])
+			}
+			console.log(node.id, isChangeConnect)
+			if(isChangeConnect !== null) this.setInputValue(_node)
+		}
+	}
+
+	syncNodeProfile(node, isChangeWidget, isChangeConnect) {
+
+		if (!node.graph || MarasitAnyBusNode.LGraph.syncProfile == MarasitAnyBusNode.LGraph.NOSYNC) return
 		// let profile = node.properties[this.PROFILE_NAME]
-		const profile = node.properties[this.PROFILE_NAME]
+		const profile = node.properties[MarasitAnyBusNode.LGraph.PROFILE_NAME]
 		let busNodes = []
 		const busNodePaths = this.getBusFlows(node)
 		for(let i in busNodePaths) {
 			if(busNodePaths[i].indexOf(node.id) > -1) busNodes = busNodePaths[i] 
 		}
 
-		if(_this.syncProfile == this.BACKWARDSYNC) {
+		let startIndex = null;
+
+		if(MarasitAnyBusNode.LGraph.syncProfile == MarasitAnyBusNode.LGraph.BACKWARDSYNC) {
 			
 			busNodes?.reverse()
+			startIndex = busNodes.indexOf(node.id) + 1;
+			busNodes = busNodes.slice(startIndex)
 
-
-			// const unified_profile_node_inputs = busNodes[profile].reduce((acc, node, nodeIndex) => {
-			// 	if (nodeIndex === 0) {
-			// 		// For the first node, just initialize the accumulator with its inputs
-			// 		return node.inputs.map(input => ({ ...input }));
-			// 	} else {
-			// 		// For subsequent nodes, merge their inputs with the accumulator by index
-			// 		node.inputs.forEach((input, index) => {
-			// 			// Merge properties from the current node's input into the corresponding input in the accumulator
-			// 			// if (slot == index) console.log(
-			// 			// 	isChangeConnect, slotType, "|",
-			// 			// 	slot, index, "|",
-			// 			// 	node.inputs[index].type, node.inputs[index].name, "|",
-			// 			// 	acc[index].type, acc[index].name, "|",
-			// 			// 	input.type, input.name, "|"
-			// 			// )
-			// 			if (!isChangeConnect) {
-			// 				acc[index] = node.inputs[index]
-			// 			} else if (input.type !== "*") {
-			// 				acc[index] = input;
-			// 			}
-			// 		});
-			// 		return acc;
-			// 	}
-			// }, []);
-	
 		}
 
-		if(_this.syncProfile == this.FORWARDSYNC) {
+		if(MarasitAnyBusNode.LGraph.syncProfile == MarasitAnyBusNode.LGraph.FORWARDSYNC) {
+
+			startIndex = busNodes.indexOf(node.id) + 1;
+			busNodes = busNodes.slice(startIndex)
+
+		}
+
+		if(MarasitAnyBusNode.LGraph.syncProfile == MarasitAnyBusNode.LGraph.FULLSYNC) {
+		
 			busNodes?.reverse()
-			console.log(profile,_this.syncProfile, busNodes)
+			
+			startIndex = 0
 
 		}
 
-		if(_this.syncProfile == this.FULLSYNC) {
-			busNodes?.reverse()
-			for(let i in busNodes) {
-				if(busNodes[i] !== node.id) {
-					let _node = node.graph.getNodeById(busNodes[i])
-					this.setWidgetValue(_node, this.PROFILE_NAME, node.properties[this.PROFILE_NAME])					
-				}
-			}
-	
-	
-		}
+		if(startIndex != null) this.syncBusNodes(node, busNodes, isChangeWidget, isChangeConnect)
 
-		// console.log(forward_bus_node_connections);
-
-		// for (let i in profile_nodes) {
-		// 	for (let _slot = 1; _slot < unified_profile_node_inputs.length; _slot++) {
-		// 		profile_nodes[i].inputs[_slot].name = unified_profile_node_inputs[_slot].name.toLowerCase()
-		// 		profile_nodes[i].inputs[_slot].type = unified_profile_node_inputs[_slot].type
-		// 		profile_nodes[i].outputs[_slot].name = profile_nodes[i].inputs[_slot].name
-		// 		profile_nodes[i].outputs[_slot].type = profile_nodes[i].inputs[_slot].type
-		// 	}
-		// }
-		this.syncProfile = this.NOSYNC
+		MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.NOSYNC
 	}
 
 	assignBackwardInputValue(node, slot) {
@@ -380,7 +387,7 @@ class MarasitAnyBusNodeLiteGraph {
 				)
 
 				const anyPrefix = "* " + slot.toString().padStart(2, '0')
-				const origin_name = previousNode.outputs[previousLink.origin_slot].name
+				const origin_name = previousNode.outputs[previousLink.origin_slot].name.toLowerCase()
 				let newName = origin_name
 				if (origin_name.indexOf(anyPrefix) === -1) {
 					newName = anyPrefix + " - " + origin_name
@@ -409,9 +416,9 @@ class MarasitAnyBusNodeLiteGraph {
 		) {
 			const r = onConnectionsChange ? onConnectionsChange.apply(this, arguments) : undefined
 
-			MarasitAnyBusNode.LGraph.syncProfile = this.NOSYNC
-			MarasitAnyBusNode.LGraph.firstAnyIndex = 1;
-			MarasitAnyBusNode.LGraph.AnyIndexLabel = slot + 1 - MarasitAnyBusNode.LGraph.firstAnyIndex
+			MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.NOSYNC
+			MarasitAnyBusNode.LGraph.AnyIndexLabel = slot + 1 - MarasitAnyBusNode.LGraph.FIRST_ANY_INDEX
+
 			//On Disconnect
 			if (!isChangeConnect && slotType == 1 && typeof link_info != 'undefined') {
 
@@ -428,6 +435,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 							}
 						}
+						MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.FORWARDSYNC
 					}
 
 				} else {
@@ -441,7 +449,7 @@ class MarasitAnyBusNodeLiteGraph {
 						this.outputs[slot].name = this.inputs[slot].name
 						this.outputs[slot].type = this.inputs[slot].type
 					}
-					MarasitAnyBusNode.LGraph.syncProfile = this.FULLSYNC
+					MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.FULLSYNC
 				}
 
 			}
@@ -455,10 +463,15 @@ class MarasitAnyBusNodeLiteGraph {
 				const link_info_node = this.graph._nodes.find(
 					(otherNode) => otherNode.id == link_info.origin_id
 				)
-
+				
 				if (slot < MarasitAnyBusNode.LGraph.firstAnyIndex) {
 					// bus
-					if (slot == 0 && link_info_node.outputs && link_info_node.type == "MarasitAnyBusNode") {
+					const isBusInput = slot == 0
+					const isOutputs = link_info_node.outputs?.length > 0
+					const isMarasitBusNode = link_info_node.type == "MarasitAnyBusNode"
+					const isOriginProfileSame = this.properties[MarasitAnyBusNode.LGraph.PROFILE_NAME] == link_info_node.properties[MarasitAnyBusNode.LGraph.PROFILE_NAME]
+					const isTargetProfileDefault = this.properties[MarasitAnyBusNode.LGraph.PROFILE_NAME] == MarasitAnyBusNode.LGraph.DEFAULT_PROFILE
+					if (isBusInput && isOutputs && isMarasitBusNode && (isOriginProfileSame || isTargetProfileDefault)) {
 						for (let _slot = MarasitAnyBusNode.LGraph.firstAnyIndex; _slot < link_info_node.outputs.length; _slot++) {
 							const previousInputAssigned = MarasitAnyBusNode.LGraph.assignBackwardInputValue(this, _slot)
 							if (link_info_node.outputs[_slot].type != this.inputs[_slot].type) {
@@ -470,15 +483,16 @@ class MarasitAnyBusNodeLiteGraph {
 							this.outputs[_slot].name = this.inputs[_slot].name
 							this.outputs[_slot].type = this.inputs[_slot].type
 						}
-						MarasitAnyBusNode.LGraph.syncProfile = this.FULLSYNC
+						MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.FULLSYNC
 					} else {
 						this.disconnectInput(slot)
+						MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, isChangeConnect)
 					}
 
 				} else {
 
 					const anyPrefix = "* " + MarasitAnyBusNode.LGraph.AnyIndexLabel.toString().padStart(2, '0')
-					const origin_name = link_info_node.outputs[link_info.origin_slot].name
+					const origin_name = link_info_node.outputs[link_info.origin_slot].name.toLowerCase()
 					let newName = origin_name
 					if (origin_name.indexOf(anyPrefix) === -1) {
 						newName = anyPrefix + " - " + origin_name
@@ -489,13 +503,13 @@ class MarasitAnyBusNodeLiteGraph {
 						this.outputs[slot].name = this.inputs[slot].name
 						this.outputs[slot].type = this.inputs[slot].type
 
-						let sync = this.NOSYNC
+						let sync = MarasitAnyBusNode.LGraph.NOSYNC
 						if (this.inputs[slot].link != null && this.outputs[slot]?.links?.length > 0) {
-							sync = this.FULLSYNC
+							sync = MarasitAnyBusNode.LGraph.FULLSYNC
 						} else if (this.inputs[slot].link != null){
-							sync = this.BACKWARDSYNC
+							sync = MarasitAnyBusNode.LGraph.BACKWARDSYNC
 						} else if (this.outputs[slot].link != null) {
-							sync = this.FORWARDSYNC
+							sync = MarasitAnyBusNode.LGraph.FORWARDSYNC
 						}
 						MarasitAnyBusNode.LGraph.syncProfile = sync
 					}
@@ -510,7 +524,7 @@ class MarasitAnyBusNodeLiteGraph {
 				// this.inputs[slot].name = ":) ("+slot.toString().padStart(2, '0')+")"
 			}
 
-			MarasitAnyBusNode.LGraph.syncNodeProfile(this, isChangeConnect, slotType, slot)
+			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, isChangeConnect)
 
 			return r;
 		}
