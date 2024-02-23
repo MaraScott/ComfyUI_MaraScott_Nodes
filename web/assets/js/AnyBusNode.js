@@ -578,12 +578,12 @@ class MarasitAnyBusNodeLiteGraph {
 				} else {
 
 					const anyPrefix = "* " + MarasitAnyBusNode.LGraph.AnyIndexLabel.toString().padStart(2, '0')
-					const origin_name = link_info_node.outputs[link_info.origin_slot].name.toLowerCase()
+					const origin_name = link_info_node.outputs[link_info.origin_slot]?.name.toLowerCase()
 					let newName = origin_name
-					if (origin_name.indexOf(anyPrefix) === -1) {
+					if (origin_name && origin_name.indexOf(anyPrefix) === -1) {
 						newName = anyPrefix + " - " + origin_name
 					}
-					if (this.inputs[slot].name == anyPrefix && this.inputs[slot].type == "*") {
+					if (link_info_node.outputs[link_info.origin_slot] && this.inputs[slot].name == anyPrefix && this.inputs[slot].type == "*") {
 												
 						MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.getSyncType(this, slot, link_info_node, link_info.origin_slot)
 
@@ -592,7 +592,7 @@ class MarasitAnyBusNodeLiteGraph {
 						this.outputs[slot].name = this.inputs[slot].name
 						this.outputs[slot].type = this.inputs[slot].type
 
-					} else if (this.inputs[slot].type == link_info_node.outputs[link_info.origin_slot].type && this.inputs[slot].type != newName) {
+					} else if (this.inputs[slot].type == link_info_node.outputs[link_info.origin_slot]?.type && this.inputs[slot].type != newName) {
 
 						MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.getSyncType(this, slot, link_info_node, link_info.origin_slot)
 
