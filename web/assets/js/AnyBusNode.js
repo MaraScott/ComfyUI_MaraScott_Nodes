@@ -33,6 +33,8 @@ class MarasitAnyBusNodeLiteGraph {
 	DEFAULT_PROFILE = 'undefined'
 	PROFILE_NAME = 'Profile'
 	DEFAULT_QTY = 5
+	MIN_QTY = 3
+	MAX_QTY = 15
 	QTY_NAME = "Nb Inputs"
 
 	FIRST_ANY_INDEX = 1
@@ -71,7 +73,6 @@ class MarasitAnyBusNodeLiteGraph {
 	}
 
 	getNodeWidgetByName(node, name) {
-		console.log(name, node.widgets)
 		return node.widgets?.find((w) => w.name === name);
 	}
 	
@@ -115,17 +116,14 @@ class MarasitAnyBusNodeLiteGraph {
 		if(name == this.QTY_NAME) {
 			let qty = 0
 			let _value = value + MarasitAnyBusNode.LGraph.firstAnyIndex
-			console.log(node.id, node.inputs.length, _value)
 			if(node.inputs.length > _value) {
 				qty = node.inputs.length - _value
-				console.log(node.id, node.inputs.length, _value, qty, node.inputs)
 				for (let i = qty; i > 0; i--) {
 					node.removeInput(node.inputs.length-1)
 					node.removeOutput(node.outputs.length-1)
 				}
 			} else if(node.inputs.length < _value) {
 				qty = _value - node.inputs.length
-				console.log(node.id, node.inputs.length, _value, qty)
 				for (let i = 0; i < qty; i++) {
 					const name = "* " + node.inputs.length.toString().padStart(2, '0')
 					const type = "*"
@@ -158,20 +156,24 @@ class MarasitAnyBusNodeLiteGraph {
 		}
 		nodeWidget = this.getNodeWidgetByName(node, this.QTY_NAME);
 		if (nodeWidget == undefined) {
+
+			let values = []
+
+			for (let i = this.MIN_QTY; i <= this.MAX_QTY; i++) {
+				values.push(i);
+			}
+
 			node.addWidget(
-				"slider",
+				"combo",
 				this.QTY_NAME,
 				node.properties[this.QTY_NAME] ?? this.DEFAULT_QTY,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-					this.setWidgetValue(node, this.QTY_NAME, Math.round(value))
+					this.setWidgetValue(node, this.QTY_NAME, value)
 					MarasitAnyBusNode.LGraph.syncProfile = this.FULLSYNC;
 					this.syncNodeProfile(node, this.QTY_NAME, null)
 				},
 				{
-					"min": 3,
-					"max": 15,
-					"step": 1,
-					"precision": 0
+					"values": values
 				}
 			)
 			node.setProperty(this.QTY_NAME, this.DEFAULT_QTY)
@@ -378,7 +380,6 @@ class MarasitAnyBusNodeLiteGraph {
 			)
 			parentNode = node.graph.getNodeById(parentLink.origin_id)
 
-			console.log(parentNode.id, parentNode.inputs[slot].link)
 			if(parentNode.inputs[slot].link == null) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			}
