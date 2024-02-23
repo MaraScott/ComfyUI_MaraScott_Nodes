@@ -43,6 +43,11 @@ class MarasitAnyBusNodeLiteGraph {
 	BASIC_PIPE_SLOT = 0
 	REFINER_PIPE_SLOT = 0
 
+	ALLOWED_NODE_TYPE = [
+		"MarasitAnyBusNode",
+		"Reroute",
+	]
+
 	constructor() {
 
 		this.syncProfile = this.NOSYNC
@@ -248,7 +253,7 @@ class MarasitAnyBusNodeLiteGraph {
 		let _backward_node_list = []
 		for (let i in node.graph._nodes) {
 			let _node = node.graph._nodes[i]
-			if (_node.type == "MarasitAnyBusNode" && _backward_node_list.indexOf(_node.id) == -1) {
+			if (this.ALLOWED_NODE_TYPE.includes(_node.type) && _backward_node_list.indexOf(_node.id) == -1) {
 				_backward_node_list.push(_node.id);
 				if (_node.inputs[0].link != null) _backward_node.push(_node);
 			}
@@ -259,9 +264,7 @@ class MarasitAnyBusNodeLiteGraph {
 		let backward_bus_nodes = []
 		let backward_bus_node_connections = {}
 		for (let i in _backward_node_list) {
-			backward_bus_nodes.push(node.graph._nodes.find(
-				(otherNode) => otherNode.id == _backward_node_list[i]
-			))
+			backward_bus_nodes.push(node.graph.getNodeById(_backward_node_list[i]))
 		}
 		for (let i in backward_bus_nodes) {
 			_backward_bus_node_link = backward_bus_nodes[i].inputs[0].link
@@ -277,7 +280,10 @@ class MarasitAnyBusNodeLiteGraph {
 		const backward_path = [currentNode]; // Initialize the path with the starting node
 		while (backward_bus_node_connections[currentNode] !== undefined) {
 			currentNode = backward_bus_node_connections[currentNode]; // Move to the parent node
-			backward_path.push(currentNode); // Add the parent node to the path
+			const _currentNode = node.graph.getNodeById(currentNode)
+			if(_currentNode.type == "MarasitAnyBusNode") {
+				backward_path.push(currentNode); // Add the parent node to the path
+			}
 		}
 
 		return backward_path;
@@ -306,7 +312,7 @@ class MarasitAnyBusNodeLiteGraph {
 		for (let i in node.graph._nodes) {
 			let _node = node.graph._nodes[i]
 			let _previous_node = null
-			if (_node.type == "MarasitAnyBusNode" && nodes_list.indexOf(_node.id) == -1) {
+			if (this.ALLOWED_NODE_TYPE.includes(_node.type) && nodes_list.indexOf(_node.id) == -1) {
 				nodes_list.push(_node.id);
 				let _previousNode_id = null;
 				if (_node.inputs[0].link != null) {
@@ -367,6 +373,31 @@ class MarasitAnyBusNodeLiteGraph {
 		}
 
 		return backward_path;
+
+	}
+
+	getOriginRerouteBusType(node) {
+		let originNode = null
+		let _originNode = null
+		let isMarasitAnyBusNode = false
+
+		if(node.inputs[0].link != null) {
+
+			const __originLink = node.graph.links.find(
+				(otherLink) => otherLink?.id == node.inputs[0].link
+			)
+			_originNode = node.graph.getNodeById(__originLink.origin_id)
+
+			if (_originNode.type == 'Reroute' && _originNode?.__outputType == 'BUS') {
+				_originNode = node.getOriginRerouteBusType(node)
+			}
+			if (_originNode.type == "MarasitAnyBusNode") {
+				originNode = _originNode
+			}
+
+		}
+
+		return originNode
 
 	}
 
@@ -542,7 +573,7 @@ class MarasitAnyBusNodeLiteGraph {
 			//On Connect
 			if (isChangeConnect && slotType == 1 && typeof link_info != 'undefined' && this.graph) {
 				// do something
-				const link_info_node = this.graph._nodes.find(
+				let link_info_node = this.graph._nodes.find(
 					(otherNode) => otherNode.id == link_info.origin_id
 				)
 				
@@ -550,7 +581,14 @@ class MarasitAnyBusNodeLiteGraph {
 					// bus
 					const isBusInput = slot == 0
 					const isOutputs = link_info_node.outputs?.length > 0
-					const isMarasitBusNode = link_info_node.type == "MarasitAnyBusNode"
+					let isMarasitBusNode = link_info_node.type == "MarasitAnyBusNode"
+					if(!isMarasitBusNode) {
+						const link_info_node_origin = MarasitAnyBusNode.LGraph.getOriginRerouteBusType(link_info_node)
+						isMarasitBusNode = link_info_node_origin?.type == "MarasitAnyBusNode"
+						if (isMarasitBusNode) {
+							link_info_node = link_info_node_origin
+						}
+					}
 					const isOriginProfileSame = this.properties[MarasitAnyBusNode.LGraph.PROFILE_NAME] == link_info_node.properties[MarasitAnyBusNode.LGraph.PROFILE_NAME]
 					const isTargetProfileDefault = this.properties[MarasitAnyBusNode.LGraph.PROFILE_NAME] == MarasitAnyBusNode.LGraph.DEFAULT_PROFILE
 					if (isBusInput && isOutputs && isMarasitBusNode && (isOriginProfileSame || isTargetProfileDefault)) {
