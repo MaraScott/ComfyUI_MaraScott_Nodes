@@ -389,7 +389,7 @@ class MarasitAnyBusNodeLiteGraph {
 			_originNode = node.graph.getNodeById(__originLink.origin_id)
 
 			if (_originNode.type == 'Reroute' && _originNode?.__outputType == 'BUS') {
-				_originNode = node.getOriginRerouteBusType(node)
+				_originNode = MarasitAnyBusNode.LGraph.getOriginRerouteBusType(_originNode) 
 			}
 			if (_originNode.type == "MarasitAnyBusNode") {
 				originNode = _originNode
