@@ -327,7 +327,7 @@
         {
           "name": "bus",
           "type": "BUS",
-          "link": 401
+          "link": null
         },
         {
           "name": "* 01 - model",
@@ -841,7 +841,7 @@
         {
           "name": "bus",
           "type": "BUS",
-          "link": 403
+          "link": null
         },
         {
           "name": "* 01 - model",
