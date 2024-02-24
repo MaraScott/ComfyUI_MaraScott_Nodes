@@ -433,14 +433,14 @@ class MarasitAnyBusNodeLiteGraph {
 
 	syncBusNodes(node, busNodes, isChangeWidget, isChangeConnect) {
 
-		MarasitAnyBusNode.LGraph.busNodeForSync = {...node};
+		MarasitAnyBusNode.LGraph.busNodeForSync = node;
 
 		for(let i in busNodes) {
 			let _node = node.graph.getNodeById(busNodes[i])
 			if(_node.id !== node.id) {
 				if(isChangeWidget != null) this.setWidgetValue(_node, isChangeWidget, node.properties[isChangeWidget])
+				if(isChangeConnect !== null) this.setInputValue(_node)
 			}
-			if(isChangeConnect !== null) this.setInputValue(_node)
 		}
 	}
 
@@ -524,9 +524,9 @@ class MarasitAnyBusNodeLiteGraph {
 
 			MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.NOSYNC
 			MarasitAnyBusNode.LGraph.AnyIndexLabel = slot + 1 - MarasitAnyBusNode.LGraph.FIRST_ANY_INDEX
-
 			//On Disconnect
 			if (!isChangeConnect && slotType == 1 && typeof link_info != 'undefined') {
+				console.log('disconnect');
 
 				if (slot < MarasitAnyBusNode.LGraph.firstAnyIndex) {
 					// bus
@@ -572,6 +572,7 @@ class MarasitAnyBusNodeLiteGraph {
 			}
 			//On Connect
 			if (isChangeConnect && slotType == 1 && typeof link_info != 'undefined' && this.graph) {
+				console.log('connect');
 				// do something
 				let link_info_node = this.graph._nodes.find(
 					(otherNode) => otherNode.id == link_info.origin_id
@@ -651,18 +652,27 @@ class MarasitAnyBusNodeLiteGraph {
 
 			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, isChangeConnect)
 
+			for (const key in this.graph?.links) {
+				if (this.graph.links.hasOwnProperty(key)) {
+					const link = this.graph.links[key];
+					if (link.target_id === 98) {
+						console.log(this.graph.links[key], this.graph.links);
+					}
+				}
+			}
+
 			return r;
 		}
 
 	}
 
-	onRemoved(nodeType) {
-		const onRemoved = nodeType.prototype.onRemoved;
-		nodeType.prototype.onRemoved = function () {
-			// console.log('onRemoved')
-			onRemoved?.apply(this, arguments);
-		};
-	}
+	// onRemoved(nodeType) {
+	// 	const onRemoved = nodeType.prototype.onRemoved;
+	// 	nodeType.prototype.onRemoved = function () {
+	// 		// console.log('onRemoved')
+	// 		onRemoved?.apply(this, arguments);
+	// 	};
+	// }
 
 
 }
