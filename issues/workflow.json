@@ -1,0 +1,2675 @@
+{
+  "last_node_id": 118,
+  "last_link_id": 403,
+  "nodes": [
+    {
+      "id": 65,
+      "type": "PreviewImage",
+      "pos": [
+        2190,
+        180
+      ],
+      "size": {
+        "0": 210,
+        "1": 250
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 333
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 61,
+      "type": "CLIPTextEncode",
+      "pos": [
+        610,
+        410
+      ],
+      "size": {
+        "0": 290,
+        "1": 96
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 321
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 400,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            202,
+            246,
+            325,
+            349
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "CLIP Text Encode (Negative Prompt)",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "text, watermark"
+      ],
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 60,
+      "type": "CLIPTextEncode",
+      "pos": [
+        610,
+        230
+      ],
+      "size": {
+        "0": 290,
+        "1": 96
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 320
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 399,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            201,
+            245,
+            324,
+            350
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "CLIP Text Encode (Positive Prompt)",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "evening sunset scenery blue sky nature, glass bottle with a fizzy ice cold freezing rainbow liquid in it"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 63,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        -390,
+        80
+      ],
+      "size": {
+        "0": 315,
+        "1": 98
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            231,
+            312
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            232,
+            315,
+            351
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            234,
+            316,
+            352
+          ],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "Stable-Cascade\\stable_cascade_stage_c.safetensors"
+      ]
+    },
+    {
+      "id": 70,
+      "type": "Text _O",
+      "pos": [
+        -510,
+        520
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            244,
+            318,
+            354
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Text _O"
+      },
+      "widgets_values": [
+        "text, watermark"
+      ],
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 62,
+      "type": "StableCascade_EmptyLatentImage",
+      "pos": [
+        -400,
+        790
+      ],
+      "size": {
+        "0": 315,
+        "1": 150
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "stage_c",
+          "type": "LATENT",
+          "links": [
+            247,
+            319,
+            355
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "stage_b",
+          "type": "LATENT",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "StableCascade_EmptyLatentImage"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        42,
+        1
+      ]
+    },
+    {
+      "id": 64,
+      "type": "VAEDecode",
+      "pos": [
+        1450,
+        320
+      ],
+      "size": {
+        "0": 210,
+        "1": 46
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 194
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 357,
+          "slot_index": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            257,
+            332,
+            364
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 104,
+      "type": "MarasitAnyBusNode",
+      "pos": [
+        1008.9332275390625,
+        159.73336791992188
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 282
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 401
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": 350
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "link": 349
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            371
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": [
+            327
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": [
+            326,
+            357
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            328,
+            361
+          ],
+          "shape": 3,
+          "slot_index": 5
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            329,
+            360
+          ],
+          "slot_index": 7
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "links": [
+            330,
+            362
+          ],
+          "slot_index": 8
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - can",
+      "properties": {
+        "Profile": "can",
+        "Nb Inputs": 10,
+        "Node name for S&R": "MarasitAnyBusNode",
+        "uuid": 104
+      },
+      "widgets_values": [
+        10,
+        "can"
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 105,
+      "type": "MarasitAnyBusNode",
+      "pos": [
+        1750,
+        80
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 282
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 371
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": 363
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "link": 364
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            372
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "links": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "links": [
+            333
+          ],
+          "slot_index": 10
+        }
+      ],
+      "title": "AnyBus - can",
+      "properties": {
+        "Profile": "can",
+        "Nb Inputs": 10,
+        "Node name for S&R": "MarasitAnyBusNode",
+        "uuid": 105
+      },
+      "widgets_values": [
+        10,
+        "can"
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 106,
+      "type": "Reroute",
+      "pos": [
+        1900,
+        1000
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 372
+        }
+      ],
+      "outputs": [
+        {
+          "name": "BUS",
+          "type": "BUS",
+          "links": [
+            373
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": true,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 107,
+      "type": "Reroute",
+      "pos": [
+        0,
+        990
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 373,
+          "slot_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "name": "BUS",
+          "type": "BUS",
+          "links": [
+            374
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": true,
+        "horizontal": false
+      }
+    },
+    {
+      "id": 110,
+      "type": "CLIPTextEncode",
+      "pos": [
+        630,
+        1270
+      ],
+      "size": {
+        "0": 290,
+        "1": 96
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 379
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 398,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            385
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "CLIP Text Encode (Positive Prompt)",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "evening sunset scenery blue sky nature, glass bottle with a fizzy ice cold freezing rainbow liquid in it"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 112,
+      "type": "VAEDecode",
+      "pos": [
+        1470,
+        1360
+      ],
+      "size": {
+        "0": 210,
+        "1": 46
+      },
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 381
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 382,
+          "slot_index": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            389
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 113,
+      "type": "PreviewImage",
+      "pos": [
+        2210,
+        1220
+      ],
+      "size": {
+        "0": 210,
+        "1": 250
+      },
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 383
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 116,
+      "type": "MarasitAnyBusNode",
+      "pos": [
+        1770,
+        1120
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 282
+      },
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 403
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": 388
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "link": 389
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "links": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "links": [
+            383
+          ],
+          "slot_index": 10
+        }
+      ],
+      "title": "AnyBus - table",
+      "properties": {
+        "Profile": "table",
+        "Nb Inputs": 10,
+        "Node name for S&R": "MarasitAnyBusNode",
+        "uuid": 116
+      },
+      "widgets_values": [
+        10,
+        "table"
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 108,
+      "type": "MarasitAnyBusNode",
+      "pos": [
+        -330,
+        1160
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 282
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 374
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": [
+            390
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": [
+            391
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": [
+            392
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "links": [
+            395
+          ],
+          "slot_index": 6
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            396
+          ],
+          "slot_index": 7
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "links": [
+            393
+          ],
+          "slot_index": 8
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - can",
+      "properties": {
+        "Profile": "can",
+        "Nb Inputs": 10,
+        "Node name for S&R": "MarasitAnyBusNode",
+        "uuid": 108
+      },
+      "widgets_values": [
+        10,
+        "can"
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 69,
+      "type": "Text _O",
+      "pos": [
+        -500,
+        260
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            233,
+            317,
+            353
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Text _O"
+      },
+      "widgets_values": [
+        "soda can"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 117,
+      "type": "Text _O",
+      "pos": [
+        -490,
+        1510
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            394
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Text _O"
+      },
+      "widgets_values": [
+        "garden table"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 59,
+      "type": "KSampler",
+      "pos": [
+        1390,
+        470
+      ],
+      "size": {
+        "0": 315,
+        "1": 262
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 327,
+          "slot_index": 0
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 361
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 360
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 362
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            194,
+            256,
+            331,
+            363
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        102982498568274,
+        "fixed",
+        20,
+        7,
+        "dpmpp_2m",
+        "karras",
+        1
+      ]
+    },
+    {
+      "id": 109,
+      "type": "KSampler",
+      "pos": [
+        1410,
+        1510
+      ],
+      "size": {
+        "0": 315,
+        "1": 262
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 375,
+          "slot_index": 0
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 376
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 377
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 378
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            381,
+            388
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        102982498568274,
+        "fixed",
+        20,
+        7,
+        "dpmpp_2m",
+        "karras",
+        1
+      ]
+    },
+    {
+      "id": 103,
+      "type": "MarasitAnyBusNode",
+      "pos": [
+        140,
+        130
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 282
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": null
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": 312
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": 351
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": 352
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "link": 353
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "link": 354
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "link": 355
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            334,
+            335,
+            336,
+            337,
+            338,
+            339,
+            340,
+            341,
+            342,
+            343,
+            344,
+            345,
+            401
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": [
+            320,
+            321
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "links": [
+            322,
+            399
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "links": [
+            323,
+            400
+          ],
+          "slot_index": 6
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "links": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - can",
+      "properties": {
+        "Profile": "can",
+        "Nb Inputs": 10,
+        "Node name for S&R": "MarasitAnyBusNode",
+        "uuid": 103
+      },
+      "widgets_values": [
+        5,
+        "can"
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 114,
+      "type": "MarasitAnyBusNode",
+      "pos": [
+        160,
+        1170
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 282
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": null
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": 390
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": 391
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": 392
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "link": 394
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "link": 395
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "link": 396
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "link": 393
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            402
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": [
+            379
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "links": [
+            398
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 6
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "links": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - table",
+      "properties": {
+        "Profile": "table",
+        "Nb Inputs": 10,
+        "Node name for S&R": "MarasitAnyBusNode",
+        "uuid": 114
+      },
+      "widgets_values": [
+        5,
+        "table"
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 115,
+      "type": "MarasitAnyBusNode",
+      "pos": [
+        1030,
+        1200
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 282
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 402
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": 385
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            403
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": [
+            375
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": [
+            382
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "* 04 - string",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            376
+          ],
+          "shape": 3,
+          "slot_index": 5
+        },
+        {
+          "name": "* 06 - string",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "* 07 - conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            377
+          ],
+          "slot_index": 7
+        },
+        {
+          "name": "* 08 - stage_c",
+          "type": "LATENT",
+          "links": [
+            378
+          ],
+          "slot_index": 8
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - image",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - table",
+      "properties": {
+        "Profile": "table",
+        "Nb Inputs": 10,
+        "Node name for S&R": "MarasitAnyBusNode",
+        "uuid": 115
+      },
+      "widgets_values": [
+        10,
+        "table"
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    }
+  ],
+  "links": [
+    [
+      194,
+      59,
+      0,
+      64,
+      0,
+      "LATENT"
+    ],
+    [
+      312,
+      63,
+      0,
+      103,
+      1,
+      "*"
+    ],
+    [
+      320,
+      103,
+      2,
+      60,
+      0,
+      "CLIP"
+    ],
+    [
+      321,
+      103,
+      2,
+      61,
+      0,
+      "CLIP"
+    ],
+    [
+      327,
+      104,
+      1,
+      59,
+      0,
+      "MODEL"
+    ],
+    [
+      333,
+      105,
+      10,
+      65,
+      0,
+      "IMAGE"
+    ],
+    [
+      349,
+      61,
+      0,
+      104,
+      7,
+      "CONDITIONING"
+    ],
+    [
+      350,
+      60,
+      0,
+      104,
+      5,
+      "*"
+    ],
+    [
+      351,
+      63,
+      1,
+      103,
+      2,
+      "CLIP"
+    ],
+    [
+      352,
+      63,
+      2,
+      103,
+      3,
+      "VAE"
+    ],
+    [
+      353,
+      69,
+      0,
+      103,
+      4,
+      "STRING"
+    ],
+    [
+      354,
+      70,
+      0,
+      103,
+      6,
+      "STRING"
+    ],
+    [
+      355,
+      62,
+      0,
+      103,
+      8,
+      "LATENT"
+    ],
+    [
+      357,
+      104,
+      3,
+      64,
+      1,
+      "VAE"
+    ],
+    [
+      360,
+      104,
+      7,
+      59,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      361,
+      104,
+      5,
+      59,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      362,
+      104,
+      8,
+      59,
+      3,
+      "LATENT"
+    ],
+    [
+      363,
+      59,
+      0,
+      105,
+      9,
+      "LATENT"
+    ],
+    [
+      364,
+      64,
+      0,
+      105,
+      10,
+      "IMAGE"
+    ],
+    [
+      371,
+      104,
+      0,
+      105,
+      0,
+      "BUS"
+    ],
+    [
+      372,
+      105,
+      0,
+      106,
+      0,
+      "*"
+    ],
+    [
+      373,
+      106,
+      0,
+      107,
+      0,
+      "*"
+    ],
+    [
+      374,
+      107,
+      0,
+      108,
+      0,
+      "BUS"
+    ],
+    [
+      375,
+      115,
+      1,
+      109,
+      0,
+      "MODEL"
+    ],
+    [
+      376,
+      115,
+      5,
+      109,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      377,
+      115,
+      7,
+      109,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      378,
+      115,
+      8,
+      109,
+      3,
+      "LATENT"
+    ],
+    [
+      379,
+      114,
+      2,
+      110,
+      0,
+      "CLIP"
+    ],
+    [
+      381,
+      109,
+      0,
+      112,
+      0,
+      "LATENT"
+    ],
+    [
+      382,
+      115,
+      3,
+      112,
+      1,
+      "VAE"
+    ],
+    [
+      383,
+      116,
+      10,
+      113,
+      0,
+      "IMAGE"
+    ],
+    [
+      385,
+      110,
+      0,
+      115,
+      5,
+      "CONDITIONING"
+    ],
+    [
+      388,
+      109,
+      0,
+      116,
+      9,
+      "LATENT"
+    ],
+    [
+      389,
+      112,
+      0,
+      116,
+      10,
+      "IMAGE"
+    ],
+    [
+      390,
+      108,
+      1,
+      114,
+      1,
+      "MODEL"
+    ],
+    [
+      391,
+      108,
+      2,
+      114,
+      2,
+      "CLIP"
+    ],
+    [
+      392,
+      108,
+      3,
+      114,
+      3,
+      "VAE"
+    ],
+    [
+      393,
+      108,
+      8,
+      114,
+      8,
+      "LATENT"
+    ],
+    [
+      394,
+      117,
+      0,
+      114,
+      4,
+      "STRING"
+    ],
+    [
+      395,
+      108,
+      6,
+      114,
+      6,
+      "STRING"
+    ],
+    [
+      396,
+      108,
+      7,
+      114,
+      7,
+      "CONDITIONING"
+    ],
+    [
+      398,
+      114,
+      4,
+      110,
+      1,
+      "STRING"
+    ],
+    [
+      399,
+      103,
+      4,
+      60,
+      1,
+      "STRING"
+    ],
+    [
+      400,
+      103,
+      6,
+      61,
+      1,
+      "STRING"
+    ],
+    [
+      401,
+      103,
+      0,
+      104,
+      0,
+      "BUS"
+    ],
+    [
+      402,
+      114,
+      0,
+      115,
+      0,
+      "BUS"
+    ],
+    [
+      403,
+      115,
+      0,
+      116,
+      0,
+      "BUS"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "0246.VERSION": [
+      0,
+      0,
+      4
+    ],
+    "groupNodes": {
+      "Impact::MAKE_BASIC_PIPE": {
+        "category": "",
+        "config": {
+          "1": {
+            "input": {
+              "text": {
+                "name": "Positive prompt"
+              }
+            }
+          },
+          "2": {
+            "input": {
+              "text": {
+                "name": "Negative prompt"
+              }
+            }
+          }
+        },
+        "datetime": 1705418802481,
+        "external": [],
+        "links": [
+          [
+            0,
+            1,
+            1,
+            0,
+            1,
+            "CLIP"
+          ],
+          [
+            0,
+            1,
+            2,
+            0,
+            1,
+            "CLIP"
+          ],
+          [
+            0,
+            0,
+            3,
+            0,
+            1,
+            "MODEL"
+          ],
+          [
+            0,
+            1,
+            3,
+            1,
+            1,
+            "CLIP"
+          ],
+          [
+            0,
+            2,
+            3,
+            2,
+            1,
+            "VAE"
+          ],
+          [
+            1,
+            0,
+            3,
+            3,
+            3,
+            "CONDITIONING"
+          ],
+          [
+            2,
+            0,
+            3,
+            4,
+            4,
+            "CONDITIONING"
+          ]
+        ],
+        "nodes": [
+          {
+            "flags": {},
+            "index": 0,
+            "mode": 0,
+            "order": 0,
+            "outputs": [
+              {
+                "links": [],
+                "name": "MODEL",
+                "shape": 3,
+                "slot_index": 0,
+                "type": "MODEL"
+              },
+              {
+                "links": [],
+                "name": "CLIP",
+                "shape": 3,
+                "slot_index": 1,
+                "type": "CLIP"
+              },
+              {
+                "links": [],
+                "name": "VAE",
+                "shape": 3,
+                "slot_index": 2,
+                "type": "VAE"
+              }
+            ],
+            "pos": [
+              550,
+              360
+            ],
+            "properties": {
+              "Node name for S&R": "CheckpointLoaderSimple"
+            },
+            "size": {
+              "0": 315,
+              "1": 98
+            },
+            "type": "CheckpointLoaderSimple",
+            "widgets_values": [
+              "SDXL/sd_xl_base_1.0_0.9vae.safetensors"
+            ]
+          },
+          {
+            "flags": {},
+            "index": 1,
+            "inputs": [
+              {
+                "link": null,
+                "name": "clip",
+                "type": "CLIP"
+              }
+            ],
+            "mode": 0,
+            "order": 1,
+            "outputs": [
+              {
+                "links": [],
+                "name": "CONDITIONING",
+                "shape": 3,
+                "slot_index": 0,
+                "type": "CONDITIONING"
+              }
+            ],
+            "pos": [
+              940,
+              480
+            ],
+            "properties": {
+              "Node name for S&R": "CLIPTextEncode"
+            },
+            "size": {
+              "0": 263,
+              "1": 99
+            },
+            "title": "Positive",
+            "type": "CLIPTextEncode",
+            "widgets_values": [
+              ""
+            ]
+          },
+          {
+            "flags": {},
+            "index": 2,
+            "inputs": [
+              {
+                "link": null,
+                "name": "clip",
+                "type": "CLIP"
+              }
+            ],
+            "mode": 0,
+            "order": 2,
+            "outputs": [
+              {
+                "links": [],
+                "name": "CONDITIONING",
+                "shape": 3,
+                "slot_index": 0,
+                "type": "CONDITIONING"
+              }
+            ],
+            "pos": [
+              940,
+              640
+            ],
+            "properties": {
+              "Node name for S&R": "CLIPTextEncode"
+            },
+            "size": {
+              "0": 263,
+              "1": 99
+            },
+            "title": "Negative",
+            "type": "CLIPTextEncode",
+            "widgets_values": [
+              ""
+            ]
+          },
+          {
+            "flags": {},
+            "index": 3,
+            "inputs": [
+              {
+                "link": null,
+                "name": "model",
+                "type": "MODEL"
+              },
+              {
+                "link": null,
+                "name": "clip",
+                "type": "CLIP"
+              },
+              {
+                "link": null,
+                "name": "vae",
+                "type": "VAE"
+              },
+              {
+                "link": null,
+                "name": "positive",
+                "type": "CONDITIONING"
+              },
+              {
+                "link": null,
+                "name": "negative",
+                "type": "CONDITIONING"
+              }
+            ],
+            "mode": 0,
+            "order": 3,
+            "outputs": [
+              {
+                "links": null,
+                "name": "basic_pipe",
+                "shape": 3,
+                "slot_index": 0,
+                "type": "BASIC_PIPE"
+              }
+            ],
+            "pos": [
+              1320,
+              360
+            ],
+            "properties": {
+              "Node name for S&R": "ToBasicPipe"
+            },
+            "size": {
+              "0": 241.79998779296875,
+              "1": 106
+            },
+            "type": "ToBasicPipe"
+          }
+        ],
+        "packname": "Impact",
+        "version": "1.0"
+      },
+      "Impact::SIMPLE_DETAILER_PIPE": {
+        "category": "",
+        "config": {
+          "0": {
+            "output": {
+              "0": {
+                "visible": false
+              },
+              "1": {
+                "visible": false
+              }
+            }
+          },
+          "2": {
+            "input": {
+              "Select to add LoRA": {
+                "visible": false
+              },
+              "Select to add Wildcard": {
+                "visible": false
+              },
+              "wildcard": {
+                "visible": false
+              }
+            }
+          }
+        },
+        "datetime": 1705419147116,
+        "external": [],
+        "links": [
+          [
+            null,
+            0,
+            2,
+            0,
+            6,
+            "BASIC_PIPE"
+          ],
+          [
+            0,
+            0,
+            2,
+            1,
+            13,
+            "BBOX_DETECTOR"
+          ],
+          [
+            1,
+            0,
+            2,
+            2,
+            15,
+            "SAM_MODEL"
+          ]
+        ],
+        "nodes": [
+          {
+            "flags": {},
+            "index": 0,
+            "mode": 0,
+            "order": 2,
+            "outputs": [
+              {
+                "links": [],
+                "name": "BBOX_DETECTOR",
+                "shape": 3,
+                "type": "BBOX_DETECTOR"
+              },
+              {
+                "links": null,
+                "name": "SEGM_DETECTOR",
+                "shape": 3,
+                "type": "SEGM_DETECTOR"
+              }
+            ],
+            "pos": [
+              590,
+              830
+            ],
+            "properties": {
+              "Node name for S&R": "UltralyticsDetectorProvider"
+            },
+            "size": {
+              "0": 315,
+              "1": 78
+            },
+            "type": "UltralyticsDetectorProvider",
+            "widgets_values": [
+              "bbox/Eyeful_v1.pt"
+            ]
+          },
+          {
+            "flags": {},
+            "index": 1,
+            "mode": 0,
+            "order": 3,
+            "outputs": [
+              {
+                "links": [],
+                "name": "SAM_MODEL",
+                "shape": 3,
+                "type": "SAM_MODEL"
+              }
+            ],
+            "pos": [
+              590,
+              960
+            ],
+            "properties": {
+              "Node name for S&R": "SAMLoader"
+            },
+            "size": {
+              "0": 315,
+              "1": 82
+            },
+            "type": "SAMLoader",
+            "widgets_values": [
+              "sam_vit_b_01ec64.pth",
+              "AUTO"
+            ]
+          },
+          {
+            "flags": {},
+            "index": 2,
+            "inputs": [
+              {
+                "link": null,
+                "name": "basic_pipe",
+                "type": "BASIC_PIPE"
+              },
+              {
+                "link": null,
+                "name": "bbox_detector",
+                "slot_index": 1,
+                "type": "BBOX_DETECTOR"
+              },
+              {
+                "link": null,
+                "name": "sam_model_opt",
+                "slot_index": 2,
+                "type": "SAM_MODEL"
+              },
+              {
+                "link": null,
+                "name": "segm_detector_opt",
+                "type": "SEGM_DETECTOR"
+              },
+              {
+                "link": null,
+                "name": "detailer_hook",
+                "type": "DETAILER_HOOK"
+              }
+            ],
+            "mode": 0,
+            "order": 5,
+            "outputs": [
+              {
+                "links": null,
+                "name": "detailer_pipe",
+                "shape": 3,
+                "type": "DETAILER_PIPE"
+              }
+            ],
+            "pos": [
+              1044,
+              812
+            ],
+            "properties": {
+              "Node name for S&R": "BasicPipeToDetailerPipe"
+            },
+            "size": {
+              "0": 400,
+              "1": 204
+            },
+            "type": "BasicPipeToDetailerPipe",
+            "widgets_values": [
+              "",
+              "Select the LoRA to add to the text",
+              "Select the Wildcard to add to the text"
+            ]
+          }
+        ],
+        "packname": "Impact",
+        "version": "1.0"
+      }
+    }
+  },
+  "version": 0.4
+}
