@@ -143,23 +143,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 	setBusWidgets(node) {
 
-		let nodeWidget = this.getNodeWidgetByName(node, this.PROFILE_NAME);
-		if (nodeWidget == undefined) {
-			node.addWidget(
-				"text",
-				this.PROFILE_NAME,
-				node.properties[this.PROFILE_NAME] ?? this.DEFAULT_PROFILE,
-				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-					this.setWidgetValue(node, this.PROFILE_NAME, value)
-					MarasitAnyBusNode.LGraph.syncProfile = this.FULLSYNC;
-					this.syncNodeProfile(node, this.PROFILE_NAME, null)
-				},
-				{}
-			)
-			node.setProperty(this.PROFILE_NAME, this.DEFAULT_PROFILE)
-			this.setWidgetValue(node, this.PROFILE_NAME, this.DEFAULT_PROFILE)
-		}
-		nodeWidget = this.getNodeWidgetByName(node, this.QTY_NAME);
+		let nodeWidget = this.getNodeWidgetByName(node, this.QTY_NAME);
 		if (nodeWidget == undefined) {
 
 			let values = []
@@ -185,6 +169,23 @@ class MarasitAnyBusNodeLiteGraph {
 			this.setWidgetValue(node, this.QTY_NAME, this.DEFAULT_QTY)
 		}
 
+		nodeWidget = this.getNodeWidgetByName(node, this.PROFILE_NAME);
+		if (nodeWidget == undefined) {
+			node.addWidget(
+				"text",
+				this.PROFILE_NAME,
+				node.properties[this.PROFILE_NAME] ?? this.DEFAULT_PROFILE,
+				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
+					this.setWidgetValue(node, this.PROFILE_NAME, value)
+					MarasitAnyBusNode.LGraph.syncProfile = this.FULLSYNC;
+					this.syncNodeProfile(node, this.PROFILE_NAME, null)
+				},
+				{}
+			)
+			node.setProperty(this.PROFILE_NAME, this.DEFAULT_PROFILE)
+			this.setWidgetValue(node, this.PROFILE_NAME, this.DEFAULT_PROFILE)
+		}
+
 	}
 
 	onExecuted(nodeType) {
@@ -205,7 +206,6 @@ class MarasitAnyBusNodeLiteGraph {
 			// console.log('onNodeCreated')
 			MarasitAnyBusNode.LGraph.initNode(this)
 			MarasitAnyBusNode.LGraph.setBusWidgets(this)
-			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, null)
 
 			return r;
 		}
@@ -272,7 +272,7 @@ class MarasitAnyBusNodeLiteGraph {
 				_backward_bus_node_link = node.graph.links.find(
 					(otherLink) => otherLink?.id == _backward_bus_node_link
 				)
-				backward_bus_node_connections[backward_bus_nodes[i].id] = _backward_bus_node_link.origin_id
+				if( _backward_bus_node_link) backward_bus_node_connections[backward_bus_nodes[i].id] = _backward_bus_node_link.origin_id
 			}
 		}
 
@@ -318,8 +318,8 @@ class MarasitAnyBusNodeLiteGraph {
 				if (_node.inputs[0].link != null) {
 					const _previousNode_link = node.graph.links.find(
 						(otherLink) => otherLink?.id == _node.inputs[0].link
-					)		
-					_previousNode_id = _previousNode_link.origin_id
+					)
+					if(_previousNode_link) _previousNode_id = _previousNode_link.origin_id
 				}
 
 				nodes_paths[_node.id] = _previousNode_id
@@ -391,7 +391,7 @@ class MarasitAnyBusNodeLiteGraph {
 			if (_originNode.type == 'Reroute' && _originNode?.__outputType == 'BUS') {
 				_originNode = MarasitAnyBusNode.LGraph.getOriginRerouteBusType(_originNode) 
 			}
-			if (_originNode.type == "MarasitAnyBusNode") {
+			if (_originNode?.type == "MarasitAnyBusNode") {
 				originNode = _originNode
 			}
 
@@ -652,27 +652,18 @@ class MarasitAnyBusNodeLiteGraph {
 
 			MarasitAnyBusNode.LGraph.syncNodeProfile(this, null, isChangeConnect)
 
-			for (const key in this.graph?.links) {
-				if (this.graph.links.hasOwnProperty(key)) {
-					const link = this.graph.links[key];
-					if (link.target_id === 98) {
-						console.log(this.graph.links[key], this.graph.links);
-					}
-				}
-			}
-
 			return r;
 		}
 
 	}
 
-	// onRemoved(nodeType) {
-	// 	const onRemoved = nodeType.prototype.onRemoved;
-	// 	nodeType.prototype.onRemoved = function () {
-	// 		// console.log('onRemoved')
-	// 		onRemoved?.apply(this, arguments);
-	// 	};
-	// }
+	onRemoved(nodeType) {
+		const onRemoved = nodeType.prototype.onRemoved;
+		nodeType.prototype.onRemoved = function () {
+			// console.log('onRemoved')
+			onRemoved?.apply(this, arguments);
+		};
+	}
 
 
 }
