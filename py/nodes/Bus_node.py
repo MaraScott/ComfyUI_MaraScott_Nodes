@@ -43,8 +43,8 @@ class Bus_node:
     CATEGORY = "MarasIT/utils"
     
     def bus_fn(self, **kwargs):
-        # Initialize the bus tuple with None values for each parameter
-        bus = kwargs.get('bus', (None,) * len(self._INPUT_NAMES))
+        # Initialize the bus tuple with Any values for each parameter
+        bus = kwargs.get('bus', (_CONF.TYPES['ANY'],) * len(self._INPUT_NAMES))
         if len(bus) != len(self._INPUT_NAMES):
             raise ValueError("The 'bus' tuple must have the same number of elements as '_INPUT_NAMES'")
 
