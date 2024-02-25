@@ -43,9 +43,12 @@ class MarasitAnyBusNodeLiteGraph {
 	BASIC_PIPE_SLOT = 0
 	REFINER_PIPE_SLOT = 0
 
+	ALLOWED_REROUTE_TYPE = [
+		"Reroute",
+	]
 	ALLOWED_NODE_TYPE = [
 		"MarasitAnyBusNode",
-		"Reroute",
+		...this.ALLOWED_REROUTE_TYPE,
 	]
 
 	constructor() {
@@ -54,6 +57,7 @@ class MarasitAnyBusNodeLiteGraph {
 		this.busNodeForSync = null
 		this.firstAnyIndex = this.FIRST_ANY_INDEX;
 		this.AnyIndexLabel = 0
+		this.isAnyBusNodeSetup = false
 
 		return this
 
@@ -82,7 +86,7 @@ class MarasitAnyBusNodeLiteGraph {
 	}
 	
 	setInputValue(node) {
-
+	
 		let protected_slots = []
 
 		for (let slot = this.FIRST_ANY_INDEX; slot < MarasitAnyBusNode.LGraph.busNodeForSync.inputs.length; slot++) {
@@ -200,7 +204,7 @@ class MarasitAnyBusNodeLiteGraph {
 	onNodeCreated(nodeType) {
 
 		const onNodeCreated = nodeType.prototype.onNodeCreated;
-		nodeType.prototype.onNodeCreated = async function () {
+		nodeType.prototype.onNodeCreated = function () {
 			const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
 
 			// console.log('onNodeCreated')
@@ -437,7 +441,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 		for(let i in busNodes) {
 			let _node = node.graph.getNodeById(busNodes[i])
-			if(_node.id !== node.id) {
+			if(_node.id !== node.id && this.ALLOWED_REROUTE_TYPE.indexOf(_node.type) == -1) {
 				if(isChangeWidget != null) this.setWidgetValue(_node, isChangeWidget, node.properties[isChangeWidget])
 				if(isChangeConnect !== null) this.setInputValue(_node)
 			}
@@ -447,7 +451,7 @@ class MarasitAnyBusNodeLiteGraph {
 	syncNodeProfile(node, isChangeWidget, isChangeConnect) {
 
 		if (!node.graph || MarasitAnyBusNode.LGraph.syncProfile == MarasitAnyBusNode.LGraph.NOSYNC) return
-		// let profile = node.properties[this.PROFILE_NAME]
+	
 		const profile = node.properties[MarasitAnyBusNode.LGraph.PROFILE_NAME]
 		let busNodes = []
 		const busNodePaths = this.getBusFlows(node)
@@ -522,6 +526,8 @@ class MarasitAnyBusNodeLiteGraph {
 		) {
 			const r = onConnectionsChange ? onConnectionsChange.apply(this, arguments) : undefined
 
+			if(!MarasitAnyBusNode.LGraph.isAnyBusNodeSetup) return r
+
 			MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.NOSYNC
 			MarasitAnyBusNode.LGraph.AnyIndexLabel = slot + 1 - MarasitAnyBusNode.LGraph.FIRST_ANY_INDEX
 			//On Disconnect
@@ -585,7 +591,7 @@ class MarasitAnyBusNodeLiteGraph {
 					let isMarasitBusNode = link_info_node.type == "MarasitAnyBusNode"
 					if(!isMarasitBusNode) {
 						const link_info_node_origin = MarasitAnyBusNode.LGraph.getOriginRerouteBusType(link_info_node)
-						isMarasitBusNode = link_info_node_origin?.type == "MarasitAnyBusNode"
+						isMarasitBusNode = link_info_node_origin.type == "MarasitAnyBusNode"
 						if (isMarasitBusNode) {
 							link_info_node = link_info_node_origin
 						}
@@ -672,9 +678,13 @@ const MarasitAnyBusNode = {
 	// Unique name for the extension
 	name: "Comfy.MarasIT.AnyBusNode",
 	LGraph: new MarasitAnyBusNodeLiteGraph(),
-	async init(app) {
+	init(app) {
 		// Any initial setup to run as soon as the page loads
 		// console.log("[MarasIT - logging "+this.name+"]", "extension init");
+	},
+	setup(app) {
+		// Any setup to run after the app is created
+		// console.log("[MarasIT - logging "+this.name+"]", "extension setup");
 	},
 	// !TODO should I find a way to define defs based on profile ?
 	addCustomNodeDefs(defs, app) {
@@ -683,20 +693,16 @@ const MarasitAnyBusNode = {
 		// defs is a lookup core nodes, add yours into this
 		// console.log("[MarasIT - logging "+this.name+"]", "add custom node definitions", "current nodes:", defs['MarasitAnyBusNode'],JSON.stringify(Object.keys(defs)));
 	},
-	async getCustomWidgets(app) {
+	getCustomWidgets(app) {
 		// Return custom widget types
 		// See ComfyWidgets for widget examples
 		// console.log("[MarasIT - logging "+this.name+"]", "provide custom widgets");
 	},
-	async registerCustomNodes(app) {
+	registerCustomNodes(app) {
 		// Register any custom node implementations here allowing for more flexability than a custom node def
 		// console.log("[MarasIT - logging "+this.name+"]", "register custom nodes");
 	},
-	async setup(app) {
-		// Any setup to run after the app is created
-		// console.log("[MarasIT - logging "+this.name+"]", "extension setup");
-	},
-	async loadedGraphNode(node, app) {
+	loadedGraphNode(node, app) {
 		// Fires for each node when loading/dragging/etc a workflow json or png
 		// If you break something in the backend and want to patch workflows in the frontend
 		// This is the place to do this
@@ -720,7 +726,7 @@ const MarasitAnyBusNode = {
 		// This fires for every node so only log once
 		// delete MarasitAnyBusNode.nodeCreated;
 	},
-	async beforeRegisterNodeDef(nodeType, nodeData, app) {
+	beforeRegisterNodeDef(nodeType, nodeData, app) {
 		// Run custom logic before a node definition is registered with the graph
 
 		if (nodeData.name === 'MarasitAnyBusNode') {
@@ -735,6 +741,10 @@ const MarasitAnyBusNode = {
 			MarasitAnyBusNode.LGraph.onRemoved(nodeType)
 
 		}
+	},
+	afterConfigureGraph(app) {
+		MarasitAnyBusNode.LGraph.isAnyBusNodeSetup = true
+		// console.log("[MarasIT - logging "+this.name+"]", "extension afterConfigureGraph");
 	},
 
 };
