@@ -742,6 +742,10 @@ const MarasitAnyBusNode = {
 
 		}
 	},
+	beforeConfigureGraph(app) {
+		MarasitAnyBusNode.LGraph.isAnyBusNodeSetup = false
+		// console.log("[MarasIT - logging "+this.name+"]", "extension beforeConfigureGraph");
+	},
 	afterConfigureGraph(app) {
 		MarasitAnyBusNode.LGraph.isAnyBusNodeSetup = true
 		// console.log("[MarasIT - logging "+this.name+"]", "extension afterConfigureGraph");
