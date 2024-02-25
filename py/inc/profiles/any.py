@@ -7,7 +7,7 @@ from ..nodes import Configuration as _CONF
 
 class Node:
     
-    INPUT_ANY_QTY = 15
+    INPUT_ANY_QTY = 24
 
     INPUT_NAMES = tuple("* {:02d}".format(i) for i in range(1, INPUT_ANY_QTY + 1))
     

@@ -34,7 +34,7 @@ class MarasitAnyBusNodeLiteGraph {
 	PROFILE_NAME = 'Profile'
 	DEFAULT_QTY = 5
 	MIN_QTY = 3
-	MAX_QTY = 15
+	MAX_QTY = 25
 	QTY_NAME = "Nb Inputs"
 
 	FIRST_ANY_INDEX = 1
@@ -532,7 +532,7 @@ class MarasitAnyBusNodeLiteGraph {
 			MarasitAnyBusNode.LGraph.AnyIndexLabel = slot + 1 - MarasitAnyBusNode.LGraph.FIRST_ANY_INDEX
 			//On Disconnect
 			if (!isChangeConnect && slotType == 1 && typeof link_info != 'undefined') {
-				console.log('disconnect');
+				// console.log('disconnect');
 
 				if (slot < MarasitAnyBusNode.LGraph.firstAnyIndex) {
 					// bus
@@ -578,7 +578,7 @@ class MarasitAnyBusNodeLiteGraph {
 			}
 			//On Connect
 			if (isChangeConnect && slotType == 1 && typeof link_info != 'undefined' && this.graph) {
-				console.log('connect');
+				// console.log('connect');
 				// do something
 				let link_info_node = this.graph._nodes.find(
 					(otherNode) => otherNode.id == link_info.origin_id
