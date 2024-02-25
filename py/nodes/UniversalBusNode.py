@@ -78,7 +78,7 @@ class UniversalBusNode:
                 **ProfileNodeUniversal.ENTRIES,
             }
 
-        # Initialize the bus tuple with Any values for each parameter
+        # Initialize the bus tuple with None values for each parameter
         inputs = {}
         for name in inputsByProfile.keys():
             if name != 'bus' and not name.startswith('pipe'):
@@ -86,7 +86,7 @@ class UniversalBusNode:
         bus_outputs = inputs.copy()
         pipe_basic_outputs = {}
         
-        in_bus = kwargs.get('bus', (_CONF.TYPES['ANY'],) * len(inputs))
+        in_bus = kwargs.get('bus', (None,) * len(inputs))
 
         # print(in_bus)
         # Update bus_outputs based on in_bus values
@@ -96,7 +96,7 @@ class UniversalBusNode:
                 if name in ['model', 'clip', 'vae', 'positive', 'negative']:
                     pipe_basic_outputs[name] = bus_outputs[name]
                 
-        in_pipe = kwargs.get('pipe (basic)', (_CONF.TYPES['ANY'],) * len(inputs))
+        in_pipe = kwargs.get('pipe (basic)', (None,) * len(inputs))
         # print(in_pipe)
         # Update outputs based on in_bus values
         for i, name in enumerate(inputs):

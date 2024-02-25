@@ -36,8 +36,8 @@ class PipeNodeBasic:
     FUNCTION = "pipe_fn"
     
     def pipe_fn(self, **kwargs):
-        # Initialize the bus tuple with Any values for each parameter
-        bus = kwargs.get('pipe (basic)', (_CONF.TYPES['ANY'],) * len(ProfileNodePipeBasic.INPUT_NAMES))
+        # Initialize the bus tuple with None values for each parameter
+        bus = kwargs.get('pipe (basic)', (None,) * len(ProfileNodePipeBasic.INPUT_NAMES))
         if len(bus) != len(ProfileNodePipeBasic.INPUT_NAMES):
             raise ValueError("The 'pipe (basic)' tuple must have the same number of elements as '_INPUT_NAMES'")
 

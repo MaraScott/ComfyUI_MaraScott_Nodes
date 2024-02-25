@@ -36,8 +36,8 @@ class AnyBusNode:
     FUNCTION = "bus_fn"
     
     def bus_fn(self, **kwargs):
-        # Initialize the bus tuple with Any values for each parameter
-        bus = kwargs.get('bus', (_CONF.TYPES['ANY'],) * len(ProfileNodeAny.INPUT_NAMES))
+        # Initialize the bus tuple with None values for each parameter
+        bus = kwargs.get('bus', (None,) * len(ProfileNodeAny.INPUT_NAMES))
         if len(bus) != len(ProfileNodeAny.INPUT_NAMES):
             raise ValueError("The 'bus' tuple must have the same number of elements as '_INPUT_NAMES'")
 
