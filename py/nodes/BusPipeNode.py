@@ -21,6 +21,7 @@ class BusPipeNode:
     @classmethod
     def INPUT_TYPES(cls):
         return {
+            "hidden": {"id":"UNIQUE_ID"},
             "required":{},
             "optional": {
                 "bus": ("BUS",),

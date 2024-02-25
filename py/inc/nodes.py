@@ -62,3 +62,11 @@ class Configuration:
         if outputs.get('mask') is None or torch.numel(outputs['mask']) == 0:
             outputs['mask'] = Configuration.DEFAULT["mask"]
             
+    def get_kwarg_with_prefix(kwargs, prefix, default_value=None):
+        filtered_kwargs = {key: value for key, value in kwargs.items() if key.startswith(prefix)}
+        if filtered_kwargs:
+            # If there are matching keys, return the value of the first one found
+            return next(iter(filtered_kwargs.values()))
+        else:
+            # If no matching keys found, return the default value
+            return default_value
