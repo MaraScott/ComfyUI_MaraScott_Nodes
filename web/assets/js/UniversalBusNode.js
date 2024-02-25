@@ -17,13 +17,13 @@ if (!window.marasit) {
  * Project: litegraph.js
  * Definitions by: NateScarlet <https://github.com/NateScarlet>
  * https://github.com/NateScarlet/litegraph.js/blob/master/src/litegraph.js
- * ComfyUI\web\lib\litegraph.core.js
+ * ComfyUI\web\lib\litegraph.core.js - Check for settings
  * ComfyUI\web\extensions\logging.js.example
  * ComfyUI\custom_nodes\rgthree-comfy\src_web\typings\litegraph.d.ts
  *
  */
 
-class MarasitUniversalBusNodeHelper {
+class MarasitUniversalBusNodeLiteGraph {
 
 	constructor() {
 
@@ -55,7 +55,7 @@ class MarasitUniversalBusNodeHelper {
 
 		const profile = (node && node.properties && node.properties.profile) || 'default';
 
-		let entries = await MarasitUniversalBusNode.helper.setDefaultProfile(profile)
+		let entries = await MarasitUniversalBusNode.LGraph.setDefaultProfile(profile)
 
 		const url = `/extensions/marasit/profiles/profile_${profile}.json`;
 		try {
@@ -73,7 +73,7 @@ class MarasitUniversalBusNodeHelper {
 
 	async setProfileEntries(node) {
 		// display initial inputs/outputs
-		const entries = await MarasitUniversalBusNode.helper.getProfileEntries(node)
+		const entries = await MarasitUniversalBusNode.LGraph.getProfileEntries(node)
 		for (const name in entries) {
 			if(node.findInputSlot(name) == -1) {
 				node.addInput(name, entries[name])
@@ -84,7 +84,7 @@ class MarasitUniversalBusNodeHelper {
 	}
 	async setDefaultProfileEntries(node) {
 		// display initial inputs/outputs
-		const entries = await MarasitUniversalBusNode.helper.getProfileEntries(node)
+		const entries = await MarasitUniversalBusNode.LGraph.getProfileEntries(node)
 		for (const name in entries) {
 			node.addInput(name, entries[name])
 			node.addOutput(name, entries[name])
@@ -266,10 +266,10 @@ class MarasitUniversalBusNodeHelper {
 			const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
 
 			
-			MarasitUniversalBusNode.helper.initNode(this)
-			MarasitUniversalBusNode.helper.setProfileWidget(this)
-			await MarasitUniversalBusNode.helper.setProfileEntries(this)
-			await MarasitUniversalBusNode.helper.setNodeProfileEntries(this)
+			MarasitUniversalBusNode.LGraph.initNode(this)
+			MarasitUniversalBusNode.LGraph.setProfileWidget(this)
+			await MarasitUniversalBusNode.LGraph.setProfileEntries(this)
+			await MarasitUniversalBusNode.LGraph.setNodeProfileEntries(this)
 
 			return r;
 		}
@@ -303,7 +303,7 @@ class MarasitUniversalBusNodeHelper {
 
 				// _node.setDirtyCanvas(true);
 				console.log('+ entry ' + name);
-				await MarasitUniversalBusNode.helper.setNodeProfileEntries(_node)
+				await MarasitUniversalBusNode.LGraph.setNodeProfileEntries(_node)
 
 			}
 		}
@@ -335,7 +335,7 @@ class MarasitUniversalBusNodeHelper {
 				}
 	
 				console.log('- entry ' + name);
-				await MarasitUniversalBusNode.helper.setNodeProfileEntries(_node)
+				await MarasitUniversalBusNode.LGraph.setNodeProfileEntries(_node)
 
 			}
 		}
@@ -363,11 +363,11 @@ class MarasitUniversalBusNodeHelper {
 
 			// Add input callback
 			const addInputCallback = async () => {
-				await MarasitUniversalBusNode.helper.addInputMenuItem(this, _, options);
+				await MarasitUniversalBusNode.LGraph.addInputMenuItem(this, _, options);
 			};
 			// Remove input callback
 			const removeLastInputCallback = async () => {
-				await MarasitUniversalBusNode.helper.removeLastInputMenuItem(this, _, options);
+				await MarasitUniversalBusNode.LGraph.removeLastInputMenuItem(this, _, options);
 			};
 
 			options.unshift(
@@ -429,7 +429,7 @@ class MarasitUniversalBusNodeHelper {
 
 			}
 
-			MarasitUniversalBusNode.helper.setNodeProfileEntries(this)
+			MarasitUniversalBusNode.LGraph.setNodeProfileEntries(this)
 
 			return r;
 		}
@@ -441,7 +441,7 @@ class MarasitUniversalBusNodeHelper {
 const MarasitUniversalBusNode = {
 	// Unique name for the extension
 	name: "Comfy.MarasIT.UniversalBusNode",
-	helper: new MarasitUniversalBusNodeHelper(),
+	LGraph: new MarasitUniversalBusNodeLiteGraph(),
 	async init(app) {
 		// Any initial setup to run as soon as the page loads
 		// console.log("[MarasIT - logging "+this.name+"]", "extension init");
@@ -475,11 +475,11 @@ const MarasitUniversalBusNode = {
 			node.setProperty('uuid', node.id)
 
 			// console.log("[MarasIT - logging "+this.name+"]", "Loaded Graph", {"id": node.id, "properties": node.properties});
-			MarasitUniversalBusNode.helper.initNode(node)
-			MarasitUniversalBusNode.helper.setProfileWidget(node)
-			await MarasitUniversalBusNode.helper.setProfileEntries(node)
-			// MarasitUniversalBusNode.helper.setPipeWidget(node)
-			await MarasitUniversalBusNode.helper.setNodeProfileEntries(node)
+			MarasitUniversalBusNode.LGraph.initNode(node)
+			MarasitUniversalBusNode.LGraph.setProfileWidget(node)
+			await MarasitUniversalBusNode.LGraph.setProfileEntries(node)
+			// MarasitUniversalBusNode.LGraph.setPipeWidget(node)
+			await MarasitUniversalBusNode.LGraph.setNodeProfileEntries(node)
 
 		}
 
@@ -502,20 +502,20 @@ const MarasitUniversalBusNode = {
 			console.log("[MarasIT - logging "+this.name+"]", "before register node: ", nodeData);
 			// This fires for every node definition so only log once
 
-			MarasitUniversalBusNode.helper.onExecuted(nodeType)
-			MarasitUniversalBusNode.helper.onNodeCreated(nodeType)
-			MarasitUniversalBusNode.helper.getExtraMenuOptions(nodeType)
-			MarasitUniversalBusNode.helper.onConnectionsChange(nodeType)
-			// await MarasitUniversalBusNode.helper.setDefaultProfileEntries(this)
+			MarasitUniversalBusNode.LGraph.onExecuted(nodeType)
+			MarasitUniversalBusNode.LGraph.onNodeCreated(nodeType)
+			MarasitUniversalBusNode.LGraph.getExtraMenuOptions(nodeType)
+			MarasitUniversalBusNode.LGraph.onConnectionsChange(nodeType)
+			// await MarasitUniversalBusNode.LGraph.setDefaultProfileEntries(this)
 
 			// delete MarasitUniversalBusNode.beforeRegisterNodeDef;
 		}
 	},
 
 	onRemoved() {
-		MarasitUniversalBusNode.helper.removeNodeProfile(this)
+		MarasitUniversalBusNode.LGraph.removeNodeProfile(this)
 	}
 
 };
 
-app.registerExtension(MarasitUniversalBusNode);
+// app.registerExtension(MarasitUniversalBusNode);

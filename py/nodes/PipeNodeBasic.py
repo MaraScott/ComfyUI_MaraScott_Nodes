@@ -20,6 +20,7 @@ class PipeNodeBasic:
     @classmethod
     def INPUT_TYPES(cls):
         return {
+            "hidden": {"id":"UNIQUE_ID"},
             "required":{},
             "optional": {
                 "pipe (basic)" : ("BASIC_PIPE",),
