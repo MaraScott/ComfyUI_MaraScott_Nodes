@@ -496,19 +496,19 @@ class MarasitAnyBusNodeLiteGraph {
 		let busNodes = []
 		const busNodePaths = this.getBusFlows(node)
 		let startIndex = null;
-
+		const syncProfile = MarasitAnyBusNode.LGraph.syncProfile
 		for (let i in busNodePaths) {
 			startIndex = null;
 			busNodes = busNodePaths[i]
 
-			if (MarasitAnyBusNode.LGraph.syncProfile == MarasitAnyBusNode.LGraph.BACKWARDSYNC) {
+			if (syncProfile == MarasitAnyBusNode.LGraph.BACKWARDSYNC) {
 
 				startIndex = busNodes.indexOf(node.id) + 1;
 				busNodes = busNodes.slice(startIndex)
 
 			}
 
-			if (MarasitAnyBusNode.LGraph.syncProfile == MarasitAnyBusNode.LGraph.FORWARDSYNC) {
+			if (syncProfile == MarasitAnyBusNode.LGraph.FORWARDSYNC) {
 
 				busNodes?.reverse()
 				startIndex = busNodes.indexOf(node.id) + 1;
@@ -517,12 +517,11 @@ class MarasitAnyBusNodeLiteGraph {
 
 			}
 
-			if (MarasitAnyBusNode.LGraph.syncProfile == MarasitAnyBusNode.LGraph.FULLSYNC) {
+			if (syncProfile == MarasitAnyBusNode.LGraph.FULLSYNC) {
 
 				busNodes?.reverse()
 				startIndex = 0
 			}
-
 
 			if (startIndex != null) {
 				MarasitAnyBusNode.LGraph.syncBusNodes(node, busNodes, isChangeWidget, isChangeConnect)
@@ -561,7 +560,6 @@ class MarasitAnyBusNodeLiteGraph {
 
 	cleanBus(node) {
 
-		// console.log('clean',node.id)
 		let _node_origin_link = null
 		let _node_origin = null
 		if (node.inputs[MarasitAnyBusNode.LGraph.BUS_SLOT].link != null) {
@@ -574,6 +572,7 @@ class MarasitAnyBusNodeLiteGraph {
 			// console.log('reconnect', _node_origin.id, '=>', node.id)
 			_node_origin.connect(MarasitAnyBusNode.LGraph.BUS_SLOT, node, MarasitAnyBusNode.LGraph.BUS_SLOT)
 		} else {
+			
 			// disconnect
 			for (let slot = MarasitAnyBusNode.LGraph.firstAnyIndex; slot < node.inputs.length; slot++) {
 
@@ -595,7 +594,9 @@ class MarasitAnyBusNodeLiteGraph {
 					node.outputs[slot].type = node.inputs[slot].type
 				}
 			}
+			MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.FULLSYNC
 			MarasitAnyBusNode.LGraph.syncNodeProfile(node, this.CLEAN_NAME, false)
+			MarasitAnyBusNode.LGraph.syncNodeProfile(node, null, true)
 		}
 
 	}
