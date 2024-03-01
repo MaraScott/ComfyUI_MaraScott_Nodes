@@ -637,10 +637,10 @@ class MarasitAnyBusNodeLiteGraph {
 			busNodes.reverse()
 			for (let y in busNodes) {
 				_node = node.graph.getNodeById(busNodes[y])
-				if (_node.inputs[slot].link != null && _node.inputs[slot].type != "*") {
+				if (typeof _node.inputs[slot] != 'undefined' && _node.inputs[slot].link != null && _node.inputs[slot].type != "*") {
 					newName = _node.inputs[slot].name
 					newType = _node.inputs[slot].type
-				} else if (_node.inputs[slot].type == newType && _node.inputs[slot].name != newName) {
+				} else if (typeof _node.inputs[slot] != 'undefined' && _node.inputs[slot].type == newType && _node.inputs[slot].name != newName) {
 					newName = _node.inputs[slot].name
 				}
 			}
