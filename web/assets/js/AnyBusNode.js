@@ -52,6 +52,7 @@ class MarasitAnyBusNodeLiteGraph {
 		this.firstAnyIndex = this.FIRST_ANY_INDEX;
 		this.AnyIndexLabel = 0
 		this.isAnyBusNodeSetup = false
+		this.clean = true
 
 		return this
 
@@ -85,7 +86,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 		for (let slot = this.FIRST_ANY_INDEX; slot < MarasitAnyBusNode.LGraph.busNodeForSync.inputs.length; slot++) {
 			if (protected_slots.indexOf(slot) > -1) continue
-			const isNodeInputDifferent = node.inputs[slot].type != "*" && node.inputs[slot].type != MarasitAnyBusNode.LGraph.busNodeForSync.inputs[slot].type
+			const isNodeInputDifferent = node?.inputs[slot].type != "*" && node.inputs[slot].type != MarasitAnyBusNode.LGraph.busNodeForSync?.inputs[slot].type
 			if (isNodeInputDifferent) {
 				const preSyncMode = MarasitAnyBusNode.LGraph.syncProfile;
 				MarasitAnyBusNode.LGraph.syncProfile = this.NOSYNC;
@@ -560,6 +561,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 	cleanBus(node) {
 
+		MarasitAnyBusNode.LGraph.clean = false
 		let _node_origin_link = null
 		let _node_origin = null
 		if (node.inputs[MarasitAnyBusNode.LGraph.BUS_SLOT].link != null) {
@@ -571,6 +573,7 @@ class MarasitAnyBusNodeLiteGraph {
 			node.disconnectInput(MarasitAnyBusNode.LGraph.BUS_SLOT)
 			// console.log('reconnect', _node_origin.id, '=>', node.id)
 			_node_origin.connect(MarasitAnyBusNode.LGraph.BUS_SLOT, node, MarasitAnyBusNode.LGraph.BUS_SLOT)
+
 		} else {
 			
 			// disconnect
@@ -597,6 +600,7 @@ class MarasitAnyBusNodeLiteGraph {
 			MarasitAnyBusNode.LGraph.syncProfile = MarasitAnyBusNode.LGraph.FULLSYNC
 			MarasitAnyBusNode.LGraph.syncNodeProfile(node, this.CLEAN_NAME, false)
 			MarasitAnyBusNode.LGraph.syncNodeProfile(node, null, true)
+			MarasitAnyBusNode.LGraph.clean = true
 		}
 		const cleanedLabel = " ... cleaned"
 		node.title = node.title + cleanedLabel
@@ -614,7 +618,7 @@ class MarasitAnyBusNodeLiteGraph {
 		return syncProfile
 
 	}
-	disConnectInput(node, slot) {
+	disConnectInput(node, slot, clean) {
 
 		const syncProfile = MarasitAnyBusNode.LGraph.getSyncType(node, slot, null, null)
 		const previousBusNode = MarasitAnyBusNode.LGraph.getBusParentNodeWithInput(node, slot)
@@ -642,7 +646,7 @@ class MarasitAnyBusNodeLiteGraph {
 		node.inputs[slot].type = newType
 		node.outputs[slot].name = node.inputs[slot].name
 		node.outputs[slot].type = node.inputs[slot].type
-		this.cleanBus(node)
+		if(MarasitAnyBusNode.LGraph.clean) this.cleanBus(node)
 
 		return syncProfile
 
