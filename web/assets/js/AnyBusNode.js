@@ -540,10 +540,10 @@ class MarasitAnyBusNodeLiteGraph {
 						for (let _slot = MarasitAnyBusNode.LGraph.firstAnyIndex; _slot < this.inputs.length; _slot++) {
 							if (this.inputs[_slot].link == null) {
 
-								this.inputs[_slot].name = "* " + (_slot + 1 - MarasitAnyBusNode.LGraph.firstAnyIndex).toString().padStart(2, '0')
-								this.inputs[_slot].type = "*"
-								this.outputs[_slot].name = this.inputs[_slot].name
-								this.outputs[_slot].type = this.inputs[_slot].type
+								// this.inputs[_slot].name = "* " + (_slot + 1 - MarasitAnyBusNode.LGraph.firstAnyIndex).toString().padStart(2, '0')
+								// this.inputs[_slot].type = "*"
+								// this.outputs[_slot].name = this.inputs[_slot].name
+								// this.outputs[_slot].type = this.inputs[_slot].type
 
 							}
 						}
