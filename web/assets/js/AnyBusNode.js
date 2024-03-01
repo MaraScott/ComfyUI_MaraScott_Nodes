@@ -86,7 +86,11 @@ class MarasitAnyBusNodeLiteGraph {
 
 		for (let slot = this.FIRST_ANY_INDEX; slot < MarasitAnyBusNode.LGraph.busNodeForSync.inputs.length; slot++) {
 			if (protected_slots.indexOf(slot) > -1) continue
-			const isNodeInputDifferent = node?.inputs[slot].type != "*" && node.inputs[slot].type != MarasitAnyBusNode.LGraph.busNodeForSync?.inputs[slot].type
+			if( typeof node.inputs[slot] == 'undefined' || typeof MarasitAnyBusNode.LGraph.busNodeForSync.inputs[slot] == 'undefined' ) {
+				console.log('[MarasIT Nodes] Check your profile Names')
+				continue;
+			}
+			const isNodeInputDifferent = node.inputs[slot].type != "*" && node.inputs[slot].type != MarasitAnyBusNode.LGraph.busNodeForSync.inputs[slot].type
 			if (isNodeInputDifferent) {
 				const preSyncMode = MarasitAnyBusNode.LGraph.syncProfile;
 				MarasitAnyBusNode.LGraph.syncProfile = this.NOSYNC;
