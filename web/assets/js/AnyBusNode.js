@@ -598,6 +598,12 @@ class MarasitAnyBusNodeLiteGraph {
 			MarasitAnyBusNode.LGraph.syncNodeProfile(node, this.CLEAN_NAME, false)
 			MarasitAnyBusNode.LGraph.syncNodeProfile(node, null, true)
 		}
+		const cleanedLabel = " ... cleaned"
+		node.title = node.title + cleanedLabel
+		setTimeout(() => {
+			// Remove " (cleaned)" from the title
+			node.title = node.title.replace(cleanedLabel, "");
+		}, 500);
 
 	}
 
