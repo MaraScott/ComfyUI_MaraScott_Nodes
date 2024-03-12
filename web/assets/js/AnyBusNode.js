@@ -24,7 +24,11 @@ if (!window.marasit.anyBus) {
 		},
 		clean: false,
 		nodeToSync: null,
-		flows: [],
+		flows: {
+			start: [],
+			list: [],
+			end: [],
+		},
 		nodes: [],
 	}
 }
@@ -288,7 +292,7 @@ class MarasitAnyBusNode {
 	}
 	
 	static disConnectBus(node, slot) {
-
+		MarasitAnyBusNodeFlow.setFlows(node);
 		return MarasitAnyBusNodeFlow.FULLSYNC
 
 	}
@@ -330,42 +334,43 @@ class MarasitAnyBusNode {
 	static connectBus(node, slot, node_origin) {
 
 		const syncProfile = MarasitAnyBusNodeFlow.FULLSYNC
-		const isBusInput = slot == 0
-		const isOutputs = node_origin.outputs?.length > 0
-		let isMarasitBusNode = node_origin.type == "MarasitAnyBusNode"
-		if (!isMarasitBusNode) {
-			const origin_reroute_node = MarasitAnyBusNodeFlow.getOriginRerouteBusType(node_origin)
-			isMarasitBusNode = origin_reroute_node.type == "MarasitAnyBusNode"
-			if (isMarasitBusNode) {
-				node_origin = origin_reroute_node
-			}
-		}
-		const isOriginProfileSame = node.properties[MarasitAnyBusNodeWidget.PROFILE.name] == node_origin.properties[MarasitAnyBusNodeWidget.PROFILE.name]
-		const isTargetProfileDefault = node.properties[MarasitAnyBusNodeWidget.PROFILE.name] == MarasitAnyBusNodeWidget.PROFILE.default
-		if (isBusInput && isOutputs && isMarasitBusNode && (isOriginProfileSame || isTargetProfileDefault)) {
-			if (isTargetProfileDefault) {
-				MarasitAnyBusNodeWidget.setValue(node, MarasitAnyBusNodeWidget.PROFILE.name, node_origin.properties[MarasitAnyBusNodeWidget.PROFILE.name])
-				node.setProperty('prevProfileName', node.properties[MarasitAnyBusNodeWidget.PROFILE.name])
-			}
-			MarasitAnyBusNodeWidget.setValue(node, MarasitAnyBusNodeWidget.INPUTS.name, node_origin.properties[MarasitAnyBusNodeWidget.INPUTS.name])
-			for (let _slot = window.marasit.anyBus.input.index; _slot < node_origin.outputs.length; _slot++) {
-				if (_slot > node_origin.properties[MarasitAnyBusNodeWidget.INPUTS.name]) {
-					node.disconnectInput(_slot)
-					node.disconnectOutput(_slot)
-				} else {
-					if (node_origin.outputs[_slot].type != node.inputs[_slot].type) {
-						node.disconnectInput(_slot)
-						node.disconnectOutput(_slot)
-					}
-					node.inputs[_slot].name = node_origin.outputs[_slot].name.toLowerCase()
-					node.inputs[_slot].type = node_origin.outputs[_slot].type
-					node.outputs[_slot].name = node.inputs[_slot].name
-					node.outputs[_slot].type = node.inputs[_slot].type
-				}
-			}
-		} else {
-			node.disconnectInput(slot)
-		}
+		// const isBusInput = slot == 0
+		// const isOutputs = node_origin.outputs?.length > 0
+		// let isMarasitBusNode = node_origin.type == "MarasitAnyBusNode"
+		// if (!isMarasitBusNode) {
+		// 	const origin_reroute_node = MarasitAnyBusNodeFlow.getOriginRerouteBusType(node_origin)
+		// 	isMarasitBusNode = origin_reroute_node.type == "MarasitAnyBusNode"
+		// 	if (isMarasitBusNode) {
+		// 		node_origin = origin_reroute_node
+		// 	}
+		// }
+		// const isOriginProfileSame = node.properties[MarasitAnyBusNodeWidget.PROFILE.name] == node_origin.properties[MarasitAnyBusNodeWidget.PROFILE.name]
+		// const isTargetProfileDefault = node.properties[MarasitAnyBusNodeWidget.PROFILE.name] == MarasitAnyBusNodeWidget.PROFILE.default
+		// if (isBusInput && isOutputs && isMarasitBusNode && (isOriginProfileSame || isTargetProfileDefault)) {
+		// 	if (isTargetProfileDefault) {
+		// 		MarasitAnyBusNodeWidget.setValue(node, MarasitAnyBusNodeWidget.PROFILE.name, node_origin.properties[MarasitAnyBusNodeWidget.PROFILE.name])
+		// 		node.setProperty('prevProfileName', node.properties[MarasitAnyBusNodeWidget.PROFILE.name])
+		// 	}
+		// 	MarasitAnyBusNodeWidget.setValue(node, MarasitAnyBusNodeWidget.INPUTS.name, node_origin.properties[MarasitAnyBusNodeWidget.INPUTS.name])
+		// 	for (let _slot = window.marasit.anyBus.input.index; _slot < node_origin.outputs.length; _slot++) {
+		// 		if (_slot > node_origin.properties[MarasitAnyBusNodeWidget.INPUTS.name]) {
+		// 			node.disconnectInput(_slot)
+		// 			node.disconnectOutput(_slot)
+		// 		} else {
+		// 			if (node_origin.outputs[_slot].type != node.inputs[_slot].type) {
+		// 				node.disconnectInput(_slot)
+		// 				node.disconnectOutput(_slot)
+		// 			}
+		// 			node.inputs[_slot].name = node_origin.outputs[_slot].name.toLowerCase()
+		// 			node.inputs[_slot].type = node_origin.outputs[_slot].type
+		// 			node.outputs[_slot].name = node.inputs[_slot].name
+		// 			node.outputs[_slot].type = node.inputs[_slot].type
+		// 		}
+		// 	}
+		// } else {
+		// 	node.disconnectInput(slot)
+		// }
+		MarasitAnyBusNodeFlow.setFlows(node);
 		return syncProfile
 	}
 
@@ -459,98 +464,61 @@ class MarasitAnyBusNodeFlow {
 
 	static getFlows(node) {
 
-		let bus_flows = {}
-		let nodes_list = []
-		let nodes_paths = {}
-		for (let i in node.graph._nodes) {
-			let _node = node.graph._nodes[i]
-			let _previous_node = null
-			if (this.ALLOWED_NODE_TYPE.includes(_node.type) && nodes_list.indexOf(_node.id) == -1) {
-				nodes_list.push(_node.id);
-				let _previousNode_id = null;
-				if (_node.inputs[0].link != null) {
-					const _previousNode_link = node.graph.links.find(
-						(otherLink) => otherLink?.id == _node.inputs[0].link
-					)
-					if (_previousNode_link) _previousNode_id = _previousNode_link.origin_id
-				}
+		return window.marasit.anyBus.flows.list
 
-				nodes_paths[_node.id] = _previousNode_id
-			}
-		}
-		const lastBuseNodeIds = this.getLastBuses(nodes_paths)
-		for (let i in lastBuseNodeIds) {
-			let _node = node.graph.getNodeById(lastBuseNodeIds[i])
-			if (_node.properties[MarasitAnyBusNodeWidget.PROFILE.name] == node.properties['prevProfileName']) {
-				bus_flows[lastBuseNodeIds[i]] = this.setFlows(_node)
-			}
-		}
-		let busFlowRef = []
-		for (let i in bus_flows) {
-			if (bus_flows[i].indexOf(node.id)) {
-				busFlowRef = bus_flows[i]
-			}
-		}
-		bus_flows = this.getLinkedFlows(bus_flows, busFlowRef)
-		return bus_flows
 	}
 
 	static setFlows(node) {
 
-		let _backward_node = []
-		let _backward_node_list = []
+		let _nodes = []
+		let _nodes_list = []
 		for (let i in node.graph._nodes) {
 			let _node = node.graph._nodes[i]
-			if (this.ALLOWED_NODE_TYPE.includes(_node.type) && _backward_node_list.indexOf(_node.id) == -1) {
-				_backward_node_list.push(_node.id);
-				if (_node.inputs[0].link != null) _backward_node.push(_node);
+			if (this.ALLOWED_NODE_TYPE.includes(_node.type) && _nodes_list.indexOf(_node.id) == -1) {
+				_nodes_list.push(_node.id);
+				if (_node.inputs[0].link != null) _nodes.push(_node);
 			}
 		}
 
 		// bus network
-		let _backward_bus_node_link = null
-		let backward_bus_nodes = []
-		let backward_bus_node_connections = {}
-		for (let i in _backward_node_list) {
-			backward_bus_nodes.push(node.graph.getNodeById(_backward_node_list[i]))
+		let _bus_node_link = null
+		let _bus_nodes = []
+		let _bus_nodes_connections = {}
+		let _bus_nodes_start = []
+		for (let i in _nodes_list) {
+			_bus_nodes.push(node.graph.getNodeById(_nodes_list[i]))
 		}
-		for (let i in backward_bus_nodes) {
-			_backward_bus_node_link = backward_bus_nodes[i].inputs[0].link
-			if (_backward_bus_node_link != null) {
-				_backward_bus_node_link = node.graph.links.find(
-					(otherLink) => otherLink?.id == _backward_bus_node_link
+		for (let i in _bus_nodes) {
+			_bus_node_link = _bus_nodes[i].inputs[0].link
+			if (_bus_node_link != null) {
+				_bus_node_link = node.graph.links.find(
+					(otherLink) => otherLink?.id == _bus_node_link
 				)
-				if (_backward_bus_node_link) backward_bus_node_connections[backward_bus_nodes[i].id] = _backward_bus_node_link.origin_id
+				if (_bus_node_link) _bus_nodes_connections[_bus_nodes[i].id] = _bus_node_link.origin_id
+			} else {
+				_bus_nodes_start.push(_bus_nodes[i].id)
 			}
 		}
 
-		let currentNode = node.id
-		const backward_path = [currentNode]; // Initialize the path with the starting node
-		while (backward_bus_node_connections[currentNode] !== undefined) {
-			currentNode = backward_bus_node_connections[currentNode]; // Move to the parent node
-			const _currentNode = node.graph.getNodeById(currentNode)
-			if (_currentNode.type == "MarasitAnyBusNode") {
-				backward_path.push(currentNode); // Add the parent node to the path
+		const lastBuseNodeIds = this.getLastBuses(_bus_nodes_connections)
+		let node_paths = []
+
+		for (let id in lastBuseNodeIds) {
+			let currentNode = lastBuseNodeIds[id]
+			node_paths[id] = [currentNode]; // Initialize the path with the starting node
+			while (_bus_nodes_connections[currentNode] !== undefined) {
+				currentNode = _bus_nodes_connections[currentNode]; // Move to the parent node
+				const _currentNode = node.graph.getNodeById(currentNode)
+				if (_currentNode.type == "MarasitAnyBusNode") {
+					node_paths[id].push(currentNode); // Add the parent node to the path
+				}
 			}
 		}
 
-		return backward_path;
+		window.marasit.anyBus.flows.start = _bus_nodes_start
+		window.marasit.anyBus.flows.end = lastBuseNodeIds
+		window.marasit.anyBus.flows.list = node_paths
 
-	}
-
-	static getLinkedFlows(bus_flows, busFlowRef) {
-
-		const _bus_flows = Object.entries(bus_flows);
-
-		// Filter the entries based on the condition that at least one node in the value array is included in busFlowRef
-		const _filtered_bus_flows = _bus_flows.filter(([id, bus_flow]) =>
-			bus_flow.some(node => busFlowRef.includes(node))
-		);
-
-		// Reconstruct the object from the filtered entries
-		const filtered_bus_flows = Object.fromEntries(_filtered_bus_flows);
-
-		return filtered_bus_flows;
 	}
 
 	static syncProfile(node, isChangeWidget, isChangeConnect) {
@@ -725,6 +693,7 @@ class MarasitAnyBusNodeLiteGraph {
 				// do something
 				// this.inputs[slot].name = "* ("+slot.toString().padStart(2, '0')+")"
 			}
+
 			//On Connect
 			if (isChangeConnect && slotType == 1 && typeof link_info != 'undefined' && this.graph) {
 				// console.log('connect');
@@ -733,9 +702,10 @@ class MarasitAnyBusNodeLiteGraph {
 					(otherNode) => otherNode.id == link_info.origin_id
 				)
 
-				if (slot < window.marasit.anyBus.input.index) {
+				if (slot < MarasitAnyBusNode.FIRST_INDEX) {
 					// bus
 					window.marasit.anyBus.sync = MarasitAnyBusNode.connectBus(this, slot, link_info_node)
+					
 				} else {
 
 					window.marasit.anyBus.sync = MarasitAnyBusNode.connectInput(this, slot, link_info_node, link_info.origin_slot)
