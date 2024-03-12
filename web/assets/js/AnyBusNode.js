@@ -768,7 +768,7 @@ class MarasitAnyBusNodeLiteGraph {
 
 }
 
-const MarasitAnyBusNode = {
+const MarasitAnyBusNodeExtension = {
 	// Unique name for the extension
 	name: "Comfy.MarasIT.AnyBusNode",
 	init(app) {
@@ -784,7 +784,13 @@ const MarasitAnyBusNode = {
 		// Add custom node definitions
 		// These definitions will be configured and registered automatically
 		// defs is a lookup core nodes, add yours into this
-		console.log("[MarasIT - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs['MarasitAnyBusNode'], JSON.stringify(Object.keys(defs)));
+		const withNodesNames = false
+		if(withNodesNames) {
+			console.log("[MarasIT - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs['MarasitAnyBusNode'], JSON.stringify(Object.keys(defs)));
+
+		} else {
+			console.log("[MarasIT - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs['MarasitAnyBusNode']);
+		}
 	},
 	getCustomWidgets(app) {
 		// Return custom widget types
@@ -824,7 +830,7 @@ const MarasitAnyBusNode = {
 		if (nodeData.name === 'MarasitAnyBusNode') {
 			// This fires for every node definition so only log once
 			console.log("[MarasIT - logging " + this.name + "]", "before register node: ", nodeData);
-
+			
 			// MarasitAnyBusNodeLiteGraph.onExecuted(nodeType)
 			MarasitAnyBusNodeLiteGraph.onNodeCreated(nodeType)
 			// MarasitAnyBusNodeLiteGraph.getExtraMenuOptions(nodeType)
@@ -845,4 +851,4 @@ const MarasitAnyBusNode = {
 
 };
 
-app.registerExtension(MarasitAnyBusNode);
+app.registerExtension(MarasitAnyBusNodeExtension);
