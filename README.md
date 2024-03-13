@@ -1,5 +1,16 @@
 AnyBus Node (AKA UniversalBus) is an attempt to provide a Universal Bus Node (as some might say) which is based on AnyType Input/Output.
 
+the Bus Nodes can be connected from one AnyBusNode to another and we support the following Reroute Nodes as long as they are linked from an AnyBusNode before connecting it to another
+
+Reroute Node **Supported** :
+
+- "Reroute" from ComfyUI native
+- "Reroute (rgthree)" from RgThree Custom Node
+- "ReroutePrimitive|pysssss" from Pysssss Custom Node
+
+Reroute Node **Not Supported** :
+- "0246.CastReroute" from 0246 Custom Node
+
 I would like to thanks the following person to help me out by providing there awesome code and advises :
 - WASasquatch with his [Was Node Suite](https://github.com/WASasquatch/was-node-suite-comfyui)
 - KJNodes with his [Get/Set nodes](https://github.com/kijai/ComfyUI-KJNodes), 
