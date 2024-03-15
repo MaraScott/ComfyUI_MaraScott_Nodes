@@ -177,6 +177,8 @@ class MarasitAnyBusNodeWidget {
 
 class MarasitAnyBusNode {
 
+	static TYPE = "MarasitAnyBusNode"
+
 	static BUS_SLOT = 0
 	static BASIC_PIPE_SLOT = 0
 	static REFINER_PIPE_SLOT = 0
@@ -344,10 +346,10 @@ class MarasitAnyBusNode {
 		const syncProfile = MarasitAnyBusNodeFlow.FULLSYNC
 		const isBusInput = slot == MarasitAnyBusNode.BUS_SLOT
 		const isOutputs = node_origin.outputs?.length > 0
-		let isMarasitBusNode = node_origin.type == "MarasitAnyBusNode"
+		let isMarasitBusNode = node_origin.type == MarasitAnyBusNode.TYPE
 		if (!isMarasitBusNode) {
 			const origin_reroute_node = MarasitAnyBusNodeFlow.getOriginRerouteBusType(node_origin)
-			isMarasitBusNode = origin_reroute_node?.type == "MarasitAnyBusNode"
+			isMarasitBusNode = origin_reroute_node?.type == MarasitAnyBusNode.TYPE
 			if (isMarasitBusNode) {
 				node_origin = origin_reroute_node
 			}
@@ -386,8 +388,9 @@ class MarasitAnyBusNode {
 	static connectInput(node, slot, node_origin, origin_slot) {
 
 		let syncProfile = MarasitAnyBusNodeFlow.NOSYNC
+		const isOriginAnyBusBus = node_origin.type == MarasitAnyBusNode.TYPE
 		const isOriginSlotBus = origin_slot == MarasitAnyBusNode.BUS_SLOT
-		if(isOriginSlotBus) {
+		if(!(isOriginAnyBusBus && isOriginSlotBus)) {
 
 			let anyPrefix = "* " + slot.toString().padStart(2, '0')
 			let origin_name = node_origin.outputs[origin_slot]?.name.toLowerCase()
@@ -433,13 +436,13 @@ class MarasitAnyBusNodeFlow {
 	static FULLSYNC = 1
 
 	static ALLOWED_REROUTE_TYPE = [
-		"Reroute", // SUPPORTED - ComfyUI native
 		"Reroute (rgthree)", // SUPPORTED - RgThree Custom Node
-		"ReroutePrimitive|pysssss", // SUPPORTED - Pysssss Custom Node
+		// "Reroute", // UNSUPPORTED - ComfyUI native - do not allow connection on Any Type if origin Type is not Any Type too
+		// "ReroutePrimitive|pysssss", // UNSUPPORTED - Pysssss Custom Node - do not display the name of the origin slot
 		// "0246.CastReroute", //  UNSUPPORTED - 0246 Custom Node
 	]
 	static ALLOWED_NODE_TYPE = [
-		"MarasitAnyBusNode",
+		MarasitAnyBusNode.TYPE,
 		...this.ALLOWED_REROUTE_TYPE,
 	]
 
@@ -473,7 +476,7 @@ class MarasitAnyBusNodeFlow {
 				_originNode = this.getOriginRerouteBusType(_originNode)
 			}
 
-			if (_originNode?.type == "MarasitAnyBusNode") {
+			if (_originNode?.type == MarasitAnyBusNode.TYPE) {
 				originNode = _originNode
 			}
 
@@ -542,7 +545,7 @@ class MarasitAnyBusNodeFlow {
 			while (_bus_nodes_connections[currentNode] !== undefined) {
 				currentNode = _bus_nodes_connections[currentNode]; // Move to the parent node
 				const _currentNode = node.graph.getNodeById(currentNode)
-				if (_currentNode.type == "MarasitAnyBusNode") {
+				if (_currentNode.type == MarasitAnyBusNode.TYPE) {
 					node_paths[id].push(currentNode); // Add the parent node to the path
 				}
 			}
@@ -622,12 +625,15 @@ class MarasitAnyBusNodeFlow {
 					_node_origin.connect(_node_origin_link.origin_slot, node, slot)
 
 				} else {
+
 					node.disconnectInput(slot)
 					node.inputs[slot].name = "* " + (slot + 1 - MarasitAnyBusNode.FIRST_INDEX).toString().padStart(2, '0')
 					node.inputs[slot].type = "*"
 					node.outputs[slot].name = node.inputs[slot].name
 					node.outputs[slot].type = node.inputs[slot].type
+
 				}
+
 			}
 			window.marasit.anyBus.sync = MarasitAnyBusNodeFlow.FULLSYNC
 			MarasitAnyBusNodeFlow.syncProfile(node, MarasitAnyBusNodeWidget.CLEAN.name, false)
@@ -689,7 +695,7 @@ class MarasitAnyBusNodeLiteGraph {
 			isChangeConnect,
 			link_info,
 			output
-		) {
+			) {
 			const r = onConnectionsChange ? onConnectionsChange.apply(this, arguments) : undefined
 
 			if (!window.marasit.anyBus.init) return r
@@ -710,6 +716,7 @@ class MarasitAnyBusNodeLiteGraph {
 				} else {
 
 					window.marasit.anyBus.sync = MarasitAnyBusNode.disConnectInput(this, slot)
+					
 				}
 
 			}
@@ -721,11 +728,12 @@ class MarasitAnyBusNodeLiteGraph {
 			//On Connect
 			if (isChangeConnect && slotType == 1 && typeof link_info != 'undefined' && this.graph) {
 				// console.log('connect');
+
 				// do something
 				let link_info_node = this.graph._nodes.find(
 					(otherNode) => otherNode.id == link_info.origin_id
 				)
-
+					
 				if (slot < MarasitAnyBusNode.FIRST_INDEX) {
 					// bus
 					window.marasit.anyBus.sync = MarasitAnyBusNode.connectBus(this, slot, link_info_node, link_info.origin_slot)
@@ -780,10 +788,10 @@ const MarasitAnyBusNodeExtension = {
 		// defs is a lookup core nodes, add yours into this
 		const withNodesNames = false
 		if (withNodesNames) {
-			// console.log("[MarasIT - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs['MarasitAnyBusNode'], JSON.stringify(Object.keys(defs)));
+			// console.log("[MarasIT - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs[MarasitAnyBusNode.TYPE], JSON.stringify(Object.keys(defs)));
 
 		} else {
-			// console.log("[MarasIT - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs['MarasitAnyBusNode']);
+			// console.log("[MarasIT - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs[MarasitAnyBusNode.TYPE]);
 		}
 	},
 	getCustomWidgets(app) {
@@ -799,7 +807,7 @@ const MarasitAnyBusNodeExtension = {
 		// Fires for each node when loading/dragging/etc a workflow json or png
 		// If you break something in the backend and want to patch workflows in the frontend
 		// This is the place to do this
-		if (node.type == "MarasitAnyBusNode") {
+		if (node.type == MarasitAnyBusNode.TYPE) {
 
 			node.setProperty('uuid', node.id)
 			MarasitAnyBusNodeFlow.setFlows(node);
@@ -822,7 +830,7 @@ const MarasitAnyBusNodeExtension = {
 	beforeRegisterNodeDef(nodeType, nodeData, app) {
 		// Run custom logic before a node definition is registered with the graph
 
-		if (nodeData.name === 'MarasitAnyBusNode') {
+		if (nodeData.name === MarasitAnyBusNode.TYPE) {
 			// This fires for every node definition so only log once
 			// console.log("[MarasIT - logging " + this.name + "]", "before register node: ", nodeData, typeof MarasitAnyBusNodeLiteGraph, typeof MarasitAnyBusNodeLiteGraph.onNodeCreated);
 

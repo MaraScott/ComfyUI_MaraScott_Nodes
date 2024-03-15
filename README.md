@@ -4,12 +4,12 @@ the Bus Nodes can be connected from one AnyBusNode to another and we support the
 
 Reroute Node **Supported** :
 
-- "Reroute" from ComfyUI native
 - "Reroute (rgthree)" from RgThree Custom Node
-- "ReroutePrimitive|pysssss" from Pysssss Custom Node
 
 Reroute Node **Not Supported** :
-- "0246.CastReroute" from 0246 Custom Node
+- "Reroute" from ComfyUI native - reason : do not allow connection on Any Type if origin Type is not Any Type too
+- "ReroutePrimitive|pysssss" from Pysssss Custom Node - reason : do not display the name of the origin slot
+- "0246.CastReroute" from 0246 Custom Node - reason : undefined behavior
 
 I would like to thanks the following person to help me out by providing there awesome code and advises :
 - WASasquatch with his [Was Node Suite](https://github.com/WASasquatch/was-node-suite-comfyui)
