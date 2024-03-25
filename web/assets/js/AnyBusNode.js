@@ -282,7 +282,7 @@ class MarasitAnyBusNode {
 	static getBusParentNodeWithInput(node, slot) {
 
 		let parentNode = null
-
+		
 		if (node.inputs[0].link != null) {
 
 			const parentLink = node.graph.links.find(
@@ -293,13 +293,16 @@ class MarasitAnyBusNode {
 			if (MarasitAnyBusNodeFlow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) > -1) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			} 
+			if (MarasitAnyBusNodeFlow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) > -1) {
+				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
+			} 
 			if (parentNode != null && parentNode.inputs[slot].link == null) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			}
 
 		}
 
-		if (parentNode != null && MarasitAnyBusNodeFlow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) == -1) {
+		if (parentNode != null && MarasitAnyBusNodeFlow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) == -1 && MarasitAnyBusNodeFlow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) == -1) {
 			if (parentNode != null) {
 				node.inputs[slot].name = parentNode.inputs[slot].name
 				node.inputs[slot].type = parentNode.inputs[slot].type
@@ -453,9 +456,14 @@ class MarasitAnyBusNodeFlow {
 		// "ReroutePrimitive|pysssss", // UNSUPPORTED - Pysssss Custom Node - do not display the name of the origin slot
 		// "0246.CastReroute", //  UNSUPPORTED - 0246 Custom Node
 	]
+	static ALLOWED_GETSET_TYPE = [
+		"SetNode", // SUPPORTED - ComfyUI-KJNodes Custom Node
+		"GetNode", // SUPPORTED - ComfyUI-KJNodes Custom Node
+	]
 	static ALLOWED_NODE_TYPE = [
 		MarasitAnyBusNode.TYPE,
 		...this.ALLOWED_REROUTE_TYPE,
+		...this.ALLOWED_GETSET_TYPE,
 	]
 
 	static getLastBuses(nodes) {
@@ -479,12 +487,24 @@ class MarasitAnyBusNodeFlow {
 
 		if (node.inputs[0].link != null) {
 
-			const __originLink = node.graph.links.find(
-				(otherLink) => otherLink?.id == node.inputs[0].link
-			)
-			_originNode = node.graph.getNodeById(__originLink.origin_id)
+			if(node.inputs[0].link == 'setNode') {
+
+				_originNode = node.graph.getNodeById(node.inputs[0].origin_id)
+
+			} else {
+
+				const __originLink = node.graph.links.find(
+					(otherLink) => otherLink?.id == node.inputs[0].link
+				)
+				_originNode = node.graph.getNodeById(__originLink.origin_id)
+				
+			}
 
 			if (this.ALLOWED_REROUTE_TYPE.indexOf(_originNode.type) > -1 && _originNode?.__outputType == 'BUS') {
+				_originNode = this.getOriginRerouteBusType(_originNode)
+			}
+
+			if (this.ALLOWED_GETSET_TYPE.indexOf(_originNode.type) > -1) {
 				_originNode = this.getOriginRerouteBusType(_originNode)
 			}
 
@@ -520,7 +540,11 @@ class MarasitAnyBusNodeFlow {
 			let _node = node.graph._nodes[i]
 			if (this.ALLOWED_NODE_TYPE.includes(_node.type) && _nodes_list.indexOf(_node.id) == -1) {
 				_nodes_list.push(_node.id);
-				if (_node.inputs[0].link != null) _nodes.push(_node);
+				if(_node.type == 'GetNode') {
+					const _setnode = _node.findSetter(_node.graph)
+					if(_setnode) _node.inputs = [ {'link' : 'setNode', 'origin_id': _setnode.id}]
+				}
+				// if (_node.inputs[0].link != null) _nodes.push(_node);
 			}
 		}
 
@@ -539,7 +563,9 @@ class MarasitAnyBusNodeFlow {
 		}
 		for (let i in _bus_nodes) {
 			_bus_node_link = _bus_nodes[i].inputs[0].link
-			if (_bus_node_link != null) {
+			if (_bus_node_link == 'setNode') {
+				if (_bus_nodes[i].inputs[0].origin_id) _bus_nodes_connections[_bus_nodes[i].id] = _bus_nodes[i].inputs[0].origin_id
+			} else if (_bus_node_link != null) {
 				_bus_node_link = node.graph.links.find(
 					(otherLink) => otherLink?.id == _bus_node_link
 				)
@@ -589,7 +615,7 @@ class MarasitAnyBusNodeFlow {
 		let _node = null
 		for (let i in busNodes) {
 			_node = node.graph.getNodeById(busNodes[i])
-			if (_node.id !== window.marasit.anyBus.nodeToSync.id && this.ALLOWED_REROUTE_TYPE.indexOf(_node.type) == -1) {
+			if (_node.id !== window.marasit.anyBus.nodeToSync.id && this.ALLOWED_REROUTE_TYPE.indexOf(_node.type) == -1 && this.ALLOWED_GETSET_TYPE.indexOf(_node.type) == -1) {
 				if (isChangeWidget != null) {
 					MarasitAnyBusNodeWidget.setValue(_node, isChangeWidget, window.marasit.anyBus.nodeToSync.properties[isChangeWidget])
 					if (isChangeWidget == MarasitAnyBusNodeWidget.PROFILE.name) _node.setProperty('prevProfileName', window.marasit.anyBus.nodeToSync.properties[MarasitAnyBusNodeWidget.PROFILE.name])
