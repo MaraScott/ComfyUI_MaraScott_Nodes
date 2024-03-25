@@ -55,7 +55,7 @@ __all__ = [ 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY'
 
 MANIFEST = {
     "name": "MarasIT Nodes",
-    "version": (1,3,0),
+    "version": (3,0,0),
     "author": "davask",
     "project": "https://github.com/davask/ComfyUI-MarasIT-Nodes",
     "description": "A set of Bus & Pipe node",
