@@ -18,7 +18,7 @@ I would like to thanks the following person to help me out by providing there aw
 - KJNodes with his [Get/Set nodes](https://github.com/kijai/ComfyUI-KJNodes), 
 - Trung0246 with his [Highway node](https://github.com/Trung0246/ComfyUI-0246), 
 - DrLtData with his [Custom nodes Manager](https://github.com/ltdrdata/ComfyUI-Manager), 
-- Confyanimous with [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+- Confyanimous with his [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 - Jags with his [support](https://www.youtube.com/channel/UCLXyz7oWNKx-Dp7Ba4v5ZZg)
 
 *I might have forgotten some others person, feel free to contact me if you want to appear here and please forgive me*
@@ -26,6 +26,7 @@ I would like to thanks the following person to help me out by providing there aw
 **A special thanks to [Fern](https://www.youtube.com/@ferniclestix) for his great support**.
 
 ![AnyBus Node](./docs/img/bus-node.jpeg)
+![AnyBus Node with assigned profile and some inputs](./docs/img/bus-node-profile.jpeg)
 
 ![AnyBus Node - Widtget Qty](./docs/img/bus-node-widget-qty-inputs-outputs.jpeg)
 ![AnyBus Node - Widtget Profile](./docs/img/bus-node-widget-profile-name.jpeg)
