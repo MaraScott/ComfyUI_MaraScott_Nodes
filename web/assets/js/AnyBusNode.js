@@ -63,6 +63,10 @@ class MarasitAnyBusNodeWidget {
 		return node.widgets?.find((w) => w.name === name);
 	}
 
+	// static removeByName(node, name) {
+	// 	if (node.widgets) node.widgets = node.widgets.filter((w) => w.name !== name);
+	// }
+
 	static setValueProfile(node, name, value) {
 		node.title = "AnyBus - " + node.properties[name];
 	}
@@ -162,8 +166,10 @@ class MarasitAnyBusNodeWidget {
 				this.CLEAN.name,
 				this.CLEAN.clean,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-					MarasitAnyBusNodeFlow.clean(node)
-					window.marasit.anyBus.sync = MarasitAnyBusNodeFlow.FULLSYNC;
+					for (const index in window.marasit.anyBus.flows.end) {
+						const _node = node.graph.getNodeById(window.marasit.anyBus.flows.end[index])
+						MarasitAnyBusNodeFlow.clean(_node)
+					}
 					this.setValue(node, this.CLEAN.name, this.CLEAN.clean)
 				},
 				{}
@@ -218,7 +224,13 @@ class MarasitAnyBusNode {
 				continue;
 			}
 
-			const isNodeInputDifferent = node.inputs[slot].type != "*" && node.inputs[slot].type != window.marasit.anyBus.nodeToSync.inputs[slot].type
+			const isNodeInputAny = node.inputs[slot].type == "*"
+			const isNodeOutputDifferent = node.outputs[slot].type == window.marasit.anyBus.nodeToSync.outputs[slot].type
+			const isNodeInputDifferent = 
+				!isNodeOutputDifferent // output different from new input
+			const isOutputAny = node.outputs[slot].type == "*"
+			const isOutputDifferent = node.outputs[slot].type != window.marasit.anyBus.nodeToSync.outputs[slot].type
+			const isOutputLinked = node.outputs[slot].links != null &&node.outputs[slot].links.length > 0
 
 			if (isNodeInputDifferent) {
 				const preSyncMode = window.marasit.anyBus.sync;
@@ -236,7 +248,7 @@ class MarasitAnyBusNode {
 					node.inputs[slot].name = window.marasit.anyBus.nodeToSync.inputs[slot].name.toLowerCase()
 					node.inputs[slot].type = window.marasit.anyBus.nodeToSync.inputs[slot].type
 					node.outputs[slot].name = node.inputs[slot].name
-					node.outputs[slot].type = node.inputs[slot].type
+					if(isOutputDifferent || !isOutputLinked) node.outputs[slot].type = node.inputs[slot].type
 				}
 			}
 		}
@@ -308,7 +320,7 @@ class MarasitAnyBusNode {
 
 	}
 
-	static disConnectInput(node, slot, clean) {
+	static disConnectInput(node, slot) {
 
 		const syncProfile = this.getSyncType(node, slot, null, null)
 		const previousBusNode = this.getBusParentNodeWithInput(node, slot)
@@ -335,7 +347,7 @@ class MarasitAnyBusNode {
 		node.inputs[slot].name = newName
 		node.inputs[slot].type = newType
 		node.outputs[slot].name = node.inputs[slot].name
-		node.outputs[slot].type = node.inputs[slot].type
+		// node.outputs[slot].type = node.inputs[slot].type
 
 		return syncProfile
 
@@ -696,6 +708,7 @@ class MarasitAnyBusNodeLiteGraph {
 			link_info,
 			output
 			) {
+
 			const r = onConnectionsChange ? onConnectionsChange.apply(this, arguments) : undefined
 
 			if (!window.marasit.anyBus.init) return r
