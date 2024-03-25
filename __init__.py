@@ -58,5 +58,5 @@ MANIFEST = {
     "version": (3,0,0),
     "author": "davask",
     "project": "https://github.com/davask/ComfyUI-MarasIT-Nodes",
-    "description": "A set of Bus & Pipe node",
+    "description": "AnyBus Node (AKA UniversalBus) is an attempt to provide a Universal Bus Node (as some might say) which is based on AnyType Input/Output.",
 }
