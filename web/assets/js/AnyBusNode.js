@@ -288,12 +288,12 @@ class MarasitAnyBusNode {
 			const parentLink = node.graph.links.find(
 				(otherLink) => otherLink?.id == node.inputs[0].link
 			)
-			parentNode = node.graph.getNodeById(parentLink.origin_id)
+			if (parentLink != undefined) parentNode = node.graph.getNodeById(parentLink.origin_id)
 
-			if (MarasitAnyBusNodeFlow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) > -1) {
+			if (parentNode != null && MarasitAnyBusNodeFlow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) > -1) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			} 
-			if (MarasitAnyBusNodeFlow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) > -1) {
+			if (parentNode != null && MarasitAnyBusNodeFlow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) > -1) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			} 
 			if (parentNode != null && parentNode.inputs[slot].link == null) {
