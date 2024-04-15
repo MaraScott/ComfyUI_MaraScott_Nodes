@@ -4,6 +4,11 @@ AnyBus Node (AKA UniversalBus) is an attempt to provide a Universal Bus Node (as
 
 the Bus Nodes can be connected from one AnyBusNode to another and we support the following Reroute Nodes as long as they are linked from an AnyBusNode before connecting it to another
 
+Set/Get Node **Supported** :
+
+- "SetNode" from ComfyUI-KJNodes
+- "GetNode" from ComfyUI-KJNodes
+
 Reroute Node **Supported** :
 
 - "Reroute (rgthree)" from RgThree Custom Node

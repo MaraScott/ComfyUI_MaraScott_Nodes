@@ -55,7 +55,7 @@ __all__ = [ 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY'
 
 MANIFEST = {
     "name": "MarasIT Nodes",
-    "version": "3.0.0",
+    "version": "3.1.0",
     "author": "davask",
     "project": "https://github.com/davask/ComfyUI-MarasIT-Nodes",
     "description": "AnyBus Node (AKA UniversalBus) is an attempt to provide a Universal Bus Node (as some might say) which is based on AnyType Input/Output.",
