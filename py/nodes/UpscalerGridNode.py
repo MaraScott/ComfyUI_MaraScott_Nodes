@@ -154,6 +154,7 @@ IMAGE (OUTPUT)
         
         return (
             output_image,
+            image,
             # output_mask,
             output_info
         )
