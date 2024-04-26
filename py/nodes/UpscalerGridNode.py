@@ -50,11 +50,13 @@ class UpscalerGridNode:
 
     RETURN_TYPES = (
         "IMAGE", 
+        "IMAGE", 
         # "MASK", 
         "STRING"
     )
     
     RETURN_NAMES = (
+        "upscaled_image", 
         "image", 
         # "mask", 
         "info", 
@@ -100,17 +102,16 @@ class UpscalerGridNode:
 
         image = Image.upscale(image, upscale_method, image_width, image_height, "center")[0]
             
-        _image = image
         # _mask = torch.zeros((64,64), dtype=torch.float32, device="cpu")
         
-        _image = Image.upscaleBy(_image, upscale_method, scale_by)[0]
+        upscaled_image = Image.upscaleBy(image, upscale_method, scale_by)[0]
 
-        grid_images = Image.get_grid_images(_image)
+        grid_images = Image.get_grid_images(upscaled_image)
         
         output_images = []
-        for upscaled_image in grid_images:            
+        for grid_image in grid_images:            
             # Encode the upscaled image using the VAE
-            t = vae.encode(upscaled_image[:,:,:,:3])
+            t = vae.encode(grid_image[:,:,:,:3])
             latent_image = {"samples":t}
             
             # Use the latent image in the common_ksampler function
@@ -131,7 +132,7 @@ class UpscalerGridNode:
             # Collect all outputs (you may want to adjust this depending on how you want to handle the outputs)
             output_images.append(output)
 
-        output_image = Image.rebuild_image_from_parts(output_images, _image, scale_by)
+        output_image = Image.rebuild_image_from_parts(output_images, upscaled_image)
                 
         output_image_width = output_image.shape[2]
         output_image_height = output_image.shape[1]
