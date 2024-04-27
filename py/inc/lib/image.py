@@ -3,6 +3,7 @@
 #
 ###
 
+import torch
 import math
 import numpy as np
 
@@ -63,12 +64,22 @@ class Image:
         
     @classmethod
     def rebuild_image_from_parts(self, output_images, origin_image):
+        
+        def torch_to_numpy_dtype(torch_dtype):
+            """Convert a torch dtype to a numpy dtype."""
+            dtype_mapping = {
+                torch.float32: np.float32,
+                torch.float64: np.float64,
+                # Add other necessary type mappings here
+            }
+            return dtype_mapping.get(torch_dtype, np.float32)
 
         original_width = origin_image.shape[2]
         original_height = origin_image.shape[1]
+        np_dtype = torch_to_numpy_dtype(output_images[0].dtype)
 
         # Create an empty array to hold the full image
-        full_image = np.zeros((original_height, original_width, output_images[0].shape[2]), dtype=output_images[0].dtype)
+        full_image = np.zeros((original_height, original_width), dtype=np_dtype)
 
         # Define the start points and sizes for placing each grid section back
         grid_specs = [
