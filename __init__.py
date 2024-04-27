@@ -36,8 +36,8 @@ base_dir = os.path.abspath(os.path.dirname(__ROOT__file__))
 root_dir = os.path.join(base_dir, "..", "..")
 web_dir = os.path.join(root_dir, "web", "extensions", "marasit")
 web_dir = os.path.realpath(web_dir)
-comfy_dir = os.path.join(root_dir, "comfy")
-sys.path.insert(0, root_dir)
+# comfy_dir = os.path.join(root_dir, "comfy")
+# sys.path.insert(0, root_dir)
 if not os.path.exists(web_dir):
     os.makedirs(web_dir)
 __WEB_DIR__ = web_dir

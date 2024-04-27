@@ -9,6 +9,7 @@
 
 import torch
 import comfy
+import nodes
 
 from ..inc.lib.image import Image
 from .KSamplerNode import common_ksampler
@@ -100,11 +101,10 @@ class UpscalerGridNode:
             image_divisible_by_8 = False
             image_width, image_height = Image.calculate_new_dimensions(image_width, image_height)
 
-        image = Image.upscale(image, upscale_method, image_width, image_height, "center")[0]
-            
+        image = nodes.ImageScale.upscale(nodes.ImageScale, image, upscale_method, image_width, image_height, "center")[0]
         # _mask = torch.zeros((64,64), dtype=torch.float32, device="cpu")
         
-        upscaled_image = Image.upscaleBy(image, upscale_method, scale_by)[0]
+        upscaled_image = nodes.ImageScaleBy.upscale(nodes.ImageScaleBy, image, upscale_method, scale_by)[0]
 
         grid_images = Image.get_grid_images(upscaled_image)
         
