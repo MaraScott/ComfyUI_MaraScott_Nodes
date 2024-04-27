@@ -65,21 +65,12 @@ class Image:
     @classmethod
     def rebuild_image_from_parts(self, output_images, origin_image):
         
-        def torch_to_numpy_dtype(torch_dtype):
-            """Convert a torch dtype to a numpy dtype."""
-            dtype_mapping = {
-                torch.float32: np.float32,
-                torch.float64: np.float64,
-                # Add other necessary type mappings here
-            }
-            return dtype_mapping.get(torch_dtype, np.float32)
-
         original_width = origin_image.shape[2]
         original_height = origin_image.shape[1]
-        np_dtype = torch_to_numpy_dtype(output_images[0].dtype)
+        channel_count = origin_image.shape[3] if len(origin_image.shape) > 3 else 1  # Handling the possibility of grayscale images
 
         # Create an empty array to hold the full image
-        full_image = np.zeros((original_height, original_width), dtype=np_dtype)
+        full_image = torch.zeros((original_height, original_width, channel_count), dtype=output_images[0].dtype, device=output_images[0].device)
 
         # Define the start points and sizes for placing each grid section back
         grid_specs = [
@@ -96,8 +87,8 @@ class Image:
 
         # Place each grid section back into the appropriate position
         for output_image, (x_start, y_start, width_inc, height_inc) in zip(output_images, grid_specs):
-            full_image[y_start:y_start + height_inc, x_start:x_start + width_inc, :] = output_image[:, :, :]
-
+            full_image[y_start:y_start + height_inc, x_start:x_start + width_inc, :] = output_image
+            
         return full_image
 
         
