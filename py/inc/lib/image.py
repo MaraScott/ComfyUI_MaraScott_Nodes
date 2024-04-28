@@ -67,23 +67,45 @@ class Image:
         return grids
 
     @classmethod
-    def rebuild_image_from_parts(self, output_images, origin_image, feather_mask):
+    def rebuild_image_from_parts(self, output_images, upscaled_image, feather_mask):
         
-        original_width = origin_image.shape[2]
-        original_height = origin_image.shape[1]
-        channel_count = origin_image.shape[3]
-        
-        full_image = torch.zeros((origin_image.shape[0], original_height, original_width, channel_count), dtype=output_images[0].dtype, device=output_images[0].device)
+        upscaled_width = upscaled_image.shape[2]
+        upscaled_height = upscaled_image.shape[1]
+        channel_count = upscaled_image.shape[3]
 
-        grid_specs = self.get_grid_specs(original_width, original_height)
-        grid_mask = comfy_extras.nodes_mask.SolidMask.solid(comfy_extras.nodes_mask.SolidMask, 1, output_images[0].shape[2], output_images[0].shape[1])[0]
-        grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, feather_mask, 0, feather_mask, 0)[0]
-        # grid_feathermask_horizontal = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, 0, feather_mask, 0, feather_mask)
-        grid_destination = torch.zeros((output_images[0].shape), dtype=output_images[0].dtype, device=output_images[0].device)
-        grid_destination[:,:,:,:3] = 1
+        grid_specs = self.get_grid_specs(upscaled_width, upscaled_height)
+        log(grid_specs)
+
+        scale_by = upscaled_width // grid_specs[0][2]
+        log(scale_by)
         
-        for output_image, (x_start, y_start, width_inc, height_inc) in zip(output_images, grid_specs):
-            _output_image = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, grid_destination, output_image, x = 0, y = 0, resize_source = False, mask = grid_feathermask_vertical)[0]
-            full_image[:, y_start:y_start + height_inc, x_start:x_start + width_inc] = _output_image
-                        
+        grid_mask = comfy_extras.nodes_mask.SolidMask.solid(comfy_extras.nodes_mask.SolidMask, 1, grid_specs[0][2], grid_specs[0][3])[0]
+        grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, feather_mask, 0, feather_mask, 0)[0]
+        grid_feathermask_horizontal = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, 0, feather_mask, 0, feather_mask)[0]
+        
+        x_start, y_start, width_inc, height_inc = grid_specs[0]
+        outputTopRow = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, output_images[0], 0, 0, width_inc, 0, 0)[0]
+        x_start, y_start, width_inc, height_inc = grid_specs[1]
+        outputTopRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputTopRow, output_images[1], x = x_start, y = y_start, resize_source = False, mask = None)[0]
+        x_start, y_start, width_inc, height_inc = grid_specs[2]
+        outputTopRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputTopRow, output_images[2], x = x_start, y = y_start, resize_source = False, mask = grid_feathermask_vertical)[0]
+
+        x_start, y_start, width_inc, height_inc = grid_specs[3]
+        outputBottomRow = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, output_images[3], 0, 0, width_inc, 0, 0)[0]
+        x_start, y_start, width_inc, height_inc = grid_specs[4]
+        outputBottomRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputBottomRow, output_images[4], x = x_start, y = 0, resize_source = False, mask = None)[0]
+        x_start, y_start, width_inc, height_inc = grid_specs[5]
+        outputBottomRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputBottomRow, output_images[5], x = x_start, y = 0, resize_source = False, mask = grid_feathermask_vertical)[0]
+        
+        x_start, y_start, width_inc, height_inc = grid_specs[6]
+        outputMiddleRow = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, output_images[6], 0, 0, width_inc, 0, 0)[0]
+        x_start, y_start, width_inc, height_inc = grid_specs[7]
+        outputMiddleRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputMiddleRow, output_images[7], x = x_start, y = 0, resize_source = False, mask = None)[0]
+        x_start, y_start, width_inc, height_inc = grid_specs[8]
+        outputMiddleRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputMiddleRow, output_images[8], x = x_start, y = 0, resize_source = False, mask = grid_feathermask_vertical)[0]
+
+        full_image = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, outputTopRow, 0, 0, 0, outputTopRow.shape[1], 0)[0]
+        full_image = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, full_image, outputBottomRow, x = 0, y = outputBottomRow.shape[1], resize_source = False, mask = None)[0]
+        full_image = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, full_image, outputMiddleRow, x = 0, y = outputMiddleRow.shape[1] // 2, resize_source = False, mask = grid_feathermask_horizontal)[0]
+        
         return full_image
