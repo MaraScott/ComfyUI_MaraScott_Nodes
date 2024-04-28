@@ -11,14 +11,14 @@ import nodes
 
 from ...utils.log import *
 
-class Image:
 
+class Image:
+    
     @classmethod
     def is_divisible_by_8(self, image):
         width, height = image.shape[1], image.shape[0]
-        divisible_by_8 = (width % 8 == 0) and (height % 8 == 0)
-        return divisible_by_8
-        
+        return (width % 8 == 0) and (height % 8 == 0)
+
     @classmethod
     def calculate_new_dimensions(self, image_width, image_height):
         def round_up_to_nearest_8(x):
@@ -26,69 +26,60 @@ class Image:
         new_width = round_up_to_nearest_8(image_width)
         new_height = round_up_to_nearest_8(image_height)
         return new_width, new_height
-        
+
     @classmethod
-    def get_grid_images(self, image):
-        
-        width = image.shape[2]
-        height = image.shape[1]
+    def get_grid_specs(self, width, height):
+
         half_width = width // 2
         half_height = height // 2
         quarter_width = width // 4
         quarter_height = height // 4
 
-        # Define the starting points and sizes for each grid section
-        grid_specs = [
-            (0, 0, quarter_width, quarter_height),  # top left
-            (quarter_width, 0, quarter_width, quarter_height),  # top middle
-            (half_width, 0, quarter_width, quarter_height),  # top right
-            (0, quarter_height, quarter_width, quarter_height),  # middle left
-            (quarter_width, quarter_height, quarter_width, quarter_height),  # center
-            (half_width, quarter_height, quarter_width, quarter_height),  # middle right
-            (0, half_height, quarter_width, quarter_height),  # bottom left
-            (quarter_width, half_height, quarter_width, quarter_height),  # bottom middle
-            (half_width, half_height, quarter_width, quarter_height)  # bottom right
+        return [
+            (0, 0, half_width, half_height),  # top left
+            (quarter_width, 0, half_width, half_height),  # top middle
+            (half_width, 0, half_width, half_height),  # top right
+            (0, quarter_height, half_width, half_height),  # middle left
+            (quarter_width, quarter_height, half_width, half_height),  # center
+            (half_width, quarter_height, half_width, half_height),  # middle right
+            (0, half_height, half_width, half_height),  # bottom left
+            (quarter_width, half_height, half_width, half_height),  # bottom middle
+            (half_width, half_height, half_width, half_height)  # bottom right
         ]
+        
+        
 
-        # Extract each grid section based on specified dimensions and starting points
+    @classmethod
+    def get_grid_images(self, image):
+        width, height = image.shape[2], image.shape[1]
+        
+        grid_specs = self.get_grid_specs(width, height)
+
         grids = [
             image[
-                :, 
+                :,
                 y_start:y_start + height_inc, 
                 x_start:x_start + width_inc
-            ] 
-            for (x_start, y_start, width_inc, height_inc) in grid_specs
+            ] for x_start, y_start, width_inc, height_inc in grid_specs
         ]
 
         return grids
-        
+
     @classmethod
     def rebuild_image_from_parts(self, output_images, origin_image):
-        
         original_width = origin_image.shape[2]
         original_height = origin_image.shape[1]
-        channel_count = origin_image.shape[3] if len(origin_image.shape) > 3 else 1  # Handling the possibility of grayscale images
+        channel_count = origin_image.shape[3]
 
-        # Create an empty array to hold the full image
-        full_image = torch.zeros((original_height, original_width, channel_count), dtype=output_images[0].dtype, device=output_images[0].device)
+        full_image = torch.zeros((origin_image.shape[0], original_height, original_width, channel_count), dtype=output_images[0].dtype, device=output_images[0].device)
 
-        # Define the start points and sizes for placing each grid section back
-        grid_specs = [
-            (0, 0, original_width // 4, original_height // 4),  # top left
-            (original_width // 4, 0, original_width // 4, original_height // 4),  # top middle
-            (original_width // 2, 0, original_width // 4, original_height // 4),  # top right
-            (0, original_height // 4, original_width // 4, original_height // 4),  # middle left
-            (original_width // 4, original_height // 4, original_width // 4, original_height // 4),  # center
-            (original_width // 2, original_height // 4, original_width // 4, original_height // 4),  # middle right
-            (0, original_height // 2, original_width // 4, original_height // 4),  # bottom left
-            (original_width // 4, original_height // 2, original_width // 4, original_height // 4),  # bottom middle
-            (original_width // 2, original_height // 2, original_width // 4, original_height // 4)  # bottom right
-        ]
+        grid_specs = self.get_grid_specs(original_width, original_height)
 
-        # Place each grid section back into the appropriate position
         for output_image, (x_start, y_start, width_inc, height_inc) in zip(output_images, grid_specs):
-            full_image[y_start:y_start + height_inc, x_start:x_start + width_inc, :] = output_image
+            full_image[:, y_start:y_start + height_inc, x_start:x_start + width_inc] = output_image
             
-        return full_image
+        log(origin_image.shape)
+        log(full_image.shape)
+        log(full_image.shape)
 
-        
+        return full_image
