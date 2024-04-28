@@ -13,43 +13,6 @@ import comfy_extras
 
 from ...utils.log import *
 
-
-def composite(destination, source, x, y, mask = None, multiplier = 8, resize_source = False):
-    source = source.to(destination.device)
-    if resize_source:
-        source = torch.nn.functional.interpolate(source, size=(destination.shape[2], destination.shape[3]), mode="bilinear")
-
-    source = comfy.utils.repeat_to_batch_size(source, destination.shape[0])
-
-    x = max(-source.shape[3] * multiplier, min(x, destination.shape[3] * multiplier))
-    y = max(-source.shape[2] * multiplier, min(y, destination.shape[2] * multiplier))
-
-    left, top = (x // multiplier, y // multiplier)
-    right, bottom = (left + source.shape[3], top + source.shape[2],)
-
-    if mask is None:
-        mask = torch.ones_like(source)
-    else:
-        mask = mask.to(destination.device, copy=True)
-        log(mask.shape)
-        mask = torch.nn.functional.interpolate(mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1])), size=(source.shape[2], source.shape[3]), mode="bilinear")
-        log(mask.shape)
-        mask = comfy.utils.repeat_to_batch_size(mask, source.shape[0])
-
-    # calculate the bounds of the source that will be overlapping the destination
-    # this prevents the source trying to overwrite latent pixels that are out of bounds
-    # of the destination
-    visible_width, visible_height = (destination.shape[3] - left + min(0, x), destination.shape[2] - top + min(0, y),)
-
-    mask = mask[:, :, :visible_height, :visible_width]
-    inverse_mask = torch.ones_like(mask) - mask
-    log((mask.shape, destination.shape, source[:, :, :visible_height, :visible_width].shape))
-    source_portion = mask * source[:, :, :visible_height, :visible_width]
-    destination_portion = inverse_mask  * destination[:, :, top:bottom, left:right]
-
-    destination[:, :, top:bottom, left:right] = source_portion + destination_portion
-    return destination
-
 class Image:
     
     @classmethod
@@ -117,11 +80,10 @@ class Image:
         grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, feather_mask, 0, feather_mask, 0)[0]
         # grid_feathermask_horizontal = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, 0, feather_mask, 0, feather_mask)
         grid_destination = torch.zeros((output_images[0].shape), dtype=output_images[0].dtype, device=output_images[0].device)
-
+        grid_destination[:,:,:,:3] = 1
+        
         for output_image, (x_start, y_start, width_inc, height_inc) in zip(output_images, grid_specs):
             _output_image = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, grid_destination, output_image, x = 0, y = 0, resize_source = False, mask = grid_feathermask_vertical)[0]
-            # _output_image = composite(grid_destination.movedim(-1, 1), output_image.movedim(-1, 1), x = 0, y = 0, mask = grid_feathermask_vertical, multiplier = 1, resize_source = False)
-            # _output_image = output_image
             full_image[:, y_start:y_start + height_inc, x_start:x_start + width_inc] = _output_image
                         
         return full_image
