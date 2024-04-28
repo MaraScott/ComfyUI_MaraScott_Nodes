@@ -9,7 +9,9 @@
 
 import torch
 import comfy
+import comfy_extras
 import nodes
+import folder_paths
 
 from ..inc.lib.image import Image
 from .KSamplerNode import common_ksampler
@@ -26,8 +28,11 @@ class UpscalerGridNode:
             "hidden": {"id":"UNIQUE_ID"},
             "required":{
                 "image": ("IMAGE",),
-                "scale_by": ("INT", {"default": 2, "min": 1, "max": 4, "step": 1}),     
+                "scale_by": ("INT", {"default": 2, "min": 1, "max": 4, "step": 1}),
                 "upscale_method": (cls.upscale_methods ,),           
+                "model_name": (folder_paths.get_filename_list("upscale_models"),),
+                
+                "feather_mask": ("INT", {"default": 350, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),                
 
                 "model": ("MODEL",),
                 "vae": ("VAE",),
@@ -76,7 +81,9 @@ class UpscalerGridNode:
         image = kwargs.get('image', None)
         scale_by = kwargs.get('scale_by', None)
         upscale_method = kwargs.get('upscale_method', None)
-        
+        model_name = kwargs.get('model_name', None)
+        feather_mask = kwargs.get('feather_mask', None)
+        upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader.load_model(comfy_extras.nodes_upscale_model.UpscaleModelLoader, model_name)[0]
         vae = kwargs.get('vae', None)
         model = kwargs.get('model', None)
         seed = kwargs.get('seed', None)
@@ -104,16 +111,18 @@ class UpscalerGridNode:
             image_width, image_height = Image.calculate_new_dimensions(image_width, image_height)
 
         image = nodes.ImageScale.upscale(nodes.ImageScale, image, upscale_method, image_width, image_height, "center")[0]
-        # _mask = torch.zeros((64,64), dtype=torch.float32, device="cpu")
-        upscaled_image = nodes.ImageScaleBy.upscale(nodes.ImageScaleBy, image, upscale_method, scale_by)[0]
+
+        # upscaled_image = nodes.ImageScaleBy.upscale(nodes.ImageScaleBy, image, upscale_method, scale_by)[0]
+        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, image)[0]
         
         grid_images = Image.get_grid_images(image)
-        
+
         output_images = []
         for grid_image in grid_images:            
-            # Encode the upscaled image using the VAE
+            # Encode the upscaled image using the VAE 
             _image_grid = grid_image[:,:,:,:3]
-            upscaled_image_grid = nodes.ImageScaleBy.upscale(nodes.ImageScaleBy, _image_grid, upscale_method, scale_by)[0]
+            # upscaled_image_grid = nodes.ImageScaleBy.upscale(nodes.ImageScaleBy, _image_grid, upscale_method, scale_by)[0]
+            upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
 
             t = vae.encode(upscaled_image_grid)
             latent_image = {"samples":t}
@@ -136,7 +145,7 @@ class UpscalerGridNode:
             # Collect all outputs (you may want to adjust this depending on how you want to handle the outputs)
             output_images.append(output)
 
-        output_image = Image.rebuild_image_from_parts(output_images, upscaled_image)
+        output_image = Image.rebuild_image_from_parts(output_images, upscaled_image, feather_mask)
                 
         output_image_width = output_image.shape[2]
         output_image_height = output_image.shape[1]
