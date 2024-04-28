@@ -67,6 +67,7 @@ class Image:
 
     @classmethod
     def rebuild_image_from_parts(self, output_images, origin_image):
+        
         original_width = origin_image.shape[2]
         original_height = origin_image.shape[1]
         channel_count = origin_image.shape[3]
