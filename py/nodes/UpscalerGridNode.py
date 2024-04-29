@@ -46,7 +46,7 @@ class UpscalerGridNode:
                 "negative": ("CONDITIONING", ),
                 # "latent_image": ("LATENT", ),
 
-                "denoise": ("FLOAT", {"default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),                
+                "denoise": ("FLOAT", {"default": 0.35, "min": 0.0, "max": 0.51, "step": 0.01}),                
 
             },
             "optional": {
