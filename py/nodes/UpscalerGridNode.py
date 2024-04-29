@@ -28,7 +28,6 @@ class UpscalerGridNode:
             "hidden": {"id":"UNIQUE_ID"},
             "required":{
                 "image": ("IMAGE",),
-                "scale_by": ("INT", {"default": 2, "min": 1, "max": 4, "step": 1}),
                 "upscale_method": (cls.upscale_methods ,),           
                 "model_name": (folder_paths.get_filename_list("upscale_models"),),
                 
@@ -37,9 +36,9 @@ class UpscalerGridNode:
                 "model": ("MODEL",),
                 "vae": ("VAE",),
 
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
-                "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
+                "seed": ("INT", {"default": 4, "min": 0, "max": 0xffffffffffffffff}),
+                "steps": ("INT", {"default": 10, "min": 1, "max": 10000}),
+                "cfg": ("FLOAT", {"default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, ),
                 "scheduler": (comfy.samplers.KSampler.SCHEDULERS, ),
 
@@ -47,7 +46,7 @@ class UpscalerGridNode:
                 "negative": ("CONDITIONING", ),
                 # "latent_image": ("LATENT", ),
 
-                "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),                
+                "denoise": ("FLOAT", {"default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),                
 
             },
             "optional": {
@@ -79,7 +78,6 @@ class UpscalerGridNode:
         
         # Initialize the bus tuple with None values for each parameter
         image = kwargs.get('image', None)
-        scale_by = kwargs.get('scale_by', None)
         upscale_method = kwargs.get('upscale_method', None)
         model_name = kwargs.get('model_name', None)
         feather_mask = kwargs.get('feather_mask', None)
@@ -112,7 +110,6 @@ class UpscalerGridNode:
 
         image = nodes.ImageScale.upscale(nodes.ImageScale, image, upscale_method, image_width, image_height, "center")[0]
 
-        # upscaled_image = nodes.ImageScaleBy.upscale(nodes.ImageScaleBy, image, upscale_method, scale_by)[0]
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, image)[0]
         
         grid_images = Image.get_grid_images(image)
@@ -121,7 +118,6 @@ class UpscalerGridNode:
         for grid_image in grid_images:            
             # Encode the upscaled image using the VAE 
             _image_grid = grid_image[:,:,:,:3]
-            # upscaled_image_grid = nodes.ImageScaleBy.upscale(nodes.ImageScaleBy, _image_grid, upscale_method, scale_by)[0]
             upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
 
             t = vae.encode(upscaled_image_grid)
