@@ -21,7 +21,7 @@ NODE_CLASS_MAPPINGS = {
     "MarasitUpscalerRefinerNode": UpscalerRefinerNode
 }
 
-# A dictionary that contains the friendly/humanly readable titles for the nodes
+# A dictionary that contains the friendly/humanly readable titles for the nodes 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "MarasitAnyBusNode": "\ud83d\udc30 AnyBus Node - UniversalBus",
     "MarasitDisplayInfoNode": "\ud83d\udc30 Display Info - Text",
