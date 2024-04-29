@@ -18,7 +18,7 @@ from .KSamplerNode import common_ksampler
 
 from ..utils.log import *
 
-class UpscalerGridNode:
+class UpscalerRefinerNode:
     
     upscale_methods = ["nearest-exact", "bilinear", "area", "bicubic", "bislerp"]
 
