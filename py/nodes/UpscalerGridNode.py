@@ -64,7 +64,7 @@ class UpscalerGridNode:
     RETURN_NAMES = (
         "refined_image", 
         "upscaled_image", 
-        "image", 
+        "resized_image", 
         # "mask", 
         "info", 
     )
@@ -108,11 +108,11 @@ class UpscalerGridNode:
             image_divisible_by_8 = False
             image_width, image_height = Image.calculate_new_dimensions(image_width, image_height)
 
-        image = nodes.ImageScale.upscale(nodes.ImageScale, image, upscale_method, image_width, image_height, "center")[0]
+        resized_image = nodes.ImageScale.upscale(nodes.ImageScale, image, upscale_method, image_width, image_height, "center")[0]
 
-        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, image)[0]
+        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, resized_image)[0]
         
-        grid_images = Image.get_grid_images(image)
+        grid_images = Image.get_grid_images(resized_image)
 
         output_images = []
         for grid_image in grid_images:            
@@ -164,7 +164,7 @@ IMAGE (OUTPUT)
         return (
             output_image,
             upscaled_image,
-            image,
+            resized_image,
             # output_mask,
             output_info
         )
