@@ -1,6 +1,15 @@
-# ComfyUI Node: AnyBus or UniBus for Universal Bus
+Welcome to MaraScott.AI nodes for ComfyUI
 
-AnyBus Node (AKA UniversalBus) is an attempt to provide a Universal Bus Node (as some might say) which is based on AnyType Input/Output.
+I develop nodes as it goes mostly on user request from the [Ai Classroom Discor](discord.gg/t28yZEewrp) from [Fern](https://www.youtube.com/@ferniclestix) to whom I address **A special thanks for his support** in my ComfyUI journey.
+
+So far I did the following Nodes :
+
+- [AnyBus Node AKA UniversalBus](#anybus-node-aka-universal-bus)
+- [Upscale Refiner Node AKA McBoaty](#upscaler-refinier-node-aka-mcboaty-node)
+
+# AnyBus Node AKA UniversalBus Node
+
+AnyBus Node (AKA UniversalBus node) is an attempt to provide a Universal Bus Node (as some might say) which is based on AnyType Input/Output.
 
 the Bus Nodes can be connected from one AnyBusNode to another and we support the following Reroute Nodes as long as they are linked from an AnyBusNode before connecting it to another
 
@@ -28,8 +37,6 @@ I would like to thanks the following person to help me out by providing there aw
 
 *I might have forgotten some others person, feel free to contact me if you want to appear here and please forgive me*
 
-**A special thanks to [Fern](https://www.youtube.com/@ferniclestix) for his great support**.
-
 ![AnyBus Node](./docs/img/bus-node.jpeg)
 ![AnyBus Node with assigned profile and some inputs](./docs/img/bus-node-profile.jpeg)
 
@@ -47,9 +54,15 @@ One Bus has a maximum of 25 inputs/outputs (feel free to make an issue request t
 
 This AnyBus is dislexia friendly :D
 
-What are the features ?
+# Upscaler Refinier Node AKA McBoaty node
 
-- dynamic number of input from 3 to 25
-- profile assignment
+Upscaler Refinier Node (AKA McBoaty node) is an Upscaler coupled with a Refiner in order to get higher rendering result.
+The output image is a slightly modified image.
 
-If anybody is interested to use it, I'm following on feature request via the issues.
+I would like to thanks [Rob Adams](https://www.youtube.com/@robadams2451) AKA Treeshark who provided the workflow in the first place which I convert in a ComfyUI Node
+
+---
+
+If anybody is interested to use these nodes, I'm following on feature request via the issues.
+
+
