@@ -3,7 +3,7 @@
 #
 ###
 #
-# Upscaler.  Upscale a picture by 2 using a 9 Square Grid to upscale the visual in 9 sequences
+# Upscaler Refiner Node.  Upscale and Refine a picture by 2 using a 9 Square Grid to upscale and refine the visual in 9 sequences
 #
 ###
 
