@@ -11,6 +11,7 @@ import torch
 import comfy
 import comfy_extras
 import comfy_extras.nodes_custom_sampler
+from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
 import nodes
 import folder_paths
 
@@ -25,11 +26,12 @@ class UpscalerRefinerNode:
     scheduler = None
     steps = None
     denoise = None
+    model_type = None
     
     SIGMAS_TYPES = [
         "BasicScheduler"
         , "SDTurboScheduler"
-        # , "AlignYourStepsScheduler"
+        , "AlignYourStepsScheduler"
     ]
     
     @classmethod
@@ -54,6 +56,7 @@ class UpscalerRefinerNode:
                 "sigmas_type": (self.SIGMAS_TYPES, ),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, ),
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, ),
+                "ays_model_type": (["SD1", "SDXL", "SVD"], ),
 
                 "positive": ("CONDITIONING", ),
                 "negative": ("CONDITIONING", ),
@@ -83,8 +86,11 @@ class UpscalerRefinerNode:
     FUNCTION = "fn"
     
     @classmethod    
-    def __get_sigmas(self):        
-        if self.sigmas_type == "SDTurboScheduler":
+    def __get_sigmas(self):
+        if self.sigmas_type == "AlignYourStepsScheduler":
+            SigmaScheduler = AlignYourStepsScheduler
+            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, self.model_type, self.steps, self.denoise)[0]
+        elif self.sigmas_type == "SDTurboScheduler":
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, self.sigmas_type)
             sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, self.model, self.steps, self.denoise)[0]
         else: # BasicScheduler
@@ -115,6 +121,7 @@ class UpscalerRefinerNode:
         add_noise = True        
         self.denoise = kwargs.get('denoise', None)        
         self.sigmas_type = kwargs.get('sigmas_type', None)
+        self.model_type = kwargs.get('ays_model_type', None)
         sigmas = self.__get_sigmas()
         output_info = [f"No info"]
         
