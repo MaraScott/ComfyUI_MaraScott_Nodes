@@ -124,28 +124,26 @@ class UpscalerGridNode:
             # upscaled_image_grid = nodes.ImageScaleBy.upscale(nodes.ImageScaleBy, _image_grid, upscale_method, scale_by)[0]
             upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
 
-            output = upscaled_image_grid
+            t = vae.encode(upscaled_image_grid)
+            latent_image = {"samples":t}
             
-            # t = vae.encode(upscaled_image_grid)
-            # latent_image = {"samples":t}
-            
-            # # Use the latent image in the common_ksampler function
-            # latent_output = common_ksampler(
-            #     model, 
-            #     seed, 
-            #     steps, 
-            #     cfg, 
-            #     sampler_name, 
-            #     scheduler, 
-            #     positive, 
-            #     negative, 
-            #     latent_image, 
-            #     denoise
-            # )[0]
-            # output = vae.decode(latent_output["samples"]).unsqueeze(0)
+            # Use the latent image in the common_ksampler function
+            latent_output = common_ksampler(
+                model, 
+                seed, 
+                steps, 
+                cfg, 
+                sampler_name, 
+                scheduler, 
+                positive, 
+                negative, 
+                latent_image, 
+                denoise
+            )[0]
+            output = vae.decode(latent_output["samples"]).unsqueeze(0)
             
             # Collect all outputs (you may want to adjust this depending on how you want to handle the outputs)
-            output_images.append(output)
+            output_images.append(output[0])
 
         output_image = Image.rebuild_image_from_parts(output_images, upscaled_image, feather_mask)
                 

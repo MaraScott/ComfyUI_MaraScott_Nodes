@@ -74,15 +74,13 @@ class Image:
         channel_count = upscaled_image.shape[3]
 
         grid_specs = self.get_grid_specs(upscaled_width, upscaled_height)
-        log(grid_specs)
 
         scale_by = upscaled_width // grid_specs[0][2]
-        log(scale_by)
         
         grid_mask = comfy_extras.nodes_mask.SolidMask.solid(comfy_extras.nodes_mask.SolidMask, 1, grid_specs[0][2], grid_specs[0][3])[0]
         grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, feather_mask, 0, feather_mask, 0)[0]
         grid_feathermask_horizontal = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, 0, feather_mask, 0, feather_mask)[0]
-        
+
         x_start, y_start, width_inc, height_inc = grid_specs[0]
         outputTopRow = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, output_images[0], 0, 0, width_inc, 0, 0)[0]
         x_start, y_start, width_inc, height_inc = grid_specs[1]
