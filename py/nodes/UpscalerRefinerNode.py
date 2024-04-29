@@ -131,6 +131,8 @@ class UpscalerRefinerNode:
         if not isinstance(image, torch.Tensor):
             raise ValueError("MarasitUpscalerRefinerNode id XX: Image provided is not a Tensor")
         
+        log("McBoaty is starting to do its magic")
+        
         image_width = image.shape[2]
         image_height = image.shape[1]
         image_divisible_by_8 = Image.is_divisible_by_8(image)
@@ -168,28 +170,7 @@ class UpscalerRefinerNode:
             output_images.append(output[0])
 
         output_image = Image.rebuild_image_from_parts(output_images, upscaled_image, feather_mask)
-
-        # latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, refined_image, tile_size)[0]
-
-        # steps = 10
-        # cfg = 2.5
-        # denoise = 0.1
-        # sigmas = comfy_extras.nodes_custom_sampler.BasicScheduler.get_sigmas(comfy_extras.nodes_custom_sampler.BasicScheduler, model, scheduler, steps, denoise)[0]
-        # latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
-        #     comfy_extras.nodes_custom_sampler.SamplerCustom, 
-        #     model, 
-        #     add_noise, 
-        #     noise_seed, 
-        #     cfg, 
-        #     positive, 
-        #     negative, 
-        #     sampler, 
-        #     sigmas, 
-        #     latent_image
-        # )[0]
         
-        # output_image = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0]
-                
         output_image_width = output_image.shape[2]
         output_image_height = output_image.shape[1]
 
@@ -207,6 +188,7 @@ IMAGE (OUTPUT)
     height  :   {output_image_height}
 
 """]
+        log("McBoaty is done with its magic")
         
         return (
             output_image,
