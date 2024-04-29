@@ -162,6 +162,7 @@ class UpscalerRefinerNode:
         denoise = 0.1
         # Use the latent image in the common_ksampler function
         latent_output = nodes.KSampler.sample(
+            nodes.KSampler,
             model, 
             seed, 
             steps, 
