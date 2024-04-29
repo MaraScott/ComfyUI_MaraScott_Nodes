@@ -10,6 +10,7 @@
 import torch
 import comfy
 import comfy_extras
+import comfy_extras.nodes_custom_sampler
 import nodes
 import folder_paths
 
@@ -122,7 +123,20 @@ class UpscalerRefinerNode:
             latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
             
             # Use the latent image in the common_ksampler function
+            # latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
+            #     comfy_extras.nodes_custom_sampler.SamplerCustom, 
+            #     model, 
+            #     add_noise, 
+            #     noise_seed, 
+            #     cfg, 
+            #     positive, 
+            #     negative, 
+            #     sampler, 
+            #     sigmas, 
+            #     latent_image
+            # )
             latent_output = nodes.KSampler.sample(
+                nodes.KSampler,
                 model, 
                 seed, 
                 steps, 
