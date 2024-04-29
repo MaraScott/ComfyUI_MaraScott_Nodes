@@ -14,21 +14,17 @@ import nodes
 import folder_paths
 
 from ..inc.lib.image import Image
-from .KSamplerNode import common_ksampler
 
 from ..utils.log import *
 
 class UpscalerRefinerNode:
     
-    upscale_methods = ["nearest-exact", "bilinear", "area", "bicubic", "bislerp"]
-
     @classmethod
-    def INPUT_TYPES(cls):
+    def INPUT_TYPES(self):
         return {
             "hidden": {"id":"UNIQUE_ID"},
             "required":{
                 "image": ("IMAGE",),
-                "upscale_method": (cls.upscale_methods ,),           
                 "model_name": (folder_paths.get_filename_list("upscale_models"),),
                 
                 "feather_mask": ("INT", {"default": 350, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),                
@@ -81,7 +77,6 @@ class UpscalerRefinerNode:
         
         # Initialize the bus tuple with None values for each parameter
         image = kwargs.get('image', None)
-        upscale_method = kwargs.get('upscale_method', None)
         model_name = kwargs.get('model_name', None)
         feather_mask = kwargs.get('feather_mask', None)
         upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader.load_model(comfy_extras.nodes_upscale_model.UpscaleModelLoader, model_name)[0]
@@ -112,7 +107,7 @@ class UpscalerRefinerNode:
             image_divisible_by_8 = False
             image_width, image_height = Image.calculate_new_dimensions(image_width, image_height)
 
-        resized_image = nodes.ImageScale.upscale(nodes.ImageScale, image, upscale_method, image_width, image_height, "center")[0]
+        resized_image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", image_width, image_height, "center")[0]
 
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, resized_image)[0]
         
@@ -127,7 +122,7 @@ class UpscalerRefinerNode:
             latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
             
             # Use the latent image in the common_ksampler function
-            latent_output = common_ksampler(
+            latent_output = nodes.KSampler.sample(
                 model, 
                 seed, 
                 steps, 
@@ -138,8 +133,8 @@ class UpscalerRefinerNode:
                 negative, 
                 latent_image, 
                 denoise
-            )
-            output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output[0], tile_size)[0].unsqueeze(0)
+            )[0]
+            output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
             
             # Collect all outputs (you may want to adjust this depending on how you want to handle the outputs)
             output_images.append(output[0])
@@ -152,7 +147,7 @@ class UpscalerRefinerNode:
         cfg = 2.5
         denoise = 0.1
         # Use the latent image in the common_ksampler function
-        latent_output = common_ksampler(
+        latent_output = nodes.KSampler.sample(
             model, 
             seed, 
             steps, 
@@ -163,8 +158,8 @@ class UpscalerRefinerNode:
             negative, 
             latent_image, 
             denoise
-        )
-        output_image = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output[0], tile_size)[0]
+        )[0]
+        output_image = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0]
                 
         output_image_width = output_image.shape[2]
         output_image_height = output_image.shape[1]
