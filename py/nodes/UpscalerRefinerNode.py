@@ -35,6 +35,7 @@ class UpscalerRefinerNode:
 
                 "model": ("MODEL",),
                 "vae": ("VAE",),
+                "tile_size": ("INT", {"default": 512, "min": 320, "max": 4096, "step": 64}),
 
                 "seed": ("INT", {"default": 4, "min": 0, "max": 0xffffffffffffffff}),
                 "steps": ("INT", {"default": 10, "min": 1, "max": 10000}),
@@ -57,11 +58,13 @@ class UpscalerRefinerNode:
         "IMAGE", 
         "IMAGE", 
         "IMAGE", 
+        "IMAGE", 
         # "MASK", 
         "STRING"
     )
     
     RETURN_NAMES = (
+        "final_image", 
         "refined_image", 
         "upscaled_image", 
         "resized_image", 
@@ -83,6 +86,7 @@ class UpscalerRefinerNode:
         feather_mask = kwargs.get('feather_mask', None)
         upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader.load_model(comfy_extras.nodes_upscale_model.UpscaleModelLoader, model_name)[0]
         vae = kwargs.get('vae', None)
+        tile_size = kwargs.get('tile_size', None)
         model = kwargs.get('model', None)
         seed = kwargs.get('seed', None)
         steps = kwargs.get('steps', None)
@@ -120,8 +124,7 @@ class UpscalerRefinerNode:
             _image_grid = grid_image[:,:,:,:3]
             upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
 
-            t = vae.encode(upscaled_image_grid)
-            latent_image = {"samples":t}
+            latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
             
             # Use the latent image in the common_ksampler function
             latent_output = common_ksampler(
@@ -135,13 +138,33 @@ class UpscalerRefinerNode:
                 negative, 
                 latent_image, 
                 denoise
-            )[0]
-            output = vae.decode(latent_output["samples"]).unsqueeze(0)
+            )
+            output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output[0], tile_size)[0].unsqueeze(0)
             
             # Collect all outputs (you may want to adjust this depending on how you want to handle the outputs)
             output_images.append(output[0])
 
-        output_image = Image.rebuild_image_from_parts(output_images, upscaled_image, feather_mask)
+        refined_image = Image.rebuild_image_from_parts(output_images, upscaled_image, feather_mask)
+
+        latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, refined_image, tile_size)[0]
+
+        steps = 10
+        cfg = 2.5
+        denoise = 0.1
+        # Use the latent image in the common_ksampler function
+        latent_output = common_ksampler(
+            model, 
+            seed, 
+            steps, 
+            cfg, 
+            sampler_name, 
+            scheduler, 
+            positive, 
+            negative, 
+            latent_image, 
+            denoise
+        )
+        output_image = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output[0], tile_size)[0]
                 
         output_image_width = output_image.shape[2]
         output_image_height = output_image.shape[1]
@@ -163,6 +186,7 @@ IMAGE (OUTPUT)
         
         return (
             output_image,
+            refined_image,
             upscaled_image,
             resized_image,
             # output_mask,
