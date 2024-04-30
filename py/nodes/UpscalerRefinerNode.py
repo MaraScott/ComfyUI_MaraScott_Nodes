@@ -112,7 +112,7 @@ class UpscalerRefinerNode:
         vae = kwargs.get('vae', None)
         tile_size = kwargs.get('tile_size', None)
         self.model = model = kwargs.get('model', None)
-        noise_seed = kwargs.get('seed', None)
+        noise_seed = seed = kwargs.get('seed', None)
         self.steps = kwargs.get('steps', None)
         cfg = kwargs.get('cfg', None)
         sampler_name = kwargs.get('sampler_name', None)
@@ -158,18 +158,32 @@ class UpscalerRefinerNode:
             else:
                 latent_image = nodes.VAEEncode.encode(nodes.VAEEncode, vae, upscaled_image_grid)[0]
                     
-            latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
-                comfy_extras.nodes_custom_sampler.SamplerCustom, 
-                model, 
-                add_noise, 
-                noise_seed, 
+            # latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
+            #     comfy_extras.nodes_custom_sampler.SamplerCustom, 
+            #     model, 
+            #     add_noise, 
+            #     noise_seed, 
+            #     cfg, 
+            #     positive, 
+            #     negative, 
+            #     sampler, 
+            #     sigmas, 
+            #     latent_image
+            # )[0]
+            
+            latent_output = nodes.KSampler.sample(
+                self.model, 
+                seed, 
+                self.steps, 
                 cfg, 
+                sampler_name, 
+                self.scheduler, 
                 positive, 
                 negative, 
-                sampler, 
-                sigmas, 
-                latent_image
+                latent_image, 
+                self.denoise
             )[0]
+            
             if tiled == True:
                 output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
             else:
