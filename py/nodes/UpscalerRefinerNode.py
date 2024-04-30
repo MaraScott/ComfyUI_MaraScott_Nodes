@@ -126,7 +126,7 @@ class UpscalerRefinerNode:
         if not isinstance(image, torch.Tensor):
             raise ValueError("MarasitUpscalerRefinerNode id XX: Image provided is not a Tensor")
         
-        log("McBoaty is starting to do its magic")
+        log(f"McBoaty is starting to do its magic")
         
         image_width = image.shape[2]
         image_height = image.shape[1]
@@ -141,8 +141,12 @@ class UpscalerRefinerNode:
         
         grid_images = Image.get_grid_images(resized_image)
 
+        grid_latents = []
+        grid_latent_outputs = []
         output_images = []
-        for grid_image in grid_images:            
+        total = len(grid_images)
+        for index, grid_image in enumerate(grid_images):            
+            log(f"Upscaling tile {index + 1}/{total}")
             _image_grid = grid_image[:,:,:,:3]
             upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
             tiled = False
@@ -150,7 +154,10 @@ class UpscalerRefinerNode:
                 latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
             else:
                 latent_image = nodes.VAEEncode.encode(nodes.VAEEncode, vae, upscaled_image_grid)[0]
+            grid_latents.append(latent_image)
                     
+        for index, latent_image in enumerate(grid_latents):            
+            log(f"Refining tile {index + 1}/{total}")
             latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
                 comfy_extras.nodes_custom_sampler.SamplerCustom, 
                 model, 
@@ -163,21 +170,10 @@ class UpscalerRefinerNode:
                 sigmas, 
                 latent_image
             )[0]
-            
-            # latent_output = nodes.KSampler.sample(
-            #     nodes.KSampler,
-            #     model, 
-            #     seed, 
-            #     steps, 
-            #     cfg, 
-            #     sampler_name, 
-            #     scheduler, 
-            #     positive, 
-            #     negative, 
-            #     latent_image, 
-            #     denoise
-            # )[0]
-            
+            grid_latent_outputs.append(latent_output)
+
+        for index, latent_output in enumerate(grid_latent_outputs):            
+            log(f"VAEDecoding tile {index + 1}/{total}")
             if tiled == True:
                 output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
             else:
@@ -207,7 +203,7 @@ NODE INFO
     version : {VERSION}
 
 """]
-        log("McBoaty is done with its magic")
+        log(f"McBoaty is done with its magic")
         
         return (
             output_image,
