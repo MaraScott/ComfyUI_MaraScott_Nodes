@@ -149,10 +149,13 @@ class UpscalerRefinerNode:
             log(f"Upscaling tile {index + 1}/{total}")
             _image_grid = grid_image[:,:,:,:3]
             upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
-            tiled = False
+            if 'tiled' not in locals():
+                tiled = True if upscaled_image_grid.shape[2] > tile_size * 2 else False
             if tiled == True:
+                log(f"VAEEncodingTiled tile {index + 1}/{total}")
                 latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
             else:
+                log(f"VAEEncoding tile {index + 1}/{total}")
                 latent_image = nodes.VAEEncode.encode(nodes.VAEEncode, vae, upscaled_image_grid)[0]
             grid_latents.append(latent_image)
                     
@@ -173,10 +176,11 @@ class UpscalerRefinerNode:
             grid_latent_outputs.append(latent_output)
 
         for index, latent_output in enumerate(grid_latent_outputs):            
-            log(f"VAEDecoding tile {index + 1}/{total}")
             if tiled == True:
+                log(f"VAEDecodingTiled tile {index + 1}/{total}")
                 output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
             else:
+                log(f"VAEDecoding tile {index + 1}/{total}")
                 output = nodes.VAEDecode.decode(nodes.VAEDecode, vae, latent_output)[0].unsqueeze(0)
             
             output_images.append(output[0])
