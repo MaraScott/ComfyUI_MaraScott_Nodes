@@ -15,6 +15,8 @@ from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
 import nodes
 import folder_paths
 
+from ..utils.version import VERSION
+
 from ..inc.lib.image import Image
 
 from ..utils.log import *
@@ -150,9 +152,12 @@ class UpscalerRefinerNode:
         for grid_image in grid_images:            
             _image_grid = grid_image[:,:,:,:3]
             upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
-
-            latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
-            
+            tiled = False
+            if tiled == True:
+                latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
+            else:
+                latent_image = nodes.VAEEncode.encode(nodes.VAEEncode, vae, upscaled_image_grid)[0]
+                    
             latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
                 comfy_extras.nodes_custom_sampler.SamplerCustom, 
                 model, 
@@ -165,7 +170,10 @@ class UpscalerRefinerNode:
                 sigmas, 
                 latent_image
             )[0]
-            output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
+            if tiled == True:
+                output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
+            else:
+                output = nodes.VAEDecode.decode(nodes.VAEDecode, vae, latent_output)[0].unsqueeze(0)
             
             output_images.append(output[0])
 
@@ -186,6 +194,9 @@ IMAGE (INPUT)
 IMAGE (OUTPUT)
     width   :   {output_image_width}
     height  :   {output_image_height}
+    
+NODE INFO
+    version : {VERSION}
 
 """]
         log("McBoaty is done with its magic")

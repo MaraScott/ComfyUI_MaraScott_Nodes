@@ -56,10 +56,12 @@ from .Marasit_Nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, WEB_
 
 __all__ = [ 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY' ]
 
+from .py.utils.version import VERSION
+
 MANIFEST = {
     "name": "MarasIT Nodes",
-    "version": "3.2.4",
+    "version": VERSION,
     "author": "davask",
     "project": "https://github.com/davask/ComfyUI-MarasIT-Nodes",
-    "description": "AnyBus Node (AKA UniversalBus) is an attempt to provide a Universal Bus Node (as some might say) which is based on AnyType Input/Output.",
+    "description": "AnyBus, UpScaler Refiner Nodes - a MaraScott.ai nodes suite",
 }
