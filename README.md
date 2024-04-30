@@ -11,7 +11,13 @@ So far I did the following Nodes :
 
 AnyBus Node (AKA UniversalBus node) is an attempt to provide a Universal Bus Node (as some might say) which is based on AnyType Input/Output.
 
-the Bus Nodes can be connected from one AnyBusNode to another and we support the following Reroute Nodes as long as they are linked from an AnyBusNode before connecting it to another
+**Native Support**
+
+You can assume that any node input/output works like "UE Nodes / Use Everywhere" Nodes
+
+**BUS Input/Output Support**
+
+The Bus Nodes can be connected from one AnyBusNode to another and we support the following Reroute Nodes as long as they are linked from an AnyBusNode before connecting it to another
 
 Set/Get Node **Supported** :
 
