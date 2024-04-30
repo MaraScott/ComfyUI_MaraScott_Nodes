@@ -23,13 +23,6 @@ from ..utils.log import *
 
 class UpscalerRefinerNode:
     
-    sigmas_type = None
-    model = None
-    scheduler = None
-    steps = None
-    denoise = None
-    model_type = None
-    
     SIGMAS_TYPES = [
         "BasicScheduler"
         , "SDTurboScheduler"
@@ -88,16 +81,16 @@ class UpscalerRefinerNode:
     FUNCTION = "fn"
     
     @classmethod    
-    def __get_sigmas(self):
-        if self.sigmas_type == "AlignYourStepsScheduler":
+    def __get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
+        if sigmas_type == "SDTurboScheduler":
+            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
+            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model, steps, denoise)[0]
+        elif sigmas_type == "AlignYourStepsScheduler":
             SigmaScheduler = AlignYourStepsScheduler
-            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, self.model_type, self.steps, self.denoise)[0]
-        elif self.sigmas_type == "SDTurboScheduler":
-            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, self.sigmas_type)
-            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, self.model, self.steps, self.denoise)[0]
+            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model_type, steps, denoise)[0]
         else: # BasicScheduler
-            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, self.sigmas_type)
-            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, self.model, self.scheduler, self.steps, self.denoise)[0]
+            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
+            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model, scheduler, steps, denoise)[0]
 
         return sigmas
             
@@ -111,20 +104,20 @@ class UpscalerRefinerNode:
         feather_mask = kwargs.get('feather_mask', None)
         vae = kwargs.get('vae', None)
         tile_size = kwargs.get('tile_size', None)
-        self.model = model = kwargs.get('model', None)
+        model = kwargs.get('model', None)
         noise_seed = seed = kwargs.get('seed', None)
-        self.steps = kwargs.get('steps', None)
+        steps = kwargs.get('steps', None)
         cfg = kwargs.get('cfg', None)
         sampler_name = kwargs.get('sampler_name', None)
         sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect.get_sampler(comfy_extras.nodes_custom_sampler.KSamplerSelect,sampler_name)[0]
-        self.scheduler = kwargs.get('basic_scheduler', None)
+        scheduler = kwargs.get('basic_scheduler', None)
         positive = kwargs.get('positive', None)
         negative = kwargs.get('negative', None)
         add_noise = True        
-        self.denoise = kwargs.get('denoise', None)        
-        self.sigmas_type = kwargs.get('sigmas_type', None)
-        self.model_type = kwargs.get('ays_model_type', None)
-        sigmas = self.__get_sigmas()
+        denoise = kwargs.get('denoise', None)        
+        sigmas_type = kwargs.get('sigmas_type', None)
+        model_type = kwargs.get('ays_model_type', None)
+        sigmas = self.__get_sigmas(sigmas_type, model, steps, denoise, scheduler, model_type)
         output_info = [f"No info"]
         
         if image is None:
@@ -158,31 +151,32 @@ class UpscalerRefinerNode:
             else:
                 latent_image = nodes.VAEEncode.encode(nodes.VAEEncode, vae, upscaled_image_grid)[0]
                     
-            # latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
-            #     comfy_extras.nodes_custom_sampler.SamplerCustom, 
-            #     model, 
-            #     add_noise, 
-            #     noise_seed, 
-            #     cfg, 
-            #     positive, 
-            #     negative, 
-            #     sampler, 
-            #     sigmas, 
-            #     latent_image
-            # )[0]
-            
-            latent_output = nodes.KSampler.sample(
-                self.model, 
-                seed, 
-                self.steps, 
+            latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
+                comfy_extras.nodes_custom_sampler.SamplerCustom, 
+                model, 
+                add_noise, 
+                noise_seed, 
                 cfg, 
-                sampler_name, 
-                self.scheduler, 
                 positive, 
                 negative, 
-                latent_image, 
-                self.denoise
+                sampler, 
+                sigmas, 
+                latent_image
             )[0]
+            
+            # latent_output = nodes.KSampler.sample(
+            #     nodes.KSampler,
+            #     model, 
+            #     seed, 
+            #     steps, 
+            #     cfg, 
+            #     sampler_name, 
+            #     scheduler, 
+            #     positive, 
+            #     negative, 
+            #     latent_image, 
+            #     denoise
+            # )[0]
             
             if tiled == True:
                 output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
