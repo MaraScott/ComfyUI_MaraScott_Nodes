@@ -126,7 +126,7 @@ class UpscalerRefinerNode:
         if not isinstance(image, torch.Tensor):
             raise ValueError("MarasitUpscalerRefinerNode id XX: Image provided is not a Tensor")
         
-        log("McBoaty is starting to do its magic")
+        # log("McBoaty is starting to do its magic")
         
         image_width = image.shape[2]
         image_height = image.shape[1]
@@ -207,7 +207,7 @@ NODE INFO
     version : {VERSION}
 
 """]
-        log("McBoaty is done with its magic")
+        # log("McBoaty is done with its magic")
         
         return (
             output_image,
