@@ -35,6 +35,7 @@ class UpscalerRefinerNode:
             "hidden": {"id":"UNIQUE_ID"},
             "required":{
                 "image": ("IMAGE",),
+                "output_size": ("BOOLEAN", {"default": True, "label_on": "Upscale size", "label_off": "Input size"}),
 
                 "upscale_model": (folder_paths.get_filename_list("upscale_models"),),
                 
@@ -42,6 +43,7 @@ class UpscalerRefinerNode:
 
                 "model": ("MODEL",),
                 "vae": ("VAE",),
+                "vae_encode": ("BOOLEAN", {"default": True, "label_on": "tiled", "label_off": "standard"}),
                 "tile_size": ("INT", {"default": 512, "min": 320, "max": 4096, "step": 64}),
 
                 "seed": ("INT", {"default": 4, "min": 0, "max": 0xffffffffffffffff}),
@@ -56,7 +58,10 @@ class UpscalerRefinerNode:
                 "positive": ("CONDITIONING", ),
                 "negative": ("CONDITIONING", ),
 
-                "denoise": ("FLOAT", {"default": 0.35, "min": 0.0, "max": 0.51, "step": 0.01}),                
+                "denoise": ("FLOAT", {"default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),
+                
+                # "running_count": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
+                
 
             },
             "optional": {
@@ -93,16 +98,89 @@ class UpscalerRefinerNode:
             sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model, scheduler, steps, denoise)[0]
 
         return sigmas
+    
+    @classmethod
+    def upscale_refine(
+        self, 
+        iteration,
+        image, 
+        upscale_model,
+        model, 
+        vae, 
+        tiled, 
+        tile_size, 
+        add_noise, 
+        noise_seed, 
+        cfg, 
+        positive, 
+        negative, 
+        sampler, 
+        sigmas, 
+        feather_mask
+    ):
+        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, image)[0]
+        
+        grid_images = Image.get_grid_images(image)
+
+        grid_upscales = []
+        grid_latents = []
+        grid_latent_outputs = []
+        output_images = []
+        total = len(grid_images)
+        for index, grid_image in enumerate(grid_images):            
+            log(f"tile {index + 1}/{total}", None, None, f"Upscaling {iteration}")
+            _image_grid = grid_image[:,:,:,:3]
+            upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
+            grid_upscales.append(upscaled_image_grid)
+                    
+        for index, upscaled_image_grid in enumerate(grid_upscales):
+            if tiled == True:
+                log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
+                latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
+            else:
+                log(f"tile {index + 1}/{total}", None, None, f"VAEEncoding {iteration}")
+                latent_image = nodes.VAEEncode.encode(nodes.VAEEncode, vae, upscaled_image_grid)[0]
+            grid_latents.append(latent_image)
+                    
+        for index, latent_image in enumerate(grid_latents):            
+            log(f"tile {index + 1}/{total}", None, None, f"Refining {iteration}")
+            latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
+                comfy_extras.nodes_custom_sampler.SamplerCustom, 
+                model, 
+                add_noise, 
+                noise_seed, 
+                cfg, 
+                positive, 
+                negative, 
+                sampler, 
+                sigmas, 
+                latent_image
+            )[0]
+            grid_latent_outputs.append(latent_output)
+
+        for index, latent_output in enumerate(grid_latent_outputs):            
+            if tiled == True:
+                log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
+                output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
+            else:
+                log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
+                output = nodes.VAEDecode.decode(nodes.VAEDecode, vae, latent_output)[0].unsqueeze(0)
+            
+            output_images.append(output[0])
+
+        return Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask)        
             
     @classmethod    
     def fn(self, **kwargs):
-                
+        
         # Initialize the bus tuple with None values for each parameter
         image = kwargs.get('image', None)
+        upscale_size = kwargs.get('output_size', None)
         upscale_model_name = kwargs.get('upscale_model', None)
         upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader.load_model(comfy_extras.nodes_upscale_model.UpscaleModelLoader, upscale_model_name)[0]
         feather_mask = kwargs.get('feather_mask', None)
         vae = kwargs.get('vae', None)
+        tiled = kwargs.get('vae_encode', None)
         tile_size = kwargs.get('tile_size', None)
         model = kwargs.get('model', None)
         noise_seed = seed = kwargs.get('seed', None)
@@ -118,6 +196,8 @@ class UpscalerRefinerNode:
         sigmas_type = kwargs.get('sigmas_type', None)
         model_type = kwargs.get('ays_model_type', None)
         sigmas = self.__get_sigmas(sigmas_type, model, steps, denoise, scheduler, model_type)
+        max_iterations = kwargs.get('running_count', 1)
+
         output_info = [f"No info"]
         
         if image is None:
@@ -135,35 +215,17 @@ class UpscalerRefinerNode:
             image_divisible_by_8 = False
             image_width, image_height = Image.calculate_new_dimensions(image_width, image_height)
 
-        resized_image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", image_width, image_height, "center")[0]
-
-        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, resized_image)[0]
-        
-        grid_images = Image.get_grid_images(resized_image)
-
-        grid_latents = []
-        grid_latent_outputs = []
-        output_images = []
-        total = len(grid_images)
-        for index, grid_image in enumerate(grid_images):            
-            log(f"Upscaling tile {index + 1}/{total}")
-            _image_grid = grid_image[:,:,:,:3]
-            upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
-            if 'tiled' not in locals():
-                tiled = True if upscaled_image_grid.shape[2] > tile_size * 2 else False
-            if tiled == True:
-                log(f"VAEEncodingTiled tile {index + 1}/{total}")
-                latent_image = nodes.VAEEncodeTiled.encode(nodes.VAEEncodeTiled, vae, upscaled_image_grid, tile_size)[0]
-            else:
-                log(f"VAEEncoding tile {index + 1}/{total}")
-                latent_image = nodes.VAEEncode.encode(nodes.VAEEncode, vae, upscaled_image_grid)[0]
-            grid_latents.append(latent_image)
-                    
-        for index, latent_image in enumerate(grid_latents):            
-            log(f"Refining tile {index + 1}/{total}")
-            latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom.sample(
-                comfy_extras.nodes_custom_sampler.SamplerCustom, 
+        image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", image_width, image_height, "center")[0]
+        current_image = image
+        for index in range(max_iterations):
+            output_image = self.upscale_refine(
+                f"{index + 1}/{max_iterations}",
+                current_image, 
+                upscale_model,
                 model, 
+                vae, 
+                tiled, 
+                tile_size, 
                 add_noise, 
                 noise_seed, 
                 cfg, 
@@ -171,46 +233,36 @@ class UpscalerRefinerNode:
                 negative, 
                 sampler, 
                 sigmas, 
-                latent_image
-            )[0]
-            grid_latent_outputs.append(latent_output)
-
-        for index, latent_output in enumerate(grid_latent_outputs):            
-            if tiled == True:
-                log(f"VAEDecodingTiled tile {index + 1}/{total}")
-                output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
-            else:
-                log(f"VAEDecoding tile {index + 1}/{total}")
-                output = nodes.VAEDecode.decode(nodes.VAEDecode, vae, latent_output)[0].unsqueeze(0)
+                feather_mask
+            )
+            if not upscale_size: 
+                output_image = nodes.ImageScale.upscale(nodes.ImageScale, output_image, "nearest-exact", image_width, image_height, "center")[0]
+            current_image = output_image
             
-            output_images.append(output[0])
-
-        output_image = Image.rebuild_image_from_parts(output_images, upscaled_image, feather_mask)
-        
         output_image_width = output_image.shape[2]
         output_image_height = output_image.shape[1]
 
         output_info = [f"""
 
-IMAGE (INPUT)
-    width   :   {image_width}
-    height  :   {image_height}
-    image divisible by 8 : {image_divisible_by_8}
+    IMAGE (INPUT)
+        width   :   {image_width}
+        height  :   {image_height}
+        image divisible by 8 : {image_divisible_by_8}
 
-------------------------------
+    ------------------------------
 
-IMAGE (OUTPUT)
-    width   :   {output_image_width}
-    height  :   {output_image_height}
-    
-NODE INFO
-    version : {VERSION}
+    IMAGE (OUTPUT)
+        width   :   {output_image_width}
+        height  :   {output_image_height}
+        
+    NODE INFO
+        version : {VERSION}
 
 """]
         log(f"McBoaty is done with its magic")
         
         return (
             output_image,
-            resized_image,
+            image,
             output_info
         )

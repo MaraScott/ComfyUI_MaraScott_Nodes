@@ -67,7 +67,7 @@ class Image:
         return grids
 
     @classmethod
-    def rebuild_image_from_parts(self, output_images, upscaled_image, feather_mask):
+    def rebuild_image_from_parts(self, iteration, output_images, upscaled_image, feather_mask):
         
         upscaled_width = upscaled_image.shape[2]
         upscaled_height = upscaled_image.shape[1]
@@ -83,41 +83,41 @@ class Image:
 
         index = 0
         total = len(output_images)
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputTopRow = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, output_images[index], 0, 0, width_inc, 0, 0)[0]
         index = index + 1
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputTopRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputTopRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = None)[0]
         index = index + 1
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputTopRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputTopRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = grid_feathermask_vertical)[0]
 
         index = index + 1
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputBottomRow = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, output_images[index], 0, 0, width_inc, 0, 0)[0]
         index = index + 1
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputBottomRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputBottomRow, output_images[index], x = x_start, y = 0, resize_source = False, mask = None)[0]
         index = index + 1
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputBottomRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputBottomRow, output_images[index], x = x_start, y = 0, resize_source = False, mask = grid_feathermask_vertical)[0]
         
         index = index + 1
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputMiddleRow = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, output_images[index], 0, 0, width_inc, 0, 0)[0]
         index = index + 1
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputMiddleRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputMiddleRow, output_images[index], x = x_start, y = 0, resize_source = False, mask = None)[0]
         index = index + 1
-        log(f"Rebuilding tile {index + 1}/{total}")
+        log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
         x_start, y_start, width_inc, height_inc = grid_specs[index]
         outputMiddleRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputMiddleRow, output_images[index], x = x_start, y = 0, resize_source = False, mask = grid_feathermask_vertical)[0]
 
