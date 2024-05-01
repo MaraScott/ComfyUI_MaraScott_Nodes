@@ -485,7 +485,7 @@ class MarasitAnyBusNodeFlow {
 		let _originNode = null
 		let isMarasitAnyBusNode = false
 
-		if (node.inputs[0].link != null) {
+		if (node && node.inputs && node.inputs[0].link != null) {
 
 			if(node.inputs[0].link == 'setNode') {
 
