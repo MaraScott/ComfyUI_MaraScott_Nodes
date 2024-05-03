@@ -169,7 +169,6 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         upscale_size = kwargs.get('output_size', None)
         upscale_model_name = kwargs.get('upscale_model', None)
         upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader.load_model(comfy_extras.nodes_upscale_model.UpscaleModelLoader, upscale_model_name)[0]
-        feather_mask = kwargs.get('feather_mask', None)
         vae = kwargs.get('vae', None)
         tiled = kwargs.get('vae_encode', None)
         tile_size = kwargs.get('tile_size', None)
