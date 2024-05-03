@@ -29,7 +29,30 @@ class Image:
         return new_width, new_height
 
     @classmethod
-    def get_grid_specs(self, width, height):
+    def get_16_grid_specs(self, width, height):
+        # For row one:
+        # Pad size is width/16*10
+        # Tile one: crop x = 0   y = 0    width = width/16*6 height = height/16*6
+        # Tile two: crop x = width/16*5   y = 0   width = width/16*6  height = height/16*6
+        # Tile three: crop x = width/16*10  y = 0  width = width/16*6  height = height/16*6
+
+        # For row two:
+        # Tile one: crop x = 0   y = height/16*5 width = width/16*6 height = height/16*6
+        # Tile two: crop x = width/16*5   y = height/16*5   width = width/16*6  height = height/16*6
+        # Tile three: crop x = width/16*10  y = height/16*5  width = width/16*6  height = height/16*6
+
+        # For row three:
+        # Tile one: crop x = 0   y = height/16*10    width = width/16*6 height = height/16*6
+        # Tile two: crop x = width/16*5   y = height/16*10   width = width/16*6  height = height/16*6
+        # Tile three: crop x = width/16*10  y = height/16*10  width = width/16*6  height = height/16*6
+
+        # SolidMask for tile two width = width/16*6  height = height/16*6  Feather = width/16
+        # Composite: Tile one x = 0    Tile two x = width/16*5   Tile three: x = width/16*10
+        # Rows follow the same numbers without the crops. 'width' substituted for 'height' 
+        return []  
+    
+    @classmethod
+    def get_9_grid_specs(self, width, height):
 
         half_width = width // 2
         half_height = height // 2
@@ -54,7 +77,7 @@ class Image:
     def get_grid_images(self, image):
         width, height = image.shape[2], image.shape[1]
         
-        grid_specs = self.get_grid_specs(width, height)
+        grid_specs = self.get_9_grid_specs(width, height)
 
         grids = [
             image[
@@ -73,7 +96,7 @@ class Image:
         upscaled_height = upscaled_image.shape[1]
         channel_count = upscaled_image.shape[3]
 
-        grid_specs = self.get_grid_specs(upscaled_width, upscaled_height)
+        grid_specs = self.get_9_grid_specs(upscaled_width, upscaled_height)
 
         scale_by = upscaled_width // grid_specs[0][2]
         
