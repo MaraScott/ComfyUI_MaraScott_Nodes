@@ -7,6 +7,7 @@
 #
 ###
 
+import torch
 import math
 import comfy
 import comfy_extras
@@ -62,11 +63,13 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
     RETURN_TYPES = (
         "IMAGE", 
         "IMAGE", 
+        "IMAGE",
         "STRING"
     )
     
     RETURN_NAMES = (
         "image", 
+        "tiles", 
         "original_resized", 
         "info", 
     )
@@ -156,7 +159,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         tile_qty = tile_rows * tile_cols
         feather_mask = upscaled_width / tile_qty            
                         
-        return Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask, rows = tile_rows, cols = tile_cols)        
+        return Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask, rows = tile_rows, cols = tile_cols), output_images
         
     @classmethod    
     def fn(self, **kwargs):
@@ -184,7 +187,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         denoise = kwargs.get('denoise', None)        
         sigmas_type = kwargs.get('sigmas_type', None)
         model_type = kwargs.get('ays_model_type', None)
-        sigmas = self.__get_sigmas(sigmas_type, model, steps, denoise, scheduler, model_type)
+        sigmas = self._get_sigmas(sigmas_type, model, steps, denoise, scheduler, model_type)
         max_iterations = kwargs.get('running_count', 1)
 
         output_info = [f"No info"]
@@ -207,7 +210,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", image_width, image_height, "center")[0]
         current_image = image
         for index in range(max_iterations):
-            output_image = self.upscale_refine(
+            output_image, output_tiles = self.upscale_refine(
                 f"{index + 1}/{max_iterations}",
                 current_image, 
                 upscale_model,
@@ -231,12 +234,13 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         output_image_width = output_image.shape[2]
         output_image_height = output_image.shape[1]
 
-        output_info = self.__get_info(image_width, image_height, image_divisible_by_8, output_image_width, output_image_height)
+        output_info = self._get_info(image_width, image_height, image_divisible_by_8, output_image_width, output_image_height)
         
         log(f"McBoaty is done with its magic")
         
         return (
             output_image,
+            output_tiles,
             image,
             output_info
         )

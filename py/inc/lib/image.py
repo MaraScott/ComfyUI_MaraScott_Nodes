@@ -35,20 +35,20 @@ class Image:
         height_multiplier = math.ceil(tile_cols / 2)
         tile_width = width // width_multiplier
         tile_height = height // height_multiplier
-        margin_width = width - tile_width // 2
-        margin_height = height - tile_height // 2
+        margin_width = (width - tile_width) // 2
+        margin_height = (height - tile_height) // 2
                 
         tiles = []
         tile_order = [0,2,1]
-        for row in tile_order:
-            for col in tile_order:
+        for col in tile_order:
+            for row in tile_order:
                 tiles.append([
                    row * margin_width, # x 
                    col * margin_height, # y 
                    tile_width, # width 
                    tile_height, # height 
                 ])
-
+                
         return tiles
     
     @classmethod
@@ -78,7 +78,7 @@ class Image:
         width, height = image.shape[2], image.shape[1]
         
         grid_specs = self.get_dynamic_grid_specs(width, height, rows, cols)
-
+            
         grids = [
             image[
                 :,
@@ -98,20 +98,20 @@ class Image:
 
         grid_specs = self.get_dynamic_grid_specs(upscaled_width, upscaled_height, rows, cols)
 
-        scale_by = upscaled_width // grid_specs[0][2]
+        scale_by = math.ceil(upscaled_width // grid_specs[0][2])
         
         tile_qty = rows * cols
         
-        width_feather_seam = upscaled_width / tile_qty
+        width_feather_seam = math.ceil(upscaled_width / tile_qty)
         # v1 legacy code fix
         if feather_mask > width_feather_seam:
             width_feather_seam = feather_mask
             
-        height_feather_seam = upscaled_height / tile_qty                    
+        height_feather_seam = math.ceil(upscaled_height / tile_qty)                    
         # v1 legacy code fix
         if feather_mask > height_feather_seam:
             height_feather_seam = feather_mask
-        
+            
         grid_mask = comfy_extras.nodes_mask.SolidMask.solid(comfy_extras.nodes_mask.SolidMask, 1, grid_specs[0][2], grid_specs[0][3])[0]
         grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask.feather(
             comfy_extras.nodes_mask.FeatherMask, 

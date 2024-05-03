@@ -35,7 +35,7 @@ class UpscalerRefiner_McBoaty:
     FUNCTION = "fn"
     
     @classmethod
-    def __get_info(self, image_width, image_height, image_divisible_by_8, output_image_width, output_image_height):
+    def _get_info(self, image_width, image_height, image_divisible_by_8, output_image_width, output_image_height):
         return [f"""
 
     IMAGE (INPUT)
@@ -55,7 +55,7 @@ class UpscalerRefiner_McBoaty:
 """]        
     
     @classmethod    
-    def __get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
+    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
         if sigmas_type == "SDTurboScheduler":
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model, steps, denoise)[0]
