@@ -29,27 +29,27 @@ class Image:
         return new_width, new_height
 
     @classmethod
-    def get_16_grid_specs(self, width, height):
-        # For row one:
-        # Pad size is width/16*10
-        # Tile one: crop x = 0   y = 0    width = width/16*6 height = height/16*6
-        # Tile two: crop x = width/16*5   y = 0   width = width/16*6  height = height/16*6
-        # Tile three: crop x = width/16*10  y = 0  width = width/16*6  height = height/16*6
+    def get_dynamic_grid_specs(self, width, height, tile_rows = 3, tile_cols =3):
+        
+        width_multiplier = math.ceil(tile_rows / 2)
+        height_multiplier = math.ceil(tile_cols / 2)
+        tile_width = width // width_multiplier
+        tile_height = height // height_multiplier
+        margin_width = width - tile_width // 2
+        margin_height = height - tile_height // 2
+                
+        tiles = []
+        tile_order = [0,2,1]
+        for row in tile_order:
+            for col in tile_order:
+                tiles.append([
+                   row * margin_width, # x 
+                   col * margin_height, # y 
+                   tile_width, # width 
+                   tile_height, # height 
+                ])
 
-        # For row two:
-        # Tile one: crop x = 0   y = height/16*5 width = width/16*6 height = height/16*6
-        # Tile two: crop x = width/16*5   y = height/16*5   width = width/16*6  height = height/16*6
-        # Tile three: crop x = width/16*10  y = height/16*5  width = width/16*6  height = height/16*6
-
-        # For row three:
-        # Tile one: crop x = 0   y = height/16*10    width = width/16*6 height = height/16*6
-        # Tile two: crop x = width/16*5   y = height/16*10   width = width/16*6  height = height/16*6
-        # Tile three: crop x = width/16*10  y = height/16*10  width = width/16*6  height = height/16*6
-
-        # SolidMask for tile two width = width/16*6  height = height/16*6  Feather = width/16
-        # Composite: Tile one x = 0    Tile two x = width/16*5   Tile three: x = width/16*10
-        # Rows follow the same numbers without the crops. 'width' substituted for 'height' 
-        return []  
+        return tiles
     
     @classmethod
     def get_9_grid_specs(self, width, height):
@@ -74,10 +74,10 @@ class Image:
         ]
 
     @classmethod
-    def get_grid_images(self, image):
+    def get_grid_images(self, image, rows = 3, cols = 3):
         width, height = image.shape[2], image.shape[1]
         
-        grid_specs = self.get_9_grid_specs(width, height)
+        grid_specs = self.get_dynamic_grid_specs(width, height, rows, cols)
 
         grids = [
             image[
@@ -90,19 +90,45 @@ class Image:
         return grids
 
     @classmethod
-    def rebuild_image_from_parts(self, iteration, output_images, upscaled_image, feather_mask):
+    def rebuild_image_from_parts(self, iteration, output_images, upscaled_image, feather_mask = 350, rows = 3, cols = 3):
         
         upscaled_width = upscaled_image.shape[2]
         upscaled_height = upscaled_image.shape[1]
         channel_count = upscaled_image.shape[3]
 
-        grid_specs = self.get_9_grid_specs(upscaled_width, upscaled_height)
+        grid_specs = self.get_dynamic_grid_specs(upscaled_width, upscaled_height, rows, cols)
 
         scale_by = upscaled_width // grid_specs[0][2]
         
+        tile_qty = rows * cols
+        
+        width_feather_seam = upscaled_width / tile_qty
+        # v1 legacy code fix
+        if feather_mask > width_feather_seam:
+            width_feather_seam = feather_mask
+            
+        height_feather_seam = upscaled_height / tile_qty                    
+        # v1 legacy code fix
+        if feather_mask > height_feather_seam:
+            height_feather_seam = feather_mask
+        
         grid_mask = comfy_extras.nodes_mask.SolidMask.solid(comfy_extras.nodes_mask.SolidMask, 1, grid_specs[0][2], grid_specs[0][3])[0]
-        grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, feather_mask, 0, feather_mask, 0)[0]
-        grid_feathermask_horizontal = comfy_extras.nodes_mask.FeatherMask.feather(comfy_extras.nodes_mask.FeatherMask, grid_mask, 0, feather_mask, 0, feather_mask)[0]
+        grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask.feather(
+            comfy_extras.nodes_mask.FeatherMask, 
+            grid_mask, 
+            width_feather_seam, 
+            0, 
+            width_feather_seam, 
+            0
+        )[0]
+        grid_feathermask_horizontal = comfy_extras.nodes_mask.FeatherMask.feather(
+            comfy_extras.nodes_mask.FeatherMask, 
+            grid_mask, 
+            0, 
+            height_feather_seam, 
+            0, 
+            height_feather_seam
+        )[0]
 
         index = 0
         total = len(output_images)
