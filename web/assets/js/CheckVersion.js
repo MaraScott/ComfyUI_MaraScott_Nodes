@@ -34,15 +34,8 @@ fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`)
   href="https://github.com/${repoOwner}/${repoName}/releases/">https://github.com/${repoOwner}/${repoName}/releases</a>
       `)
 
-      // window.alert(
-      //     `Please proceed to the official repository to download the latest version.https://github.com/shadowcz007/comfyui-mixlab-nodes/releases/`
-      //   )
-      //   window.open(
-      //     'https://github.com/shadowcz007/comfyui-mixlab-nodes/releases/'
-      //   )
     }
   })
   .catch(error => {
     console.error('Error fetching release information:', error)
   })
-//  #MixCopilot
