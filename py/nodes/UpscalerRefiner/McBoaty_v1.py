@@ -95,7 +95,7 @@ class UpscalerRefiner_McBoaty_v1(UpscalerRefiner_McBoaty):
     ):
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, image)[0]
         
-        grid_images = Image.get_grid_images(image)
+        grid_images = Image.get_grid_images(image, 3, 3)
 
         grid_upscales = []
         grid_latents = []
@@ -170,7 +170,7 @@ class UpscalerRefiner_McBoaty_v1(UpscalerRefiner_McBoaty):
         denoise = kwargs.get('denoise', None)        
         sigmas_type = kwargs.get('sigmas_type', None)
         model_type = kwargs.get('ays_model_type', None)
-        sigmas = self.__get_sigmas(sigmas_type, model, steps, denoise, scheduler, model_type)
+        sigmas = self._get_sigmas(sigmas_type, model, steps, denoise, scheduler, model_type) 
         max_iterations = kwargs.get('running_count', 1)
 
         output_info = [f"No info"]
@@ -217,7 +217,7 @@ class UpscalerRefiner_McBoaty_v1(UpscalerRefiner_McBoaty):
         output_image_width = output_image.shape[2]
         output_image_height = output_image.shape[1]
 
-        output_info = self.__get_info(image_width, image_height, image_divisible_by_8, output_image_width, output_image_height)
+        output_info = self._get_info(image_width, image_height, image_divisible_by_8, output_image_width, output_image_height)
         
         log(f"McBoaty is done with its magic")
         
