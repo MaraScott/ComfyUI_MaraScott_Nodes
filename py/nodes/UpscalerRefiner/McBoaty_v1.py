@@ -33,7 +33,7 @@ class UpscalerRefiner_McBoaty_v1(UpscalerRefiner_McBoaty):
 
                 "upscale_model": (folder_paths.get_filename_list("upscale_models"),),
                 
-                "feather_mask": ("INT", {"default": 350, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),                
+                "feather_mask": ("INT", {"default": 64, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),                
 
                 "model": ("MODEL",),
                 "vae": ("VAE",),
