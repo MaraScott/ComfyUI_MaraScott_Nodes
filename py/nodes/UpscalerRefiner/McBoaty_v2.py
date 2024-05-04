@@ -33,12 +33,13 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
                 "output_size": ("BOOLEAN", {"default": True, "label_on": "Upscale size", "label_off": "Input size"}),
 
                 "upscale_model": (folder_paths.get_filename_list("upscale_models"),),
+
+                "feather_mask": ("INT", {"default": 16, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),                
                 
                 "model": ("MODEL",),
                 "vae": ("VAE",),
                 "vae_encode": ("BOOLEAN", {"default": True, "label_on": "tiled", "label_off": "standard"}),
                 "tile_size": ("INT", {"default": 512, "min": 320, "max": 4096, "step": 64}),
-                "refiner_type": ("BOOLEAN", {"default": True, "label_on": "per tile", "label_off": "entire image"}),
 
                 "seed": ("INT", {"default": 4, "min": 0, "max": 0xffffffffffffffff}),
                 "steps": ("INT", {"default": 10, "min": 1, "max": 10000}),
@@ -84,27 +85,22 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         vae, 
         tiled, 
         tile_size, 
-        per_tile_refiner,
         add_noise, 
         noise_seed, 
         cfg, 
         positive, 
         negative, 
         sampler, 
-        sigmas
+        sigmas,
+        feather_mask        
     ):
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, image)[0]
-        
         upscaled_width = upscaled_image.shape[2]
         upscaled_height = upscaled_image.shape[1]
         tile_rows = math.floor(upscaled_width // tile_size)
         tile_cols = math.floor(upscaled_height // tile_size)
         
-        tiled_image = image
-        if not per_tile_refiner:
-            tiled_image = upscaled_image
-        
-        grid_images = Image.get_grid_images(tiled_image, tile_rows, tile_cols)
+        grid_images = Image.get_grid_images(image, tile_rows, tile_cols)
 
         grid_upscales = []
         grid_latents = []
@@ -112,14 +108,11 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         output_images = []
         total = len(grid_images)
         
-        if per_tile_refiner:
-            for index, grid_image in enumerate(grid_images):            
-                log(f"tile {index + 1}/{total}", None, None, f"Upscaling {iteration}")
-                _image_grid = grid_image[:,:,:,:3]
-                upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
-                grid_upscales.append(upscaled_image_grid)
-        else:
-            grid_upscales = grid_images
+        for index, grid_image in enumerate(grid_images):            
+            log(f"tile {index + 1}/{total}", None, None, f"Upscaling {iteration}")
+            _image_grid = grid_image[:,:,:,:3]
+            upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel.upscale(comfy_extras.nodes_upscale_model.ImageUpscaleWithModel, upscale_model, _image_grid)[0]
+            grid_upscales.append(upscaled_image_grid)
             
         for index, upscaled_image_grid in enumerate(grid_upscales):
             if tiled == True:
@@ -156,9 +149,6 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
             
             output_images.append(output[0])
             
-        tile_qty = tile_rows * tile_cols
-        feather_mask = upscaled_width / tile_qty            
-                        
         return Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask, rows = tile_rows, cols = tile_cols), output_images
         
     @classmethod    
@@ -169,10 +159,10 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         upscale_size = kwargs.get('output_size', None)
         upscale_model_name = kwargs.get('upscale_model', None)
         upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader.load_model(comfy_extras.nodes_upscale_model.UpscaleModelLoader, upscale_model_name)[0]
+        feather_mask = kwargs.get('feather_mask', None)
         vae = kwargs.get('vae', None)
         tiled = kwargs.get('vae_encode', None)
         tile_size = kwargs.get('tile_size', None)
-        per_tile_refiner = kwargs.get('refiner_type', None)
         model = kwargs.get('model', None)
         noise_seed = seed = kwargs.get('seed', None)
         steps = kwargs.get('steps', None)
@@ -217,14 +207,14 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
                 vae, 
                 tiled, 
                 tile_size, 
-                per_tile_refiner,
                 add_noise, 
                 noise_seed, 
                 cfg, 
                 positive, 
                 negative, 
                 sampler, 
-                sigmas
+                sigmas,
+                feather_mask                
             )
             if not upscale_size: 
                 output_image = nodes.ImageScale.upscale(nodes.ImageScale, output_image, "nearest-exact", image_width, image_height, "center")[0]
