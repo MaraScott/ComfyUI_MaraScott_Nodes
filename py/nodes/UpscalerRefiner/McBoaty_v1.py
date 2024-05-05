@@ -143,7 +143,7 @@ class UpscalerRefiner_McBoaty_v1(UpscalerRefiner_McBoaty):
             
             output_images.append(output[0])
 
-        return Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask)        
+        return Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask)[0]
 
     @classmethod    
     def fn(self, **kwargs):
