@@ -149,7 +149,13 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
             
             output_images.append(output[0])
             
-        return Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask, rows = tile_rows, cols = tile_cols), output_images
+        output_image, tiles_order = Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask, rows = tile_rows, cols = tile_cols)
+
+        tiles_order.sort(key=lambda x: x[0])
+        output_tiles = tuple(output for _, output in tiles_order)
+        output_tiles = torch.cat(output_tiles)
+            
+        return output_image, output_tiles
         
     @classmethod    
     def fn(self, **kwargs):
