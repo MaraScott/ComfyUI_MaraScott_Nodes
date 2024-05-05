@@ -65,7 +65,7 @@ This AnyBus is dislexia friendly :D
 Upscaler Refinier Node (AKA McBoaty node) is an Upscaler coupled with a Refiner in order to get higher rendering result.
 The output image is a slightly modified image.
 
-I would like to thanks [Rob Adams](https://www.youtube.com/@robadams2451) AKA Treeshark who provided the workflow in the first place which I convert in a ComfyUI Node
+I would like to thanks [Rob Adams](https://www.youtube.com/@robadams2451) AKA Treeshark who provided the workflow in the first place which I convert in a ComfyUI Node, you can find his original workflow presentation in his youtube video : [Advanced UpScaling in ComfyUI](https://www.youtube.com/watch?v=HStp7u682mE)
 
 ---
 
