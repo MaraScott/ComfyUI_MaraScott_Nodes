@@ -55,6 +55,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
 
                 "denoise": ("FLOAT", {"default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),
                                 
+                "running_count": ("INT", {"default": 1, "min": 1, "max": 0xffffffffffffffff}),
 
             },
             "optional": {
@@ -64,6 +65,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
     RETURN_TYPES = (
         "IMAGE", 
         "IMAGE", 
+        "IMAGE", 
         "IMAGE",
         "STRING"
     )
@@ -71,6 +73,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
     RETURN_NAMES = (
         "image", 
         "tiles", 
+        "running images", 
         "original_resized", 
         "info", 
     )
@@ -184,6 +187,9 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         model_type = kwargs.get('ays_model_type', None)
         sigmas = self._get_sigmas(sigmas_type, model, steps, denoise, scheduler, model_type)
         max_iterations = kwargs.get('running_count', 1)
+        
+        if max_iterations > 1:
+            upscale_size = False
 
         output_info = [f"No info"]
         
@@ -204,6 +210,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
 
         image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", image_width, image_height, "center")[0]
         current_image = image
+        output_run_images = []
         for index in range(max_iterations):
             output_image, output_tiles = self.upscale_refine(
                 f"{index + 1}/{max_iterations}",
@@ -224,6 +231,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
             )
             if not upscale_size: 
                 output_image = nodes.ImageScale.upscale(nodes.ImageScale, output_image, "nearest-exact", image_width, image_height, "center")[0]
+            output_run_images.append(output_image)
             current_image = output_image
             
         output_image_width = output_image.shape[2]
@@ -236,6 +244,7 @@ class UpscalerRefiner_McBoaty_v2(UpscalerRefiner_McBoaty):
         return (
             output_image,
             output_tiles,
+            torch.cat(output_run_images),
             image,
             output_info
         )
