@@ -77,7 +77,7 @@ I would like to thank the following people for helping me out by providing their
 
 I would like to thank 
 - [Rob Adams](https://www.youtube.com/@robadams2451) AKA Treeshark who provided the workflow in the first place which I converted into a ComfyUI Node, you can find his original workflow presentation in his YouTube video: [Advanced UpScaling in ComfyUI](https://www.youtube.com/watch?v=HStp7u682mE)
-- [Rob Adams](https://www.youtube.com/@robadams2451) for guiding me in the expectations of his nodes and other advice
+- [@YouFunnyGuys](discord.gg/t28yZEewrp) From the discord channel for his invaluable contribution and exceptional testing skills
 
 *I might have forgotten some other people, please contact me if you want to appear here and please forgive me.*
 
