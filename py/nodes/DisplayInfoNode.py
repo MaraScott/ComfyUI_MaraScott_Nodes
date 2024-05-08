@@ -29,7 +29,7 @@ class DisplayInfoNode:
     OUTPUT_NODE = True
     OUTPUT_IS_LIST = (True,)
 
-    CATEGORY = "MarasIT/utils"
+    CATEGORY = "MaraScott/utils"
 
     def fn(self, text, unique_id=None, extra_pnginfo=None):
         

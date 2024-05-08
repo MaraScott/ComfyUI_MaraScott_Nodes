@@ -1,6 +1,6 @@
 /**
  * File: helper.js
- * Project: MarasitUniversalBusNode
+ * Project: MaraScottUniversalBusNode
  * Author: David Asquiedge
  *
  * Copyright (c) 2024 David Asquiedge
@@ -57,7 +57,7 @@ export class LocalStorageManager {
 
 function createLogger(emoji, color, consoleMethod = 'log') {
     return function (message, ...args) {
-        if (window.marasit?.DEBUG) {
+        if (window.marascott?.DEBUG) {
             console[consoleMethod](
                 `%c${emoji} ${message}`,
                 `color: ${color};`,
@@ -73,7 +73,7 @@ export const errorLogger = createLogger('🔥', 'red', 'error')
 export const successLogger = createLogger('✅', 'green')
 
 export const log = (...args) => {
-    if (window.marasit?.DEBUG) {
+    if (window.marascott?.DEBUG) {
         console.debug(...args)
     }
 }

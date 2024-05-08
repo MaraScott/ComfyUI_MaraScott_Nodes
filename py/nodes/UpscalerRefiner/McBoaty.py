@@ -30,7 +30,7 @@ class UpscalerRefiner_McBoaty:
     ]
     
     OUTPUT_NODE = False
-    CATEGORY = "MarasIT/upscaling"
+    CATEGORY = "MaraScott/upscaling"
     DESCRIPTION = "An \"UPSCALER\" Node"
     FUNCTION = "fn"
     
