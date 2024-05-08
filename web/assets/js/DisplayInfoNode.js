@@ -3,9 +3,9 @@ import { ComfyWidgets } from "../../scripts/widgets.js";
 
 // Displays input text on a node
 app.registerExtension({
-	name: "Comfy.MarasIT.DisplayInfoNode",
+	name: "ComfyUI.MaraScott.DisplayInfoNode",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
-		if (nodeData.name === "MarasitDisplayInfoNode") {
+		if (nodeData.name === "MaraScottDisplayInfoNode") {
 			function populate(text) {
 				if (this.widgets) {
 					for (let i = 1; i < this.widgets.length; i++) {

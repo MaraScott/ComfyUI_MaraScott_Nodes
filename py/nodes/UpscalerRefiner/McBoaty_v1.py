@@ -176,10 +176,10 @@ class UpscalerRefiner_McBoaty_v1(UpscalerRefiner_McBoaty):
         output_info = [f"No info"]
         
         if image is None:
-            raise ValueError("MarasitUpscalerRefinerNode id XX: No image provided")
+            raise ValueError("MaraScottUpscalerRefinerNode id XX: No image provided")
 
         if not isinstance(image, torch.Tensor):
-            raise ValueError("MarasitUpscalerRefinerNode id XX: Image provided is not a Tensor")
+            raise ValueError("MaraScottUpscalerRefinerNode id XX: Image provided is not a Tensor")
         
         log(f"McBoaty is starting to do its magic")
         

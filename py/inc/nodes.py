@@ -13,7 +13,7 @@ class AnyType(str):
 class Configuration:
     
     OUTPUT_NODE = False
-    CATEGORY = "MarasIT/utils"
+    CATEGORY = "MaraScott/utils"
     
     # SHAPE = LiteGraph.CARD_SHAPE
     # COLOR = "#8154A6"
