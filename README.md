@@ -47,6 +47,12 @@ What does it intend to do?
 In the world of ComfyUI, the spaghetti workflow can quickly become a mess. I personally was confused at some point by the get/set approach, which brought me to develop this AnyBus Node applying a profile approach to organize different Buses in the same workflow.
 One Bus has a maximum of 25 inputs/outputs (feel free to make an issue request for a higher maximum).
 
+the profile setting :
+
+the BusNode profile is a mecanism to synchronize BusNodes in the samw flow (connected by the Bus input/output) all nodes with the same profile name and connected together will be synchronized if one of them is modified
+
+when adding a node, the profile is default, if you have another flow called main for example and you connect the bus output of the flow to the input of the default busnode, the main flow will synchronize the main input to the default one and change the profile name to main. this works only for default node, if you have a node called TextFlow and try to connect main to TextFlow, the connection will be refused. this allow to have multiple flow in the same workflow and avoid conflict
+
 This AnyBus is dyslexia friendly :D
 
 # Large Upscaler Refiner Node AKA McBoaty Node
