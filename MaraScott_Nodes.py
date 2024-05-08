@@ -24,6 +24,7 @@ NODE_CLASS_MAPPINGS = {
     "MaraScottUpscalerRefinerNode_v2": UpscalerRefiner_McBoaty_v2,
 
     "MarasitBusNode": BusNode_v1,
+    "MarasitUniversalBusNode": BusNode_v1,
     "MarasitAnyBusNode": AnyBusNode_V1,
     "MarasitDisplayInfoNode": DisplayInfoNode_v1,
     "MarasitUpscalerRefinerNode": UpscalerRefiner_McBoaty_v1,
@@ -36,11 +37,12 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottDisplayInfoNode": "\ud83d\udc30 Display Info - Text v1 /i",
     "MaraScottUpscalerRefinerNode_v2": "\ud83d\udc30 Large Refiner - McBoaty v2 /u",
 
-    "MarasitBusNode": "\ud83d\udc30 Bus Node v1 (deprecated) /*",
-    "MarasitAnyBusNode": "\ud83d\udc30 AnyBus - UniversalBus v1 (deprecated) /*",
-    "MarasitDisplayInfoNode": "\ud83d\udc30 Display Info - Text v1 (deprecated) /i",
-    "MarasitUpscalerRefinerNode": "\ud83d\udc30 Large Refiner - McBoaty v1 (deprecated)/u",
-    "MarasitUpscalerRefinerNode_v2": "\ud83d\udc30 Large Refiner - McBoaty v2 (deprecated)/u",
+    "MarasitBusNode": "\u274C Bus v1 (deprecated)",
+    "MarasitUniversalBusNode": "\u274C Bus - UniversalBus v1 (deprecated)",
+    "MarasitAnyBusNode": "\u274C AnyBus - UniversalBus v1 (deprecated)",
+    "MarasitDisplayInfoNode": "\u274C Display Info - Text v1 (deprecated)",
+    "MarasitUpscalerRefinerNode": "\u274C Large Refiner - McBoaty v1 (deprecated)",
+    "MarasitUpscalerRefinerNode_v2": "\u274C Large Refiner - McBoaty v2 (deprecated)",
 }
 
 print('\033[34m[Maras IT] \033[92mLoaded\033[0m')
