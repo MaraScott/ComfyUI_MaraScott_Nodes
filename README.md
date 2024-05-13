@@ -60,6 +60,9 @@ This AnyBus is dyslexia friendly :D
 The Upscaler Refiner Node (AKA McBoaty Node) is an upscaler coupled with a refiner to achieve higher rendering results.
 The output image is a slightly modified image.
 
+**Not Supported**:
+- ControlNet : your conditioning needs to be ControlNet Free  
+
 # Thanks
 
 ## Special thanks
