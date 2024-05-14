@@ -12,10 +12,8 @@
 #
 ###
 
-from ..inc.nodes import Configuration as _CONF
-from ..inc.profiles.any import Node as ProfileNodeAny
-# from ..inc.profiles.pipe_basic import Node as ProfileNodePipeBasic
-# from ..inc.profiles.pipe_detailer import Node as ProfileNodePipeDetailer
+from ...inc.nodes import Configuration as _CONF
+from ...inc.profiles.any import Node as ProfileNodeAny
 
 class AnyBusNode:
 
@@ -26,23 +24,17 @@ class AnyBusNode:
             "required":{},
             "optional": {
                 "bus": ("BUS",),
-                # "pipe (basic)": "BASIC_PIPE",
-                # "pipe (detailer)": "DETAILER_PIPE",
                 **ProfileNodeAny.ENTRIES,
             }
         }
 
     RETURN_TYPES = (
         ("BUS", ) 
-        # + ("BASIC_PIPE", ) 
-        # + ("DETAILER_PIPE", ) 
         + ProfileNodeAny.INPUT_TYPES
     )
     
     RETURN_NAMES = (
         ("bus",) 
-        # + ("pipe (basic)", )
-        # + ("pipe (detailer)", )
         + ProfileNodeAny.INPUT_NAMES
     )
     
@@ -58,25 +50,17 @@ class AnyBusNode:
             raise ValueError("The 'bus' tuple must have the same number of elements as '_INPUT_NAMES'")
 
         outputs = {}
-        # pipe_basic_outputs = {}
-        # pipe_detailer_outputs = {}
+
         for name, bus_value in zip(ProfileNodeAny.INPUT_NAMES, bus):
             _input = _CONF.get_kwarg_with_prefix(kwargs, name, bus_value)
             outputs[name] = _CONF.determine_output_value(name, _input, bus_value)
-            # if name in ProfileNodePipeBasic.INPUT_NAMES:
-            #     pipe_basic_outputs[name] = outputs[name]
 
-        # _CONF.ensure_required_parameters(outputs)
         _CONF.handle_special_parameters(outputs)
 
         # Prepare and return the output bus tuple with updated values
         out_bus = tuple(outputs[name] for name in ProfileNodeAny.INPUT_NAMES)
-        # out_pipe_basic = tuple(pipe_basic_outputs[name] for name in ProfileNodePipeBasic.INPUT_NAMES)
-        # out_pipe_detailer = tuple(pipe_detailer_outputs[name] for name in ProfileNodePipeDetailer.INPUT_NAMES)
         
         return (
             (out_bus,) 
-            # + (out_pipe_basic,) 
-            # + (out_pipe_detailer,) 
             + out_bus
         )
