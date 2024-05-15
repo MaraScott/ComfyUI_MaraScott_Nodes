@@ -718,7 +718,7 @@ class MaraScottAnyBusNode_v3LiteGraph {
 	static getExtraMenuOptions(nodeType) {
 		const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
 		nodeType.prototype.getExtraMenuOptions = function (_, options) {
-
+			// check ComfyUI\custom_nodes~\ComfyUI-Easy-Use\web\js\easy\easyExtraMenu.js l.511
 			// console.log("[MaraScott - logging " + this.name + "]", "on Extra Menu Options", { "id": this.id, "properties": this.properties });
 
 		}
@@ -875,7 +875,7 @@ const MaraScottAnyBusNode_v3Extension = {
 
 			// MaraScottAnyBusNode_v3LiteGraph.onExecuted(nodeType)
 			MaraScottAnyBusNode_v3LiteGraph.onNodeCreated(nodeType)
-			// MaraScottAnyBusNode_v3LiteGraph.getExtraMenuOptions(nodeType)
+			MaraScottAnyBusNode_v3LiteGraph.getExtraMenuOptions(nodeType)
 			MaraScottAnyBusNode_v3LiteGraph.onConnectionsChange(nodeType)
 			// delete MaraScottAnyBusNode_v3.beforeRegisterNodeDef;
 			MaraScottAnyBusNode_v3LiteGraph.onRemoved(nodeType)
