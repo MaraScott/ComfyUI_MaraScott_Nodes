@@ -17,13 +17,14 @@ class litegraph {
 
 	onNodeCreated(nodeType) {
 
+		const self = this
 		const onNodeCreated = nodeType.prototype.onNodeCreated;
 		nodeType.prototype.onNodeCreated = function () {
 			const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
 
 			// console.log("[MaraScott - logging " + this.name + "]", 'onNodeCreated')
-			this.ext.core.configure(this)
-			this.ext.core.setWidgets(this)
+			self.ext.core.configure(this)
+			self.ext.core.setWidgets(this)
 
 			return r;
 		}
@@ -36,6 +37,7 @@ class litegraph {
 
 	onConnectionsChange(nodeType) {
 
+		const self = this
 		const onConnectionsChange = nodeType.prototype.onConnectionsChange
 		nodeType.prototype.onConnectionsChange = function (
 			slotType,	//1 = input, 2 = output
@@ -47,24 +49,24 @@ class litegraph {
 
 			const r = onConnectionsChange ? onConnectionsChange.apply(this, arguments) : undefined
 
-			if (!window.marascott[this.ext.name].init) return r
+			if (!window.marascott[self.ext.name].init) return r
 
-			window.marascott[this.ext.name].sync = this.ext.flow.NOSYNC
-			window.marascott[this.ext.name].input.index = slot + 1 - this.ext.core.FIRST_INDEX
+			window.marascott[self.ext.name].sync = self.ext.flow.NOSYNC
+			window.marascott[self.ext.name].input.index = slot + 1 - self.ext.core.FIRST_INDEX
 
 			//On Disconnect
 			if (!isChangeConnect && slotType == 1 && typeof link_info != 'undefined') {
 				// console.log('disconnect');
 
-				if (slot < this.ext.core.FIRST_INDEX) {
+				if (slot < self.ext.core.FIRST_INDEX) {
 					// bus
 					if (slot == 0 && this.inputs) {
-						window.marascott[this.ext.name].sync = this.ext.core.disConnectBus(this)
+						window.marascott[self.ext.name].sync = self.ext.core.disConnectBus(this)
 					}
 
 				} else {
 
-					window.marascott[this.ext.name].sync = this.ext.core.disConnectInput(this, slot)
+					window.marascott[self.ext.name].sync = self.ext.core.disConnectInput(this, slot)
 					
 				}
 
@@ -83,13 +85,13 @@ class litegraph {
 					(otherNode) => otherNode.id == link_info.origin_id
 				)
 					
-				if (slot < this.ext.core.FIRST_INDEX) {
+				if (slot < self.ext.core.FIRST_INDEX) {
 					// bus
-					window.marascott[this.ext.name].sync = this.ext.core.connectBus(this, slot, link_info_node, link_info.origin_slot)
+					window.marascott[self.ext.name].sync = self.ext.core.connectBus(this, slot, link_info_node, link_info.origin_slot)
 
 				} else {
 
-					window.marascott[this.ext.name].sync = this.ext.core.connectInput(this, slot, link_info_node, link_info.origin_slot)
+					window.marascott[self.ext.name].sync = self.ext.core.connectInput(this, slot, link_info_node, link_info.origin_slot)
 
 
 				}
@@ -101,7 +103,7 @@ class litegraph {
 				// this.inputs[slot].name = ":) ("+slot.toString().padStart(2, '0')+")"
 			}
 
-			this.ext.flow.syncProfile(this, null, isChangeConnect)
+			self.ext.flow.syncProfile(this, null, isChangeConnect)
 
 			return r;
 		}

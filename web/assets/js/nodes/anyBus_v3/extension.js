@@ -24,10 +24,10 @@ const getExtension = (ext) => {
             // defs is a lookup core nodes, add yours into this
             const withNodesNames = false
             if (withNodesNames) {
-                // console.log("[MaraScott - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs[ext.core.TYPE], JSON.stringify(Object.keys(defs)));
+                // console.log("[MaraScott - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs[ext.TYPE], JSON.stringify(Object.keys(defs)));
 
             } else {
-                // console.log("[MaraScott - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs[ext.core.TYPE]);
+                // console.log("[MaraScott - logging " + this.name + "]", "add custom node definitions", "current nodes:", defs[ext.TYPE]);
             }
         },
         getCustomWidgets(app) {
@@ -43,7 +43,7 @@ const getExtension = (ext) => {
             // Fires for each node when loading/dragging/etc a workflow json or png
             // If you break something in the backend and want to patch workflows in the frontend
             // This is the place to do this
-            if (node.type == ext.core.TYPE) {
+            if (node.type == ext.TYPE) {
 
                 node.setProperty('uuid', node.id)
                 ext.flow.setFlows(node);
@@ -66,7 +66,7 @@ const getExtension = (ext) => {
         beforeRegisterNodeDef(nodeType, nodeData, app) {
             // Run custom logic before a node definition is registered with the graph
 
-            if (nodeData.name === ext.core.TYPE) {
+            if (nodeData.name === ext.TYPE) {
                 // This fires for every node definition so only log once
                 // console.log("[MaraScott - logging " + this.name + "]", "before register node: ", nodeData, typeof ext.litegraph, typeof ext.litegraph.onNodeCreated);
 
@@ -116,7 +116,7 @@ class extension {
         this.widget = new widget(this)
         this.flow = new flow(this)
         this.menu = new menu(this)
-        this.litegrah = new litegraph(this)
+        this.litegraph = new litegraph(this)
 
         return getExtension(this)
     }
@@ -190,12 +190,12 @@ class extension {
         this._menu = menu;
     }
 
-    get litegrah(){
-        return this._litegrah;
+    get litegraph(){
+        return this._litegraph;
     }
 
-    set litegrah(litegrah){
-        this._litegrah = litegrah;
+    set litegraph(litegraph){
+        this._litegraph = litegraph;
     }
 
 };

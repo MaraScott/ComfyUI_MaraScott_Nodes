@@ -23,7 +23,7 @@ class flow {
 		this.ext = extension
 
 		this.ALLOWED_NODE_TYPE = [
-			this.ext.core.TYPE,
+			this.ext.TYPE,
 			...this.ALLOWED_REROUTE_TYPE,
 			...this.ALLOWED_GETSET_TYPE,
 		]
@@ -72,7 +72,7 @@ class flow {
 				_originNode = this.getOriginRerouteBusType(_originNode)
 			}
 
-			if (_originNode?.type == this.ext.core.TYPE) {
+			if (_originNode?.type == this.ext.TYPE) {
 				originNode = _originNode
 			}
 
@@ -147,7 +147,7 @@ class flow {
 			while (_bus_nodes_connections[currentNode] !== undefined) {
 				currentNode = _bus_nodes_connections[currentNode]; // Move to the parent node
 				const _currentNode = node.graph.getNodeById(currentNode)
-				if (_currentNode.type == this.ext.core.TYPE) {
+				if (_currentNode.type == this.ext.TYPE) {
 					node_paths[id].push(currentNode); // Add the parent node to the path
 				}
 			}
