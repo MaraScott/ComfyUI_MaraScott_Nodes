@@ -25,7 +25,7 @@ class widget {
 
 		this.setProfileInput(node)
 		this.setInputsSelect(node)
-		// this.setCleanSwitch(node)
+		this.setCleanSwitch(node)
 
 	}
 

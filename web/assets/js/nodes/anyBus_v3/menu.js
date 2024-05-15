@@ -1,3 +1,5 @@
+import { $t } from './../../utils/i18n.js'
+
 class menu {
 
 	_ext = null
@@ -17,9 +19,9 @@ class menu {
 	
 	viewProfile = function(_, options){
 		options.unshift({
-			content: this.ext.$t("\ud83d\udc30 View Bus Info..."),
+			content: $t("\ud83d\udc30 View Bus Info..."),
 			callback: (value, options, e, menu, node) => {
-				console.log(window.marascott[this.ext.name].nodeToSync)
+				console.log(window.marascott.anyBus_v3.nodeToSync)
 			}
 		})
 	}

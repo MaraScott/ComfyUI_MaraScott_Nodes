@@ -1,4 +1,3 @@
-import { $t } from './../../utils/i18n.js'
 import { core } from './core.js'
 import { widget } from './widget.js'
 import { flow } from './flow.js'
@@ -72,10 +71,11 @@ const getExtension = (ext) => {
 
                 // ext.litegraph.onExecuted(nodeType)
                 ext.litegraph.onNodeCreated(nodeType)
-                ext.litegraph.getExtraMenuOptions(nodeType, ext.menu.viewProfile)
+                ext.litegraph.getExtraMenuOptions(nodeType)
                 ext.litegraph.onConnectionsChange(nodeType)
                 // delete ext.core.beforeRegisterNodeDef;
                 ext.litegraph.onRemoved(nodeType)
+                ext.flow.clean(nodeData)
 
             }
         },
@@ -86,6 +86,7 @@ const getExtension = (ext) => {
         afterConfigureGraph(app) {
             // console.log("[MaraScott - logging " + this.name + "]", "extension afterConfigureGraph");
             window.marascott[ext.name].init = true
+
         },
     }
 }
@@ -99,8 +100,6 @@ class extension {
     name = 'anyBus_v3'
     lSP = extension.prefix+'.'+this.name // localStorage Prefix
 
-    $t = $t
-    
     _core = null
     _widget = null
     _flow = null
@@ -119,6 +118,7 @@ class extension {
         this.litegraph = new litegraph(this)
 
         return getExtension(this)
+
     }
 
     init() {
