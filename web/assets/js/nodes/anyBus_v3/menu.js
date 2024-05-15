@@ -1,6 +1,10 @@
-import { $t } from './../../utils/i18n.js'
-
 class menu {
+
+	_ext = null
+
+	constructor(extension) {
+        this.ext = extension
+	}
 
 	static addMenuHandler = (nodeType, cb)=> {
 		const getOpts = nodeType.prototype.getExtraMenuOptions;
@@ -13,12 +17,21 @@ class menu {
 	
 	static viewProfile = function(_, options){
 		options.unshift({
-			content: $t("\ud83d\udc30 View Bus Info..."),
+			content: this.ext.$t("\ud83d\udc30 View Bus Info..."),
 			callback: (value, options, e, menu, node) => {
-				console.log(window.marascott.anyBus_v3.nodeToSync)
+				console.log(window.marascott[this.ext.name].nodeToSync)
 			}
 		})
 	}
+
+	get ext(){
+        return this._ext;
+    }
+    
+    set ext(extension){
+        this._ext = extension;
+    }
+
 }
 
 export { menu }

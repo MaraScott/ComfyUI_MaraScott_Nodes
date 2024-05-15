@@ -1,6 +1,6 @@
-import { core as MaraScottAnyBusNode_v3 } from './core.js'
-
 class widget {
+
+	_ext = null
 
 	static PROFILE = {
 		name: 'Profile',
@@ -15,6 +15,10 @@ class widget {
 	static CLEAN = {
 		default: false,
 		name: 'Clean Inputs',
+	}
+
+	constructor(extension) {
+        this.ext = extension
 	}
 
 	static init(node) {
@@ -39,7 +43,7 @@ class widget {
 
 	static setValueInputs(node, name, value) {
 		let qty = 0
-		let _value = value + MaraScottAnyBusNode_v3.FIRST_INDEX
+		let _value = value + this.ext.core.FIRST_INDEX
 		if (node.inputs.length > _value) {
 			qty = node.inputs.length - _value
 			for (let i = qty; i > 0; i--) {
@@ -79,8 +83,8 @@ class widget {
 				node.properties[this.PROFILE.name] ?? this.PROFILE.default,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
 					this.setValue(node, this.PROFILE.name, value)
-					window.marascott.anyBus_v3.sync = MaraScottAnyBusNode_v3Flow.FULLSYNC;
-					MaraScottAnyBusNode_v3Flow.syncProfile(node, this.PROFILE.name, null)
+					window.marascott[this.ext.name].sync = this.ext.flow.FULLSYNC;
+					this.ext.flow.syncProfile(node, this.PROFILE.name, null)
 					node.setProperty('prevProfileName', node.properties[this.PROFILE.name])
 
 				},
@@ -110,8 +114,8 @@ class widget {
 				node.properties[this.INPUTS.name] ?? this.INPUTS.default,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
 					this.setValue(node, this.INPUTS.name, value)
-					window.marascott.anyBus_v3.sync = MaraScottAnyBusNode_v3Flow.FULLSYNC;
-					MaraScottAnyBusNode_v3Flow.syncProfile(node, this.INPUTS.name, null)
+					window.marascott[this.ext.name].sync = this.ext.flow.FULLSYNC;
+					this.ext.flow.syncProfile(node, this.INPUTS.name, null)
 				},
 				{
 					"values": values
@@ -132,9 +136,9 @@ class widget {
 				this.CLEAN.name,
 				this.CLEAN.clean,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-					for (const index in window.marascott.anyBus_v3.flows.end) {
-						const _node = node.graph.getNodeById(window.marascott.anyBus_v3.flows.end[index])
-						MaraScottAnyBusNode_v3Flow.clean(_node)
+					for (const index in window.marascott[this.ext.name].flows.end) {
+						const _node = node.graph.getNodeById(window.marascott[this.ext.name].flows.end[index])
+						this.ext.flow.clean(_node)
 					}
 					this.setValue(node, this.CLEAN.name, this.CLEAN.clean)
 				},
@@ -144,6 +148,14 @@ class widget {
 		}
 
 	}
+
+    get ext(){
+        return this._ext;
+    }
+    
+    set ext(extension){
+        this._ext = extension;
+    }
 
 }
 

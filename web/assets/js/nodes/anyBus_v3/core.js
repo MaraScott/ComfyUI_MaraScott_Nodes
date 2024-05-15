@@ -1,53 +1,18 @@
-import { widget as MaraScottAnyBusNode_v3Widget } from './widget.js'
-import { flow as MaraScottAnyBusNode_v3Flow } from './flow.js'
-
 class core {
 
-    static name = 'anyBus_v3'
 	static TYPE = "MaraScottAnyBusNode_v3"
-
+	
 	static BUS_SLOT = 0
 	static BASIC_PIPE_SLOT = 0
 	static REFINER_PIPE_SLOT = 0
-
+	
 	static FIRST_INDEX = 1
+	
+	_ext = null
 
-
-    static init() {
-        if (!window.marascott) {
-            window.marascott = {}
-        }
-        
-        if (!window.marascott[this.name]) {
-            window.marascott[this.name] = {}
-        }    
-    }
-
-    static get(name_version) {
-        this.name = name_version
-        this.init(this.name)
-        return {
-            init: false,
-            sync: false,
-            input: {
-                label: "0",
-                index: 0,
-            },
-            clean: false,
-            nodeToSync: null,
-            flows: {
-                start: [],
-                list: [],
-                end: [],
-            },
-            nodes: {},
-            profiles: localStorage['MaraScott.'+this.name+'.profiles'] || {
-                _default: {},
-                _basic_pipe: {},
-                _detailer_pipe: {},
-            },
-        }
-    }
+	constructor(extension) {
+        this.ext = extension
+	}
 
 	static configure(node) {
 
@@ -57,54 +22,54 @@ class core {
 		node.groupcolor = LGraphCanvas.node_colors.green.groupcolor
 		node.groupcolor = LGraphCanvas.node_colors.green.groupcolor
 		node.size[0] = 150 // width
-		if (!node.properties || !(MaraScottAnyBusNode_v3Widget.PROFILE.name in node.properties)) {
-			node.properties[MaraScottAnyBusNode_v3Widget.PROFILE.name] = MaraScottAnyBusNode_v3Widget.PROFILE.default;
+		if (!node.properties || !(this.ext.widget.PROFILE.name in node.properties)) {
+			node.properties[this.ext.widget.PROFILE.name] = this.ext.widget.PROFILE.default;
 		}
-		node.title = "AnyBus - " + node.properties[MaraScottAnyBusNode_v3Widget.PROFILE.name]
+		node.title = "AnyBus - " + node.properties[this.ext.widget.PROFILE.name]
 	}
 
 	static setWidgets(node) {
-		MaraScottAnyBusNode_v3Widget.init(node)
+		this.ext.widget.init(node)
 	}
 
 	static setInputValue(node) {
 
 		let protected_slots = []
 
-		let inputsLength = window.marascott.anyBus_v3.nodeToSync.inputs.length
+		let inputsLength = window.marascott[this.ext.name].nodeToSync.inputs.length
 		if(node.inputs.length < inputsLength) inputsLength = node.inputs.length
 
 		for (let slot = this.FIRST_INDEX; slot < inputsLength; slot++) {
 
 			if (protected_slots.indexOf(slot) > -1) continue
-			if (typeof node.inputs[slot] == 'undefined' || typeof window.marascott.anyBus_v3.nodeToSync.inputs[slot] == 'undefined') {
+			if (typeof node.inputs[slot] == 'undefined' || typeof window.marascott[this.ext.name].nodeToSync.inputs[slot] == 'undefined') {
 				console.log('[MaraScott Nodes] Check your profile Names')
 				continue;
 			}
 
 			const isNodeInputAny = node.inputs[slot].type == "*"
-			const isNodeOutputDifferent = node.outputs[slot].type == window.marascott.anyBus_v3.nodeToSync.outputs[slot].type
+			const isNodeOutputDifferent = node.outputs[slot].type == window.marascott[this.ext.name].nodeToSync.outputs[slot].type
 			const isNodeInputDifferent = 
 				!isNodeOutputDifferent // output different from new input
 			const isOutputAny = node.outputs[slot].type == "*"
-			const isOutputDifferent = node.outputs[slot].type != window.marascott.anyBus_v3.nodeToSync.outputs[slot].type
+			const isOutputDifferent = node.outputs[slot].type != window.marascott[this.ext.name].nodeToSync.outputs[slot].type
 			const isOutputLinked = node.outputs[slot].links != null &&node.outputs[slot].links.length > 0
 
 			if (isNodeInputDifferent) {
-				const preSyncMode = window.marascott.anyBus_v3.sync;
-				window.marascott.anyBus_v3.sync = this.NOSYNC;
+				const preSyncMode = window.marascott[this.ext.name].sync;
+				window.marascott[this.ext.name].sync = this.NOSYNC;
 				if (node.inputs[slot].link == null) {
 					node.disconnectInput(slot)
 					node.disconnectOutput(slot)
 				} else {
 					protected_slots.push(node.id)
 				}
-				window.marascott.anyBus_v3.sync = preSyncMode;
+				window.marascott[this.ext.name].sync = preSyncMode;
 			}
-			if (window.marascott.anyBus_v3.nodeToSync.id != node.id) {
+			if (window.marascott[this.ext.name].nodeToSync.id != node.id) {
 				if (node.inputs[slot].link == null) {
-					node.inputs[slot].name = window.marascott.anyBus_v3.nodeToSync.inputs[slot].name.toLowerCase()
-					node.inputs[slot].type = window.marascott.anyBus_v3.nodeToSync.inputs[slot].type
+					node.inputs[slot].name = window.marascott[this.ext.name].nodeToSync.inputs[slot].name.toLowerCase()
+					node.inputs[slot].type = window.marascott[this.ext.name].nodeToSync.inputs[slot].type
 					node.outputs[slot].name = node.inputs[slot].name
 					if(isOutputDifferent || !isOutputLinked) node.outputs[slot].type = node.inputs[slot].type
 				}
@@ -130,8 +95,8 @@ class core {
 		const isBackward = !isFull && !isOutBusLink && isInBusLink
 		const isForward = !isBackward && isOutBusLink
 
-		let syncType = MaraScottAnyBusNode_v3Flow.NOSYNC
-		if (isForward || isBackward || isFull) syncType = MaraScottAnyBusNode_v3Flow.FULLSYNC
+		let syncType = this.ext.flow.NOSYNC
+		if (isForward || isBackward || isFull) syncType = this.ext.flow.FULLSYNC
 
 		return syncType
 
@@ -148,10 +113,10 @@ class core {
 			)
 			if (parentLink != undefined) parentNode = node.graph.getNodeById(parentLink.origin_id)
 
-			if (parentNode != null && MaraScottAnyBusNode_v3Flow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) > -1) {
+			if (parentNode != null && this.ext.flow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) > -1) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			} 
-			if (parentNode != null && MaraScottAnyBusNode_v3Flow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) > -1) {
+			if (parentNode != null && this.ext.flow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) > -1) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			} 
 			if (parentNode != null && parentNode.inputs[slot].link == null) {
@@ -160,12 +125,12 @@ class core {
 
 		}
 
-		if (parentNode != null && MaraScottAnyBusNode_v3Flow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) == -1 && MaraScottAnyBusNode_v3Flow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) == -1) {
+		if (parentNode != null && this.ext.flow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) == -1 && this.ext.flow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) == -1) {
 			if (parentNode != null) {
 				node.inputs[slot].name = parentNode.inputs[slot].name
 				node.inputs[slot].type = parentNode.inputs[slot].type
 			} else {
-				node.inputs[slot].name = "* " + window.marascott.anyBus_v3.input.index.toString().padStart(2, '0')
+				node.inputs[slot].name = "* " + window.marascott[this.ext.name].input.index.toString().padStart(2, '0')
 				node.inputs[slot].type = "*"
 			}
 
@@ -177,7 +142,7 @@ class core {
 
 	static disConnectBus(node, slot) {
 		
-		return MaraScottAnyBusNode_v3Flow.FULLSYNC
+		return this.ext.flow.FULLSYNC
 
 	}
 
@@ -186,9 +151,9 @@ class core {
 		const syncProfile = this.getSyncType(node, slot, null, null)
 		const previousBusNode = this.getBusParentNodeWithInput(node, slot)
 		let busNodes = []
-		const busNodePaths = MaraScottAnyBusNode_v3Flow.getFlows(node)
+		const busNodePaths = this.ext.flow.getFlows(node)
 
-		let newName = "* " + window.marascott.anyBus_v3.input.index.toString().padStart(2, '0')
+		let newName = "* " + window.marascott[this.ext.name].input.index.toString().padStart(2, '0')
 		let newType = "*"
 		let _node = null
 		for (let i in busNodePaths) {
@@ -216,29 +181,29 @@ class core {
 
 	static connectBus(node, slot, node_origin, origin_slot) {
 
-		const syncProfile = MaraScottAnyBusNode_v3Flow.FULLSYNC
+		const syncProfile = this.ext.flow.FULLSYNC
 		const isBusInput = slot == this.BUS_SLOT
 		const isOutputs = node_origin.outputs?.length > 0
 		let isMaraScottBusNode = node_origin.type == this.TYPE
 		if (!isMaraScottBusNode) {
-			const origin_reroute_node = MaraScottAnyBusNode_v3Flow.getOriginRerouteBusType(node_origin)
+			const origin_reroute_node = this.ext.flow.getOriginRerouteBusType(node_origin)
 			isMaraScottBusNode = origin_reroute_node?.type == this.TYPE
 			if (isMaraScottBusNode) {
 				node_origin = origin_reroute_node
 			}
 		}
-		const isOriginProfileSame = node.properties[MaraScottAnyBusNode_v3Widget.PROFILE.name] == node_origin.properties[MaraScottAnyBusNode_v3Widget.PROFILE.name]
-		const isTargetProfileDefault = node.properties[MaraScottAnyBusNode_v3Widget.PROFILE.name] == MaraScottAnyBusNode_v3Widget.PROFILE.default
+		const isOriginProfileSame = node.properties[this.ext.widget.PROFILE.name] == node_origin.properties[this.ext.widget.PROFILE.name]
+		const isTargetProfileDefault = node.properties[this.ext.widget.PROFILE.name] == this.ext.widget.PROFILE.default
 		const isOriginSlotBus = origin_slot == this.BUS_SLOT
 		if (isBusInput && isOriginSlotBus && isOutputs && isMaraScottBusNode && (isOriginProfileSame || isTargetProfileDefault)) {
 			if (isTargetProfileDefault) {
-				MaraScottAnyBusNode_v3Widget.setValue(node, MaraScottAnyBusNode_v3Widget.PROFILE.name, node_origin.properties[MaraScottAnyBusNode_v3Widget.PROFILE.name])
-				node.setProperty('prevProfileName', node.properties[MaraScottAnyBusNode_v3Widget.PROFILE.name])
+				this.ext.widget.setValue(node, this.ext.widget.PROFILE.name, node_origin.properties[this.ext.widget.PROFILE.name])
+				node.setProperty('prevProfileName', node.properties[this.ext.widget.PROFILE.name])
 			}
 
-			MaraScottAnyBusNode_v3Widget.setValue(node, MaraScottAnyBusNode_v3Widget.INPUTS.name, node_origin.properties[MaraScottAnyBusNode_v3Widget.INPUTS.name])
+			this.ext.widget.setValue(node, this.ext.widget.INPUTS.name, node_origin.properties[this.ext.widget.INPUTS.name])
 			for (let _slot = this.FIRST_INDEX; _slot < node_origin.outputs.length; _slot++) {
-				if (_slot > node_origin.properties[MaraScottAnyBusNode_v3Widget.INPUTS.name]) {
+				if (_slot > node_origin.properties[this.ext.widget.INPUTS.name]) {
 					node.disconnectInput(_slot)
 					node.disconnectOutput(_slot)
 				} else {
@@ -260,7 +225,7 @@ class core {
 
 	static connectInput(node, slot, node_origin, origin_slot) {
 
-		let syncProfile = MaraScottAnyBusNode_v3Flow.NOSYNC
+		let syncProfile = this.ext.flow.NOSYNC
 		const isOriginAnyBusBus = node_origin.type == this.TYPE
 		const isOriginSlotBus = origin_slot == this.BUS_SLOT
 		if(!(isOriginAnyBusBus && isOriginSlotBus)) {
@@ -300,6 +265,14 @@ class core {
 
 		return syncProfile
 	}
+
+    get ext(){
+        return this._ext;
+    }
+    
+    set ext(extension){
+        this._ext = extension;
+    }
 
 }
 
