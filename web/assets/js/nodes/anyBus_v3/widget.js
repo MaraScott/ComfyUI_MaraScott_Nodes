@@ -2,17 +2,17 @@ class widget {
 
 	_ext = null
 
-	static PROFILE = {
+	PROFILE = {
 		name: 'Profile',
 		default: 'default',
 	}
-	static INPUTS = {
+	INPUTS = {
 		name: "Nb Inputs",
 		default: 5,
 		min: 3,
 		max: 25,
 	}
-	static CLEAN = {
+	CLEAN = {
 		default: false,
 		name: 'Clean Inputs',
 	}
@@ -21,7 +21,7 @@ class widget {
         this.ext = extension
 	}
 
-	static init(node) {
+	init(node) {
 
 		this.setProfileInput(node)
 		this.setInputsSelect(node)
@@ -29,19 +29,19 @@ class widget {
 
 	}
 
-	static getByName(node, name) {
+	getByName(node, name) {
 		return node.widgets?.find((w) => w.name === name);
 	}
 
-	// static removeByName(node, name) {
+	// removeByName(node, name) {
 	// 	if (node.widgets) node.widgets = node.widgets.filter((w) => w.name !== name);
 	// }
 
-	static setValueProfile(node, name, value) {
+	setValueProfile(node, name, value) {
 		node.title = "AnyBus - " + node.properties[name];
 	}
 
-	static setValueInputs(node, name, value) {
+	setValueInputs(node, name, value) {
 		let qty = 0
 		let _value = value + this.ext.core.FIRST_INDEX
 		if (node.inputs.length > _value) {
@@ -61,7 +61,7 @@ class widget {
 		}
 	}
 
-	static setValue(node, name, value) {
+	setValue(node, name, value) {
 
 		const nodeWidget = this.getByName(node, name);
 		nodeWidget.value = value
@@ -72,7 +72,7 @@ class widget {
 
 	}
 
-	static setProfileInput(node) {
+	setProfileInput(node) {
 
 		const nodeWidget = this.getByName(node, this.PROFILE.name);
 
@@ -96,7 +96,7 @@ class widget {
 
 	}
 
-	static setInputsSelect(node) {
+	setInputsSelect(node) {
 
 		const nodeWidget = this.getByName(node, this.INPUTS.name);
 
@@ -127,7 +127,7 @@ class widget {
 
 	}
 
-	static setCleanSwitch(node) {
+	setCleanSwitch(node) {
 
 		const nodeWidget = this.getByName(node, this.CLEAN.name);
 		if (nodeWidget == undefined) {

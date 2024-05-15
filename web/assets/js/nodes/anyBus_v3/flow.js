@@ -2,16 +2,16 @@ class flow {
 
 	_ext = null
 
-	static NOSYNC = 0
-	static FULLSYNC = 1
+	NOSYNC = 0
+	FULLSYNC = 1
 
-	static ALLOWED_REROUTE_TYPE = [
+	ALLOWED_REROUTE_TYPE = [
 		"Reroute (rgthree)", // SUPPORTED - RgThree Custom Node
 		// "Reroute", // UNSUPPORTED - ComfyUI native - do not allow connection on Any Type if origin Type is not Any Type too
 		// "ReroutePrimitive|pysssss", // UNSUPPORTED - Pysssss Custom Node - do not display the name of the origin slot
 		// "0246.CastReroute", //  UNSUPPORTED - 0246 Custom Node
 	]
-	static ALLOWED_GETSET_TYPE = [
+	ALLOWED_GETSET_TYPE = [
 		"SetNode", // SUPPORTED - ComfyUI-KJNodes Custom Node
 		"GetNode", // SUPPORTED - ComfyUI-KJNodes Custom Node
 	]
@@ -24,13 +24,13 @@ class flow {
 
 		this.ALLOWED_NODE_TYPE = [
 			this.ext.core.TYPE,
-			...flow.ALLOWED_REROUTE_TYPE,
-			...flow.ALLOWED_GETSET_TYPE,
+			...this.ALLOWED_REROUTE_TYPE,
+			...this.ALLOWED_GETSET_TYPE,
 		]
 	
 	}
 
-	static getLastBuses(nodes) {
+	getLastBuses(nodes) {
 		// Find all parent nodes
 		let parents = Object.values(nodes);
 		const leafs = Object.keys(nodes);
@@ -44,7 +44,7 @@ class flow {
 		return lastLeaves;
 	}
 
-	static getOriginRerouteBusType(node) {
+	getOriginRerouteBusType(node) {
 		let originNode = null
 		let _originNode = null
 		let isMaraScottAnyBusNode_v3 = false
@@ -64,11 +64,11 @@ class flow {
 				
 			}
 
-			if (flow.ALLOWED_REROUTE_TYPE.indexOf(_originNode.type) > -1 && _originNode?.__outputType == 'BUS') {
+			if (this.ALLOWED_REROUTE_TYPE.indexOf(_originNode.type) > -1 && _originNode?.__outputType == 'BUS') {
 				_originNode = this.getOriginRerouteBusType(_originNode)
 			}
 
-			if (flow.ALLOWED_GETSET_TYPE.indexOf(_originNode.type) > -1) {
+			if (this.ALLOWED_GETSET_TYPE.indexOf(_originNode.type) > -1) {
 				_originNode = this.getOriginRerouteBusType(_originNode)
 			}
 
@@ -82,7 +82,7 @@ class flow {
 
 	}
 
-	static getFlows(node) {
+	getFlows(node) {
 
 		let firstItem = null;
 		for (let list of window.marascott[this.ext.name].flows.list) {
@@ -96,13 +96,13 @@ class flow {
 
 	}
 
-	static setFlows(node) {
+	setFlows(node) {
 
 		let _nodes = []
 		let _nodes_list = []
 		for (let i in node.graph._nodes) {
 			let _node = node.graph._nodes[i]
-			if (flow.ALLOWED_NODE_TYPE.includes(_node.type) && _nodes_list.indexOf(_node.id) == -1) {
+			if (this.ALLOWED_NODE_TYPE.includes(_node.type) && _nodes_list.indexOf(_node.id) == -1) {
 				_nodes_list.push(_node.id);
 				if(_node.type == 'GetNode') {
 					const _setnode = _node.findSetter(_node.graph)
@@ -160,7 +160,7 @@ class flow {
 
 	}
 
-	static syncProfile(node, isChangeWidget, isChangeConnect) {
+	syncProfile(node, isChangeWidget, isChangeConnect) {
 
 		if (!node.graph || window.marascott[this.ext.name].sync == this.NOSYNC) return
 		if (window.marascott[this.ext.name].sync == this.FULLSYNC) {
@@ -172,14 +172,14 @@ class flow {
 		window.marascott[this.ext.name].sync = this.NOSYNC
 	}
 
-	static sync(node, busNodes, isChangeWidget, isChangeConnect) {
+	sync(node, busNodes, isChangeWidget, isChangeConnect) {
 
 		window.marascott[this.ext.name].nodeToSync = node;
 
 		let _node = null
 		for (let i in busNodes) {
 			_node = node.graph.getNodeById(busNodes[i])
-			if (_node.id !== window.marascott[this.ext.name].nodeToSync.id && flow.ALLOWED_REROUTE_TYPE.indexOf(_node.type) == -1 && flow.ALLOWED_GETSET_TYPE.indexOf(_node.type) == -1) {
+			if (_node.id !== window.marascott[this.ext.name].nodeToSync.id && this.ALLOWED_REROUTE_TYPE.indexOf(_node.type) == -1 && this.ALLOWED_GETSET_TYPE.indexOf(_node.type) == -1) {
 				if (isChangeWidget != null) {
 					this.ext.widget.setValue(_node, isChangeWidget, window.marascott[this.ext.name].nodeToSync.properties[isChangeWidget])
 					if (isChangeWidget == this.ext.widget.PROFILE.name) _node.setProperty('prevProfileName', window.marascott[this.ext.name].nodeToSync.properties[this.ext.widget.PROFILE.name])
@@ -196,7 +196,7 @@ class flow {
 	}
 
 
-	static clean(node) {
+	clean(node) {
 
 		window.marascott[this.ext.name].clean = false
 		let _node_origin_link = null

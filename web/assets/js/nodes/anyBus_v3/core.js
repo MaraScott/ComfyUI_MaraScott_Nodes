@@ -1,12 +1,10 @@
 class core {
-
-	static TYPE = "MaraScottAnyBusNode_v3"
 	
-	static BUS_SLOT = 0
-	static BASIC_PIPE_SLOT = 0
-	static REFINER_PIPE_SLOT = 0
+	BUS_SLOT = 0
+	BASIC_PIPE_SLOT = 0
+	REFINER_PIPE_SLOT = 0
 	
-	static FIRST_INDEX = 1
+	FIRST_INDEX = 1
 	
 	_ext = null
 
@@ -14,7 +12,7 @@ class core {
         this.ext = extension
 	}
 
-	static configure(node) {
+	configure(node) {
 
 		node.shape = LiteGraph.CARD_SHAPE // BOX_SHAPE | ROUND_SHAPE | CIRCLE_SHAPE | CARD_SHAPE
 		node.color = LGraphCanvas.node_colors.green.color
@@ -28,11 +26,11 @@ class core {
 		node.title = "AnyBus - " + node.properties[this.ext.widget.PROFILE.name]
 	}
 
-	static setWidgets(node) {
+	setWidgets(node) {
 		this.ext.widget.init(node)
 	}
 
-	static setInputValue(node) {
+	setInputValue(node) {
 
 		let protected_slots = []
 
@@ -78,7 +76,7 @@ class core {
 
 	}
 
-	static getSyncType(node, slot, link_info_node, link_info_slot) {
+	getSyncType(node, slot, link_info_node, link_info_slot) {
 
 		// on connect
 		const isInBusLink = node.inputs[0].link != null
@@ -102,7 +100,7 @@ class core {
 
 	}
 
-	static getBusParentNodeWithInput(node, slot) {
+	getBusParentNodeWithInput(node, slot) {
 
 		let parentNode = null
 		
@@ -140,13 +138,13 @@ class core {
 		return parentNode
 	}
 
-	static disConnectBus(node, slot) {
+	disConnectBus(node, slot) {
 		
 		return this.ext.flow.FULLSYNC
 
 	}
 
-	static disConnectInput(node, slot) {
+	disConnectInput(node, slot) {
 
 		const syncProfile = this.getSyncType(node, slot, null, null)
 		const previousBusNode = this.getBusParentNodeWithInput(node, slot)
@@ -179,15 +177,15 @@ class core {
 
 	}
 
-	static connectBus(node, slot, node_origin, origin_slot) {
+	connectBus(node, slot, node_origin, origin_slot) {
 
 		const syncProfile = this.ext.flow.FULLSYNC
 		const isBusInput = slot == this.BUS_SLOT
 		const isOutputs = node_origin.outputs?.length > 0
-		let isMaraScottBusNode = node_origin.type == this.TYPE
+		let isMaraScottBusNode = node_origin.type == this.ext.TYPE
 		if (!isMaraScottBusNode) {
 			const origin_reroute_node = this.ext.flow.getOriginRerouteBusType(node_origin)
-			isMaraScottBusNode = origin_reroute_node?.type == this.TYPE
+			isMaraScottBusNode = origin_reroute_node?.type == this.ext.TYPE
 			if (isMaraScottBusNode) {
 				node_origin = origin_reroute_node
 			}
@@ -223,10 +221,10 @@ class core {
 		return syncProfile
 	}
 
-	static connectInput(node, slot, node_origin, origin_slot) {
+	connectInput(node, slot, node_origin, origin_slot) {
 
 		let syncProfile = this.ext.flow.NOSYNC
-		const isOriginAnyBusBus = node_origin.type == this.TYPE
+		const isOriginAnyBusBus = node_origin.type == this.ext.TYPE
 		const isOriginSlotBus = origin_slot == this.BUS_SLOT
 		if(!(isOriginAnyBusBus && isOriginSlotBus)) {
 

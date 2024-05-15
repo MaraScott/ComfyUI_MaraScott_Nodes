@@ -13,5 +13,5 @@ import { app } from "../../scripts/app.js";
 import { extension } from './nodes/anyBus_v3/extension.js'
 
 const name_version = "anyBus_v3";
-const MaraScottAnyBusNode_v3Extension = new extension(name_version)
-app.registerExtension(MaraScottAnyBusNode_v3Extension);
+const extension_type = "MaraScottAnyBusNode_v3";
+app.registerExtension(new extension(extension_type, name_version));

@@ -93,12 +93,13 @@ const getExtension = (ext) => {
 
 class extension {
 
+	TYPE = "MaraScottAnyBusNode_v3"
     prefix = 'MaraScott'
     
     name = 'anyBus_v3'
     lSP = extension.prefix+'.'+this.name // localStorage Prefix
 
-    static $t = $t
+    $t = $t
     
     _core = null
     _widget = null
@@ -106,7 +107,8 @@ class extension {
     _menu = null
     _litegraph = null
 
-    constructor(name) {
+    constructor(type, name) {
+        this.TYPE = type
         this.name = name
         this.lSP = extension.prefix+'.'+this.name
         this.init()
@@ -116,11 +118,11 @@ class extension {
         this.menu = new menu(this)
         this.litegrah = new litegraph(this)
 
-
         return getExtension(this)
     }
 
     init() {
+
         if (!window.marascott) {
             window.marascott = {}
         }
