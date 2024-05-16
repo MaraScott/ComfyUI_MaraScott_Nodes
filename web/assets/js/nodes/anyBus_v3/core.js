@@ -125,13 +125,13 @@ class core {
 			if (parentNode != null && this.ext.flow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) > -1) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			} 
-			if (parentNode != null && parentNode.inputs[slot].link == null) {
+			if (parentNode != null && parentNode.inputs[slot] && parentNode.inputs[slot].link == null) {
 				parentNode = this.getBusParentNodeWithInput(parentNode, slot)
 			}
 
 		}
 
-		if (parentNode != null && this.ext.flow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) == -1 && this.ext.flow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) == -1) {
+		if (parentNode != null && parentNode.inputs[slot] && this.ext.flow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) == -1 && this.ext.flow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) == -1) {
 			if (parentNode != null) {
 				node.inputs[slot].name = parentNode.inputs[slot].name
 				node.inputs[slot].type = parentNode.inputs[slot].type

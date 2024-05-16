@@ -178,7 +178,7 @@ class flow {
 		let _node = null
 		for (let i in busNodes) {
 			_node = node.graph.getNodeById(busNodes[i])
-			if (_node.id !== window.marascott[this.ext.name].nodeToSync.id && this.ALLOWED_REROUTE_TYPE.indexOf(_node.type) == -1 && this.ALLOWED_GETSET_TYPE.indexOf(_node.type) == -1) {
+			if (window.marascott[this.ext.name].nodeToSync && _node.id !== window.marascott[this.ext.name].nodeToSync.id && this.ALLOWED_REROUTE_TYPE.indexOf(_node.type) == -1 && this.ALLOWED_GETSET_TYPE.indexOf(_node.type) == -1) {
 				if (isChangeWidget != null) {
 					this.ext.widget.setValue(_node, isChangeWidget, window.marascott[this.ext.name].nodeToSync.properties[isChangeWidget])
 					if (isChangeWidget == this.ext.widget.PROFILE.name) _node.setProperty('prevProfileName', window.marascott[this.ext.name].nodeToSync.properties[this.ext.widget.PROFILE.name])
