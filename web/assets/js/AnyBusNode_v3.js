@@ -9,7 +9,6 @@
  *
  */
 import { app } from "../../scripts/app.js";
-
 import { extension } from './nodes/anyBus_v3/extension.js'
 
 const name_version = "anyBus_v3";

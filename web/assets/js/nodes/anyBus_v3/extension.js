@@ -1,3 +1,4 @@
+import { api } from "../../../../scripts/api.js";
 import { core } from './core.js'
 import { widget } from './widget.js'
 import { flow } from './flow.js'
@@ -116,6 +117,10 @@ class extension {
         this.flow = new flow(this)
         this.menu = new menu(this)
         this.litegraph = new litegraph(this)
+
+        const response = api.fetchApi(`/marascott/test?testy=test`);
+        const response2 = api.fetchApi(`/marascott/test2?testy=test`);
+        console.log([response, response2])
 
         return getExtension(this)
 
