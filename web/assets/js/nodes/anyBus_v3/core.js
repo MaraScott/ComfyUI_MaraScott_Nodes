@@ -1,3 +1,5 @@
+import { loadJSON } from './../../utils/utils.js'
+
 class core {
 	
 	BUS_SLOT = 0
@@ -23,7 +25,13 @@ class core {
 		if (!node.properties || !(this.ext.widget.PROFILE.name in node.properties)) {
 			node.properties[this.ext.widget.PROFILE.name] = this.ext.widget.PROFILE.default;
 		}
-		node.title = "AnyBus - " + node.properties[this.ext.widget.PROFILE.name]
+		let profile = this.getProfile(node.properties[this.ext.widget.PROFILE.name])
+		profile.title = "AnyBus - " + node.properties[this.ext.widget.PROFILE.name]
+		node.title = profile.title
+	}
+
+	async getProfile(name = 'default') {
+		return await loadJSON("../../../../extensions/marascott/profiles/"+name+".json")
 	}
 
 	setWidgets(node) {

@@ -108,7 +108,6 @@ class flow {
 					const _setnode = _node.findSetter(_node.graph)
 					if(_setnode) _node.inputs = [ {'link' : 'setNode', 'origin_id': _setnode.id}]
 				}
-				// if (_node.inputs[0].link != null) _nodes.push(_node);
 			}
 		}
 
