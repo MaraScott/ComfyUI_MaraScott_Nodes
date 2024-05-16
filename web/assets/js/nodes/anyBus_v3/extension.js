@@ -117,12 +117,17 @@ class extension {
         this.flow = new flow(this)
         this.menu = new menu(this)
         this.litegraph = new litegraph(this)
-
-        const response = api.fetchApi(`/marascott/test?testy=test`);
-        const response2 = api.fetchApi(`/marascott/test2?testy=test`);
-        console.log([response, response2])
+        this.api()
 
         return getExtension(this)
+
+    }
+
+    async api() {
+
+        const response = await api.fetchApi(`/marascott/test?testy=test`);
+        const msg = await response.json()
+        console.log(msg)
 
     }
 

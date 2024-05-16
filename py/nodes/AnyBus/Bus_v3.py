@@ -15,12 +15,13 @@
 import os
 import json
 from ...inc.nodes import Configuration as _CONF
-from ...utils.api import *
+from ...utils.Api import Api
 from ...utils.path import PROFILES_DIR
 from ...inc.profiles.any import Node as ProfileNodeAny
 
 from ...utils.log import *
 
+Api()
 supported_profile_extensions = {'.json'}
 
 def get_profile_list_():

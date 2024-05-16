@@ -1,33 +1,25 @@
 from aiohttp import web
 from server import PromptServer
 
-app = web.Application()
-routes = web.RouteTableDef()
+class Api :
+    
+    def __init__(self):
 
-@routes.get("/test")
-async def test(request):
-    testy = request.rel_url.query.get("testy", "")
+        app = web.Application()
+        routes = web.RouteTableDef()
 
-    test = False
-    if testy == "test":
-        test = True
+        @routes.get("/test")
+        async def test(request):
+            testy = request.rel_url.query.get("testy", "")
 
-    json_obj = { "name": "test", "title": "AnyBus - test" }
+            test = False
+            if testy == "test":
+                test = True
 
-    return web.json_response(json_obj, content_type='application/json')
+            json_obj = { "name": "test", "title": "AnyBus - test" }
 
-app.add_routes(routes) 
+            return web.json_response(json_obj, content_type='application/json')
 
-PromptServer.instance.app.add_subapp('/marascott', app)
+        app.add_routes(routes) 
 
-@PromptServer.instance.routes.get("/marascott/test2")
-async def test(request):
-    testy = request.rel_url.query.get("testy", "")
-
-    test = False
-    if testy == "test":
-        test = True
-
-    json_obj = { "name": "test", "title": "AnyBus - test" }
-
-    return web.json_response(json_obj, content_type='application/json')
+        PromptServer.instance.app.add_subapp('/marascott', app)
