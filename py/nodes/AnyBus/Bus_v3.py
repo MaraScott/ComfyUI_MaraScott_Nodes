@@ -79,13 +79,17 @@ class AnyBusNode:
     def load_profiles(self, name="default"):
         self.profiles = {}
         if name in self.PROFILES_FILE:
-            with open(self.PROFILES_FILE[name], 'r') as file:
+            profile_names = list(self.PROFILES_FILE)
+            index = profile_names.index(name)
+            with open(os.path.join(PROFILES_DIR, f"{self.PROFILES_FILE[index]}.json"), 'r') as file:
                 self.profiles[name] = json.load(file)
 
     @classmethod
     def save_profiles(self, name):
         if name in self.PROFILES_FILE:
-            with open(self.PROFILES_FILE[name], 'w') as file:
+            profile_names = list(self.PROFILES_FILE)
+            index = profile_names.index(name)
+            with open(os.path.join(PROFILES_DIR, f"{self.PROFILES_FILE[index]}.json"), 'w') as file:
                 json.dump(self.profiles[name], file, indent=4)
 
     @classmethod

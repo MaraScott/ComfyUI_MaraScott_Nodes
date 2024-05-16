@@ -75,7 +75,7 @@ const getExtension = (ext) => {
                 ext.litegraph.onConnectionsChange(nodeType)
                 // delete ext.core.beforeRegisterNodeDef;
                 ext.litegraph.onRemoved(nodeType)
-                ext.flow.clean(nodeData)
+                // ext.flow.clean(nodeData) // TODO
 
             }
         },
