@@ -1,0 +1,14 @@
+[project]
+name = "comfyui_marascott_nodes"
+description = "A set of community node including a universal bus and a large Upscaler/Refiner\n[w/ComfyUI-MarasIT-Nodes has been changed to ComfyUI_MaraScott_Nodes. If you have previously installed ComfyUI-MarasIT-Nodes, Please uninstall the previous one and reinstall this.]"
+version = "1.0.0"
+license = "LICENSE"
+
+[project.urls]
+Repository = "https://github.com/MaraScott/ComfyUI_MaraScott_Nodes"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI_MaraScott_Nodes"
+Icon = ""
