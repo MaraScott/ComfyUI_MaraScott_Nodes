@@ -33,6 +33,9 @@ class DisplayInfoNode:
 
     def fn(self, text, unique_id=None, extra_pnginfo=None):
         
+        if not isinstance(text, list):
+            text = [text]
+            
         if unique_id is not None and extra_pnginfo is not None:
             if not isinstance(extra_pnginfo, list):
                 print("Error: extra_pnginfo is not a list")
