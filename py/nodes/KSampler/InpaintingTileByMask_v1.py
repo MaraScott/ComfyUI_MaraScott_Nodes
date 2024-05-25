@@ -89,15 +89,15 @@ class KSampler_InpaintingTileByMask_v1:
         image = kwargs.get('image', None)
         mask = kwargs.get('mask', None)
         model = kwargs.get('model', None)
-        model_diff = DiffDiff.DifferentialDiffusion.apply(DiffDiff.DifferentialDiffusion, model)
+        model_diff = DiffDiff.DifferentialDiffusion.apply(DiffDiff.DifferentialDiffusion(), model)[0]
         model_inpaint = model_diff
         clip = kwargs.get('clip', None)
         vae = kwargs.get('vae', None)
         text_pos_image = kwargs.get('text_pos_image', None)
         text_pos_inpaint = kwargs.get('text_pos_inpaint', None)
         text_neg_inpaint = kwargs.get('text_neg_inpaint', None)
-        positive_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_pos_inpaint)
-        negative_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_neg_inpaint)
+        positive_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_pos_inpaint)[0]
+        negative_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_neg_inpaint)[0]
         seed = kwargs.get('seed', None)
         steps = kwargs.get('steps', None)
         cfg = kwargs.get('cfg', None)
@@ -116,8 +116,8 @@ class KSampler_InpaintingTileByMask_v1:
         height = region[7]
 
         # Mask Upscale
-        mask_cropped_img = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask)[0]
-        image_mask_cropped = ImageScale.upscale(ImageScale, mask_cropped_img, self.upscale_methos, inpaint_size, inpaint_size, "disabled")[0]
+        mask_cropped_img = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask_cropped)[0]
+        image_mask_cropped = ImageScale.upscale(ImageScale, mask_cropped_img, self.upscale_methos, inpaint_size, inpaint_size, "center")[0]
         mask_cropped = extra_mask.ImageToMask.image_to_mask(extra_mask.ImageToMask, image_mask_cropped, 'red')[0]
 
         # Image Upscale
