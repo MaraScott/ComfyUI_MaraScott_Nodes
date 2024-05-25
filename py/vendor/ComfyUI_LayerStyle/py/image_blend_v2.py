@@ -68,12 +68,12 @@ class ImageBlendV2:
 
             if _mask.size != _layer.size:
                 _mask = Image.new('L', _layer.size, 'white')
-                log(f"Warning: {NODE_NAME} mask mismatch, dropped!", message_type='warning')
+                log(f"Warning: {NODE_NAME} mask mismatch, dropped!", None, None, prefix='warning')
 
             # 合成layer
             _comp = chop_image_v2(_canvas, _layer, blend_mode, opacity)
             _canvas.paste(_comp, mask=_mask)
 
             ret_images.append(pil2tensor(_canvas))
-        log(f"{NODE_NAME} Processed {len(ret_images)} image(s).", message_type='finish')
+        log(f"{NODE_NAME} Processed {len(ret_images)} image(s).", None, None, prefix='finish')
         return (torch.cat(ret_images, dim=0),)
