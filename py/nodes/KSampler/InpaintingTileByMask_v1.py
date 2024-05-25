@@ -89,15 +89,15 @@ class KSampler_InpaintingTileByMask_v1:
         image = kwargs.get('image', None)
         mask = kwargs.get('mask', None)
         model = kwargs.get('model', None)
-        model_diff = DiffDiff.apply(model)
+        model_diff = DiffDiff.DifferentialDiffusion.apply(DiffDiff.DifferentialDiffusion, model)
         model_inpaint = model_diff
-        clip = DiffDiff.apply(clip)
-        vae = DiffDiff.apply(vae)
+        clip = kwargs.get('clip', None)
+        vae = kwargs.get('vae', None)
         text_pos_image = kwargs.get('text_pos_image', None)
         text_pos_inpaint = kwargs.get('text_pos_inpaint', None)
         text_neg_inpaint = kwargs.get('text_neg_inpaint', None)
-        positive_inpaint = CLIPTextEncode.encode(clip, text_pos_inpaint)
-        negative_inpaint = CLIPTextEncode.encode(clip, text_neg_inpaint)
+        positive_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_pos_inpaint)
+        negative_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_neg_inpaint)
         seed = kwargs.get('seed', None)
         steps = kwargs.get('steps', None)
         cfg = kwargs.get('cfg', None)
@@ -108,24 +108,25 @@ class KSampler_InpaintingTileByMask_v1:
         inpaint_size = kwargs.get('inpaint_size', None)
         noise_opacity = kwargs.get('noise_opacity', None)
 
-        region_tensor, top, left, width, height, _ = WAS_Mask_Crop_Region.mask_crop_region(mask, padding=0, region_type="dominant")
+        region_tensor, top, left, width, height, _ = WAS_Mask_Crop_Region.mask_crop_region(WAS_Mask_Crop_Region, mask, padding=0, region_type="dominant")
         mask_cropped = region_tensor
         x = left
         y = top
 
         # Mask Upscale
-        mask_cropped_img = extra_mask.MaskToImage(mask)
-        image_mask_cropped = ImageScale.upscale(mask_cropped_img, self.upscale_methos, inpaint_size, inpaint_size, "disabled")
-        mask_cropped = extra_mask.ImageToMask(image_mask_cropped)
+        mask_cropped_img = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask)
+        image_mask_cropped = ImageScale.upscale(ImageScale, mask_cropped_img, self.upscale_methos, inpaint_size, inpaint_size, "disabled")
+        mask_cropped = extra_mask.ImageToMask.image_to_mask(extra_mask.ImageToMask, image_mask_cropped)
 
         # Image Upscale
-        image_inpaint = extra_images.ImageCrop(image, width, height, x, y)
-        image_inpaint_cropped = ImageScale.upscale(image_inpaint, self.upscale_methos, inpaint_size, inpaint_size, "disabled")
+        image_inpaint = extra_images.ImageCrop.crop(extra_images.ImageCrop, image, width, height, x, y)
+        image_inpaint_cropped = ImageScale.upscale(ImageScale, image_inpaint, self.upscale_methos, inpaint_size, inpaint_size, "disabled")
 
         # Noise Upscale
-        noise_image = ImageScale.upscale(noise_image, self.upscale_methos, inpaint_size, inpaint_size, "center")
+        noise_image = ImageScale.upscale(ImageScale, noise_image, self.upscale_methos, inpaint_size, inpaint_size, "center")
 
         image_inpaint = ImageBlendV2.image_blend_v2(
+            ImageBlendV2,
             background_image=image_inpaint_cropped, 
             layer_image=noise_image, 
             invert_mask=False, 
@@ -134,11 +135,12 @@ class KSampler_InpaintingTileByMask_v1:
             layer_mask=mask_cropped
         )
 
-        latent_inpaint = VAEEncodeTiled.encode(vae, image_inpaint)
+        latent_inpaint = VAEEncodeTiled.encode(VAEEncodeTiled, vae, image_inpaint, tile_size=512)
 
-        latent_inpaint = SetLatentNoiseMask(latent_inpaint, mask_cropped)
+        latent_inpaint = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent_inpaint, mask_cropped)
 
         latent_inpainted = KSampler.sample(
+            KSampler,
             self, 
             model_inpaint, 
             seed, 
@@ -152,9 +154,9 @@ class KSampler_InpaintingTileByMask_v1:
             denoise
         )
 
-        latent_inpainted = RemoveNoiseMask(latent_inpainted)
+        latent_inpainted = RemoveNoiseMask.doit(RemoveNoiseMask, latent_inpainted)
 
-        image_inpainted = VAEDecodeTiled.decode(vae, latent_inpainted)
+        image_inpainted = VAEDecodeTiled.decode(VAEDecodeTiled, vae, latent_inpainted, tile_size=512)
 
 
         text_pos_image_inpainted = f"{text_pos_image}, {text_pos_inpaint}"

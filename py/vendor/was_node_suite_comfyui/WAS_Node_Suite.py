@@ -14,38 +14,40 @@
 # THE SOFTWARE.
 
 
-# from PIL import Image, ImageFilter, ImageEnhance, ImageOps, ImageDraw, ImageChops, ImageFont
+from PIL import Image, ImageFilter, ImageEnhance, ImageOps, ImageDraw, ImageChops, ImageFont
 # from PIL.PngImagePlugin import PngInfo
 # from io import BytesIO
-# from typing import Optional, Union, List
+from typing import Optional, Union, List
 # from urllib.request import urlopen
 # import comfy.diffusers_convert
-# import comfy.samplers
-# import comfy.sd
-# import comfy.utils
-# import comfy.clip_vision
-# import comfy.model_management
+import comfy.samplers
+import comfy.sd
+import comfy.utils
+import comfy.clip_vision
+import comfy.model_management
 # import folder_paths as comfy_paths
 # from comfy_extras.chainner_models import model_loading
 # import ast
 # import glob
 # import hashlib
-# import json
+import json
 # import nodes
 # import math
-# import numpy as np
-# from numba import jit
-# import os
-# import random
+import numpy as np
+from numba import jit
+import os
+import random
 # import re
 # import requests
 # import socket
-# import subprocess
-# import sys
+import subprocess
+import sys
 # import datetime
 # import time
 # import torch
-# from tqdm import tqdm
+from tqdm import tqdm
+
+import cv2
 
 # p310_plus = (sys.version_info >= (3, 10))
 
@@ -60,80 +62,80 @@
 # sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "was_node_suite_comfyui"))
 # sys.path.append(comfy_paths.base_path)
 
-# #! SYSTEM HOOKS
+#! SYSTEM HOOKS
 
-# class cstr(str):
-#     class color:
-#         END = '\33[0m'
-#         BOLD = '\33[1m'
-#         ITALIC = '\33[3m'
-#         UNDERLINE = '\33[4m'
-#         BLINK = '\33[5m'
-#         BLINK2 = '\33[6m'
-#         SELECTED = '\33[7m'
+class cstr(str):
+    class color:
+        END = '\33[0m'
+        BOLD = '\33[1m'
+        ITALIC = '\33[3m'
+        UNDERLINE = '\33[4m'
+        BLINK = '\33[5m'
+        BLINK2 = '\33[6m'
+        SELECTED = '\33[7m'
 
-#         BLACK = '\33[30m'
-#         RED = '\33[31m'
-#         GREEN = '\33[32m'
-#         YELLOW = '\33[33m'
-#         BLUE = '\33[34m'
-#         VIOLET = '\33[35m'
-#         BEIGE = '\33[36m'
-#         WHITE = '\33[37m'
+        BLACK = '\33[30m'
+        RED = '\33[31m'
+        GREEN = '\33[32m'
+        YELLOW = '\33[33m'
+        BLUE = '\33[34m'
+        VIOLET = '\33[35m'
+        BEIGE = '\33[36m'
+        WHITE = '\33[37m'
 
-#         BLACKBG = '\33[40m'
-#         REDBG = '\33[41m'
-#         GREENBG = '\33[42m'
-#         YELLOWBG = '\33[43m'
-#         BLUEBG = '\33[44m'
-#         VIOLETBG = '\33[45m'
-#         BEIGEBG = '\33[46m'
-#         WHITEBG = '\33[47m'
+        BLACKBG = '\33[40m'
+        REDBG = '\33[41m'
+        GREENBG = '\33[42m'
+        YELLOWBG = '\33[43m'
+        BLUEBG = '\33[44m'
+        VIOLETBG = '\33[45m'
+        BEIGEBG = '\33[46m'
+        WHITEBG = '\33[47m'
 
-#         GREY = '\33[90m'
-#         LIGHTRED = '\33[91m'
-#         LIGHTGREEN = '\33[92m'
-#         LIGHTYELLOW = '\33[93m'
-#         LIGHTBLUE = '\33[94m'
-#         LIGHTVIOLET = '\33[95m'
-#         LIGHTBEIGE = '\33[96m'
-#         LIGHTWHITE = '\33[97m'
+        GREY = '\33[90m'
+        LIGHTRED = '\33[91m'
+        LIGHTGREEN = '\33[92m'
+        LIGHTYELLOW = '\33[93m'
+        LIGHTBLUE = '\33[94m'
+        LIGHTVIOLET = '\33[95m'
+        LIGHTBEIGE = '\33[96m'
+        LIGHTWHITE = '\33[97m'
 
-#         GREYBG = '\33[100m'
-#         LIGHTREDBG = '\33[101m'
-#         LIGHTGREENBG = '\33[102m'
-#         LIGHTYELLOWBG = '\33[103m'
-#         LIGHTBLUEBG = '\33[104m'
-#         LIGHTVIOLETBG = '\33[105m'
-#         LIGHTBEIGEBG = '\33[106m'
-#         LIGHTWHITEBG = '\33[107m'
+        GREYBG = '\33[100m'
+        LIGHTREDBG = '\33[101m'
+        LIGHTGREENBG = '\33[102m'
+        LIGHTYELLOWBG = '\33[103m'
+        LIGHTBLUEBG = '\33[104m'
+        LIGHTVIOLETBG = '\33[105m'
+        LIGHTBEIGEBG = '\33[106m'
+        LIGHTWHITEBG = '\33[107m'
 
-#         @staticmethod
-#         def add_code(name, code):
-#             if not hasattr(cstr.color, name.upper()):
-#                 setattr(cstr.color, name.upper(), code)
-#             else:
-#                 raise ValueError(f"'cstr' object already contains a code with the name '{name}'.")
+        @staticmethod
+        def add_code(name, code):
+            if not hasattr(cstr.color, name.upper()):
+                setattr(cstr.color, name.upper(), code)
+            else:
+                raise ValueError(f"'cstr' object already contains a code with the name '{name}'.")
 
-#     def __new__(cls, text):
-#         return super().__new__(cls, text)
+    def __new__(cls, text):
+        return super().__new__(cls, text)
 
-#     def __getattr__(self, attr):
-#         if attr.lower().startswith("_cstr"):
-#             code = getattr(self.color, attr.upper().lstrip("_cstr"))
-#             modified_text = self.replace(f"__{attr[1:]}__", f"{code}")
-#             return cstr(modified_text)
-#         elif attr.upper() in dir(self.color):
-#             code = getattr(self.color, attr.upper())
-#             modified_text = f"{code}{self}{self.color.END}"
-#             return cstr(modified_text)
-#         elif attr.lower() in dir(cstr):
-#             return getattr(cstr, attr.lower())
-#         else:
-#             raise AttributeError(f"'cstr' object has no attribute '{attr}'")
+    def __getattr__(self, attr):
+        if attr.lower().startswith("_cstr"):
+            code = getattr(self.color, attr.upper().lstrip("_cstr"))
+            modified_text = self.replace(f"__{attr[1:]}__", f"{code}")
+            return cstr(modified_text)
+        elif attr.upper() in dir(self.color):
+            code = getattr(self.color, attr.upper())
+            modified_text = f"{code}{self}{self.color.END}"
+            return cstr(modified_text)
+        elif attr.lower() in dir(cstr):
+            return getattr(cstr, attr.lower())
+        else:
+            raise AttributeError(f"'cstr' object has no attribute '{attr}'")
 
-#     def print(self, **kwargs):
-#         print(self, **kwargs)
+    def print(self, **kwargs):
+        print(self, **kwargs)
 
 # #! MESSAGE TEMPLATES
 # cstr.color.add_code("msg", f"{cstr.color.BLUE}WAS Node Suite: {cstr.color.END}")
@@ -149,11 +151,11 @@
 # WAS_CONFIG_DIR = os.environ.get('WAS_CONFIG_DIR', WAS_SUITE_ROOT)
 # WAS_DATABASE = os.path.join(WAS_CONFIG_DIR, 'was_suite_settings.json')
 # WAS_HISTORY_DATABASE = os.path.join(WAS_CONFIG_DIR, 'was_history.json')
-# WAS_CONFIG_FILE = os.path.join(WAS_CONFIG_DIR, 'was_suite_config.json')
+WAS_CONFIG_FILE = os.path.join(WAS_CONFIG_DIR, 'was_suite_config.json')
 # STYLES_PATH = os.path.join(WAS_CONFIG_DIR, 'styles.json')
 # DEFAULT_NSP_PANTRY_PATH = os.path.join(WAS_CONFIG_DIR, 'nsp_pantry.json')
-# ALLOWED_EXT = ('.jpeg', '.jpg', '.png',
-#                         '.tiff', '.gif', '.bmp', '.webp')
+ALLOWED_EXT = ('.jpeg', '.jpg', '.png',
+                        '.tiff', '.gif', '.bmp', '.webp')
 
 
 # #! INSTALLATION CLEANUP
@@ -216,19 +218,19 @@
 
 # # Create, Load, or Update Config
 
-# def getSuiteConfig():
-#     global was_conf_template
-#     try:
-#         with open(WAS_CONFIG_FILE, "r") as f:
-#             was_config = json.load(f)
-#     except OSError as e:
-#         cstr(f"Unable to load conf file at `{WAS_CONFIG_FILE}`. Using internal config template.").error.print()
-#         return was_conf_template
-#     except Exception as e:
-#         cstr(f"Unable to load conf file at `{WAS_CONFIG_FILE}`. Using internal config template.").error.print()
-#         return was_conf_template
-#     return was_config
-#     return was_config
+def getSuiteConfig():
+    global was_conf_template
+    try:
+        with open(WAS_CONFIG_FILE, "r") as f:
+            was_config = json.load(f)
+    except OSError as e:
+        cstr(f"Unable to load conf file at `{WAS_CONFIG_FILE}`. Using internal config template.").error.print()
+        return was_conf_template
+    except Exception as e:
+        cstr(f"Unable to load conf file at `{WAS_CONFIG_FILE}`. Using internal config template.").error.print()
+        return was_conf_template
+    return was_config
+    return was_config
 
 # def updateSuiteConfig(conf):
 #     try:
@@ -327,26 +329,26 @@
 
 # #! SUITE SPECIFIC CLASSES & FUNCTIONS
 
-# # Freeze PIP modules
-# def packages(versions=False):
-#     import sys
-#     import subprocess
-#     return [( r.decode().split('==')[0] if not versions else r.decode() ) for r in subprocess.check_output([sys.executable, '-s', '-m', 'pip', 'freeze']).split()]
+# Freeze PIP modules
+def packages(versions=False):
+    import sys
+    import subprocess
+    return [( r.decode().split('==')[0] if not versions else r.decode() ) for r in subprocess.check_output([sys.executable, '-s', '-m', 'pip', 'freeze']).split()]
 
-# def install_package(package, uninstall_first: Union[List[str], str] = None):
-#     if os.getenv("WAS_BLOCK_AUTO_INSTALL", 'False').lower() in ('true', '1', 't'):
-#         cstr(f"Preventing package install of '{package}' due to WAS_BLOCK_INSTALL env").msg.print()
-#     else:
-#         if uninstall_first is None:
-#             return
+def install_package(package, uninstall_first: Union[List[str], str] = None):
+    if os.getenv("WAS_BLOCK_AUTO_INSTALL", 'False').lower() in ('true', '1', 't'):
+        cstr(f"Preventing package install of '{package}' due to WAS_BLOCK_INSTALL env").msg.print()
+    else:
+        if uninstall_first is None:
+            return
 
-#         if isinstance(uninstall_first, str):
-#             uninstall_first = [uninstall_first]
+        if isinstance(uninstall_first, str):
+            uninstall_first = [uninstall_first]
 
-#         cstr(f"Uninstalling {', '.join(uninstall_first)}..")
-#         subprocess.check_call([sys.executable, '-s', '-m', 'pip', 'uninstall', *uninstall_first])
-#         cstr("Installing package...").msg.print()
-#         subprocess.check_call([sys.executable, '-s', '-m', 'pip', '-q', 'install', package])
+        cstr(f"Uninstalling {', '.join(uninstall_first)}..")
+        subprocess.check_call([sys.executable, '-s', '-m', 'pip', 'uninstall', *uninstall_first])
+        cstr("Installing package...").msg.print()
+        subprocess.check_call([sys.executable, '-s', '-m', 'pip', '-q', 'install', package])
 
 # # Tensor to PIL
 # def tensor2pil(image):
@@ -966,1433 +968,1433 @@
 #             HDB.insert("History", "TextFiles", new_paths)
 # # WAS Filter Class
 
-# class WAS_Tools_Class():
-#     """
-#     Contains various tools and filters for WAS Node Suite
-#     """
-#     # TOOLS
-
-#     def fig2img(self, plot):
-#         import io
-#         buf = io.BytesIO()
-#         plot.savefig(buf)
-#         buf.seek(0)
-#         img = Image.open(buf)
-#         return img
-
-#     def stitch_image(self, image_a, image_b, mode='right', fuzzy_zone=50):
-
-#         def linear_gradient(start_color, end_color, size, start, end, mode='horizontal'):
-#             width, height = size
-#             gradient = Image.new('RGB', (width, height), end_color)
-#             draw = ImageDraw.Draw(gradient)
-
-#             for i in range(0, start):
-#                 if mode == "horizontal":
-#                     draw.line((i, 0, i, height-1), start_color)
-#                 elif mode == "vertical":
-#                     draw.line((0, i, width-1, i), start_color)
-
-#             for i in range(start, end):
-#                 if mode == "horizontal":
-#                     curr_color = (
-#                         int(start_color[0] + (float(i - start) / (end - start)) * (end_color[0] - start_color[0])),
-#                         int(start_color[1] + (float(i - start) / (end - start)) * (end_color[1] - start_color[1])),
-#                         int(start_color[2] + (float(i - start) / (end - start)) * (end_color[2] - start_color[2]))
-#                     )
-#                     draw.line((i, 0, i, height-1), curr_color)
-#                 elif mode == "vertical":
-#                     curr_color = (
-#                         int(start_color[0] + (float(i - start) / (end - start)) * (end_color[0] - start_color[0])),
-#                         int(start_color[1] + (float(i - start) / (end - start)) * (end_color[1] - start_color[1])),
-#                         int(start_color[2] + (float(i - start) / (end - start)) * (end_color[2] - start_color[2]))
-#                     )
-#                     draw.line((0, i, width-1, i), curr_color)
-
-#             for i in range(end, width if mode == 'horizontal' else height):
-#                 if mode == "horizontal":
-#                     draw.line((i, 0, i, height-1), end_color)
-#                 elif mode == "vertical":
-#                     draw.line((0, i, width-1, i), end_color)
-
-#             return gradient
-
-#         image_a = image_a.convert('RGB')
-#         image_b = image_b.convert('RGB')
-
-#         offset = int(fuzzy_zone / 2)
-#         canvas_width = int(image_a.size[0] + image_b.size[0] - fuzzy_zone) if mode == 'right' or mode == 'left' else image_a.size[0]
-#         canvas_height = int(image_a.size[1] + image_b.size[1] - fuzzy_zone) if mode == 'top' or mode == 'bottom' else image_a.size[1]
-#         canvas = Image.new('RGB', (canvas_width, canvas_height), (0,0,0))
-
-#         im_ax = 0
-#         im_ay = 0
-#         im_bx = 0
-#         im_by = 0
-
-#         image_a_mask = None
-#         image_b_mask = None
-
-#         if mode == 'top':
-
-#             image_a_mask = linear_gradient((0,0,0), (255,255,255), image_a.size, 0, fuzzy_zone, 'vertical')
-#             image_b_mask = linear_gradient((255,255,255), (0,0,0), image_b.size, int(image_b.size[1] - fuzzy_zone), image_b.size[1], 'vertical')
-#             im_ay = image_b.size[1] - fuzzy_zone
-
-#         elif mode == 'bottom':
-
-#             image_a_mask = linear_gradient((255,255,255), (0,0,0), image_a.size, int(image_a.size[1] - fuzzy_zone), image_a.size[1], 'vertical')
-#             image_b_mask = linear_gradient((0,0,0), (255,255,255), image_b.size, 0, fuzzy_zone, 'vertical').convert('L')
-#             im_by = image_a.size[1] - fuzzy_zone
-
-#         elif mode == 'left':
-
-#             image_a_mask = linear_gradient((0,0,0), (255,255,255), image_a.size, 0, fuzzy_zone, 'horizontal')
-#             image_b_mask = linear_gradient((255,255,255), (0,0,0), image_b.size, int(image_b.size[0] - fuzzy_zone), image_b.size[0], 'horizontal')
-#             im_ax = image_b.size[0] - fuzzy_zone
-
-#         elif mode == 'right':
-
-#             image_a_mask = linear_gradient((255,255,255), (0,0,0), image_a.size, int(image_a.size[0] - fuzzy_zone), image_a.size[0], 'horizontal')
-#             image_b_mask = linear_gradient((0,0,0), (255,255,255), image_b.size, 0, fuzzy_zone, 'horizontal')
-#             im_bx = image_a.size[0] - fuzzy_zone
-
-#         Image.Image.paste(canvas, image_a, (im_ax, im_ay), image_a_mask.convert('L'))
-#         Image.Image.paste(canvas, image_b, (im_bx, im_by), image_b_mask.convert('L'))
-
-
-#         return canvas
-
-
-#     def morph_images(self, images, steps=10, max_size=512, loop=None, still_duration=30, duration=0.1, output_path='output', filename="morph", filetype="GIF"):
-
-#         import cv2
-#         import imageio
-
-#         output_file = os.path.abspath(os.path.join(os.path.join(*output_path.split('/')), filename))
-#         output_file += ( '.png' if filetype == 'APNG' else '.gif' )
-
-#         max_width = max(im.size[0] for im in images)
-#         max_height = max(im.size[1] for im in images)
-#         max_aspect_ratio = max_width / max_height
-
-#         def padded_images():
-#             for im in images:
-#                 aspect_ratio = im.size[0] / im.size[1]
-#                 if aspect_ratio > max_aspect_ratio:
-#                     new_height = int(max_width / aspect_ratio)
-#                     padding = (max_height - new_height) // 2
-#                     padded_im = Image.new('RGB', (max_width, max_height), color=(0, 0, 0))
-#                     padded_im.paste(im.resize((max_width, new_height)), (0, padding))
-#                 else:
-#                     new_width = int(max_height * aspect_ratio)
-#                     padding = (max_width - new_width) // 2
-#                     padded_im = Image.new('RGB', (max_width, max_height), color=(0, 0, 0))
-#                     padded_im.paste(im.resize((new_width, max_height)), (padding, 0))
-#                 yield np.array(padded_im)
-
-#         padded_images = list(padded_images())
-#         padded_images.append(padded_images[0].copy())
-#         images = padded_images
-#         frames = []
-#         durations = []
-
-#         for i in range(len(images)-1):
-#             frames.append(Image.fromarray(images[i]).convert('RGB'))
-#             durations.append(still_duration)
-
-#             for j in range(steps):
-#                 alpha = j / float(steps)
-#                 morph = cv2.addWeighted(images[i], 1 - alpha, images[i+1], alpha, 0)
-#                 frames.append(Image.fromarray(morph).convert('RGB'))
-#                 durations.append(duration)
-
-#         frames.append(Image.fromarray(images[-1]).convert('RGB'))
-#         durations.insert(0, still_duration)
-
-#         if loop is not None:
-#             for i in range(loop):
-#                 durations.insert(0, still_duration)
-#                 durations.append(still_duration)
-
-#         try:
-#             imageio.mimsave(output_file, frames, filetype, duration=durations, loop=loop)
-#         except OSError as e:
-#             cstr(f"Unable to save output to {output_file} due to the following error:").error.print()
-#             print(e)
-#             return
-#         except Exception as e:
-#             cstr(f"\033[34mWAS NS\033[0m Error: Unable to generate GIF due to the following error:").error.print()
-#             print(e)
-
-#         cstr(f"Morphing completed. Output saved as {output_file}").msg.print()
-
-#         return output_file
-
-#     class GifMorphWriter:
-#         def __init__(self, transition_frames=30, duration_ms=100, still_image_delay_ms=2500, loop=0):
-#             self.transition_frames = transition_frames
-#             self.duration_ms = duration_ms
-#             self.still_image_delay_ms = still_image_delay_ms
-#             self.loop = loop
-
-#         def write(self, image, gif_path):
-
-#             import cv2
-
-#             if not os.path.isfile(gif_path):
-#                 with Image.new("RGBA", image.size) as new_gif:
-#                     new_gif.paste(image.convert("RGBA"))
-#                     new_gif.info["duration"] = self.still_image_delay_ms
-#                     new_gif.save(gif_path, format="GIF", save_all=True, append_images=[], duration=self.still_image_delay_ms, loop=0)
-#                 cstr(f"Created new GIF animation at: {gif_path}").msg.print()
-#             else:
-#                 with Image.open(gif_path) as gif:
-#                     n_frames = gif.n_frames
-#                     if n_frames > 0:
-#                         gif.seek(n_frames - 1)
-#                         last_frame = gif.copy()
-#                     else:
-#                         last_frame = None
-
-#                     end_image = image
-#                     steps = self.transition_frames - 1 if last_frame is not None else self.transition_frames
-
-#                     if last_frame is not None:
-#                         image = self.pad_to_size(image, last_frame.size)
-
-#                     frames = self.generate_transition_frames(last_frame, image, steps)
-
-#                     still_frame = end_image.copy()
-
-#                     gif_frames = []
-#                     for i in range(n_frames):
-#                         gif.seek(i)
-#                         gif_frame = gif.copy()
-#                         gif_frames.append(gif_frame)
-
-#                     for frame in frames:
-#                         frame.info["duration"] = self.duration_ms
-#                         gif_frames.append(frame)
-
-#                     still_frame.info['duration'] = self.still_image_delay_ms
-#                     gif_frames.append(still_frame)
-
-#                     gif_frames[0].save(
-#                         gif_path,
-#                         format="GIF",
-#                         save_all=True,
-#                         append_images=gif_frames[1:],
-#                         optimize=True,
-#                         loop=self.loop,
-#                     )
-
-#                     cstr(f"Edited existing GIF animation at: {gif_path}").msg.print()
-
-
-#         def pad_to_size(self, image, size):
-#             new_image = Image.new("RGBA", size, color=(0, 0, 0, 0))
-#             x_offset = (size[0] - image.width) // 2
-#             y_offset = (size[1] - image.height) // 2
-#             new_image.paste(image, (x_offset, y_offset))
-#             return new_image
-
-#         def generate_transition_frames(self, start_frame, end_image, num_frames):
-
-#             if start_frame is None:
-#                 return []
-
-#             start_frame = start_frame.convert("RGBA")
-#             end_image = end_image.convert("RGBA")
-
-#             frames = []
-#             for i in range(1, num_frames + 1):
-#                 weight = i / (num_frames + 1)
-#                 frame = Image.blend(start_frame, end_image, weight)
-#                 frames.append(frame)
-#             return frames
-
-#     class VideoWriter:
-#         def __init__(self, transition_frames=30, fps=25, still_image_delay_sec=2,
-#                         max_size=512, codec="mp4v"):
-#             conf = getSuiteConfig()
-#             self.transition_frames = transition_frames
-#             self.fps = fps
-#             self.still_image_delay_frames = round(still_image_delay_sec * fps)
-#             self.max_size = int(max_size)
-#             self.valid_codecs = ["ffv1","mp4v"]
-#             self.extensions = {"ffv1":".mkv","mp4v":".mp4"}
-#             if conf.__contains__('ffmpeg_extra_codecs'):
-#                 self.add_codecs(conf['ffmpeg_extra_codecs'])
-#             self.codec = codec.lower() if codec.lower() in self.valid_codecs else "mp4v"
-
-#         def write(self, image, video_path):
-#             video_path += self.extensions[self.codec]
-#             end_image = self.rescale(self.pil2cv(image), self.max_size)
-
-#             if os.path.isfile(video_path):
-#                 cap = cv2.VideoCapture(video_path)
-
-#                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-#                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-#                 fps = int(cap.get(cv2.CAP_PROP_FPS))
-#                 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-#                 if width <= 0 or height <= 0:
-#                     raise ValueError("Invalid video dimensions")
-
-#                 temp_file_path = video_path.replace(self.extensions[self.codec], '_temp' + self.extensions[self.codec])
-#                 fourcc = cv2.VideoWriter_fourcc(*self.codec)
-#                 out = cv2.VideoWriter(temp_file_path, fourcc, fps, (width, height), isColor=True)
-
-#                 for i in tqdm(range(total_frames), desc="Copying original frames"):
-#                     ret, frame = cap.read()
-#                     if not ret:
-#                         break
-#                     out.write(frame)
-
-#                 if self.transition_frames > 0:
-#                     cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames - 1)
-#                     ret, last_frame = cap.read()
-#                     if ret:
-#                         transition_frames = self.generate_transition_frames(last_frame, end_image, self.transition_frames)
-#                         for i, transition_frame in tqdm(enumerate(transition_frames), desc="Generating transition frames", total=self.transition_frames):
-#                             try:
-#                                 transition_frame_resized = cv2.resize(transition_frame, (width, height))
-#                                 out.write(transition_frame_resized)
-#                             except cv2.error as e:
-#                                 print(f"Error resizing frame {i}: {e}")
-#                                 continue
-
-#                 for i in tqdm(range(self.still_image_delay_frames), desc="Adding new frames"):
-#                     out.write(end_image)
-
-#                 cap.release()
-#                 out.release()
-
-#                 os.remove(video_path)
-#                 os.rename(temp_file_path, video_path)
-
-#                 cstr(f"Edited video at: {video_path}").msg.print()
-
-#                 return video_path
-
-#             else:
-#                 fourcc = cv2.VideoWriter_fourcc(*self.codec)
-#                 height, width, _ = end_image.shape
-#                 if width <= 0 or height <= 0:
-#                     raise ValueError("Invalid image dimensions")
-
-#                 out = cv2.VideoWriter(video_path, fourcc, self.fps, (width, height), isColor=True)
-
-#                 for i in tqdm(range(self.still_image_delay_frames), desc="Adding new frames"):
-#                     out.write(end_image)
-
-#                 out.release()
-
-#                 cstr(f"Created new video at: {video_path}").msg.print()
-
-#                 return video_path
-
-#             return ""
-
-#         def create_video(self, image_folder, video_path):
-#             import cv2
-#             from tqdm import tqdm
-
-#             image_paths = sorted([os.path.join(image_folder, f) for f in os.listdir(image_folder)
-#                                   if os.path.isfile(os.path.join(image_folder, f))
-#                                   and os.path.join(image_folder, f).lower().endswith(ALLOWED_EXT)])
-
-#             if len(image_paths) == 0:
-#                 cstr(f"No valid image files found in `{image_folder}` directory.").error.print()
-#                 cstr(f"The valid formats are: {', '.join(sorted(ALLOWED_EXT))}").error.print()
-#                 return
-
-#             output_file = video_path + self.extensions[self.codec]
-#             image = self.rescale(cv2.imread(image_paths[0]), self.max_size)
-#             height, width = image.shape[:2]
-#             fourcc = cv2.VideoWriter_fourcc(*self.codec)
-#             out = cv2.VideoWriter(output_file, fourcc, self.fps, (width, height), isColor=True)
-#             out.write(image)
-#             for _ in range(self.still_image_delay_frames - 1):
-#                 out.write(image)
-
-#             for i in tqdm(range(len(image_paths)), desc="Writing video frames"):
-#                 start_frame = cv2.imread(image_paths[i])
-#                 end_frame = None
-#                 if i+1 <= len(image_paths)-1:
-#                     end_frame = self.rescale(cv2.imread(image_paths[i+1]), self.max_size)
-
-#                 if isinstance(end_frame, np.ndarray):
-#                     transition_frames = self.generate_transition_frames(start_frame, end_frame, self.transition_frames)
-#                     transition_frames = [cv2.resize(frame, (width, height)) for frame in transition_frames]
-#                     for _, frame in enumerate(transition_frames):
-#                         out.write(frame)
-
-#                     for _ in range(self.still_image_delay_frames - self.transition_frames):
-#                         out.write(end_frame)
-
-#                 else:
-#                     out.write(start_frame)
-#                     for _ in range(self.still_image_delay_frames - 1):
-#                         out.write(start_frame)
-
-#             out.release()
-
-#             if os.path.exists(output_file):
-#                 cstr(f"Created video at: {output_file}").msg.print()
-#                 return output_file
-#             else:
-#                 cstr(f"Unable to create video at: {output_file}").error.print()
-#                 return ""
-
-#         def extract(self, video_file, output_folder, prefix='frame_', extension="png", zero_padding_digits=-1):
-#             os.makedirs(output_folder, exist_ok=True)
-
-#             video = cv2.VideoCapture(video_file)
-
-#             fps = video.get(cv2.CAP_PROP_FPS)
-#             frame_number = 0
-
-#             while True:
-#                 success, frame = video.read()
-
-#                 if success:
-#                     if zero_padding_digits > 0:
-#                         frame_path = os.path.join(output_folder, f"{prefix}{frame_number:0{zero_padding_digits}}.{extension}")
-#                     else:
-#                         frame_path = os.path.join(output_folder, f"{prefix}{frame_number}.{extension}")
-
-#                     cv2.imwrite(frame_path, frame)
-#                     print(f"Saved frame {frame_number} to {frame_path}")
-#                     frame_number += 1
-#                 else:
-#                     break
-
-#             video.release()
-
-#         def rescale(self, image, max_size):
-#             f1 = max_size / image.shape[1]
-#             f2 = max_size / image.shape[0]
-#             f = min(f1, f2)
-#             dim = (int(image.shape[1] * f), int(image.shape[0] * f))
-#             resized = cv2.resize(image, dim)
-#             return resized
-
-#         def generate_transition_frames(self, img1, img2, num_frames):
-#             import cv2
-#             if img1 is None and img2 is None:
-#                 return []
-
-#             if img1 is not None and img2 is not None:
-#                 if img1.shape != img2.shape:
-#                     img2 = cv2.resize(img2, img1.shape[:2][::-1])
-#             elif img1 is not None:
-#                 img2 = np.zeros_like(img1)
-#             else:
-#                 img1 = np.zeros_like(img2)
-
-#             height, width, _ = img2.shape
-
-#             frame_sequence = []
-#             for i in range(num_frames):
-#                 alpha = i / float(num_frames)
-#                 blended = cv2.addWeighted(img1, 1 - alpha, img2, alpha,
-#                                               gamma=0.0, dtype=cv2.CV_8U)
-#                 frame_sequence.append(blended)
-
-#             return frame_sequence
-
-#         def pil2cv(self, img):
-#             import cv2
-#             img = np.array(img)
-#             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-#             return img
-
-#         def add_codecs(self, codecs):
-#             if isinstance(codecs, dict):
-#                 codec_forcc_codes = codecs.keys()
-#                 self.valid_codecs.extend(codec_forcc_codes)
-#                 self.extensions.update(codecs)
-
-#         def get_codecs(self):
-#             return self.valid_codecs
-
-
-#     # FILTERS
-
-#     class Masking:
-
-#         @staticmethod
-#         def crop_dominant_region(image, padding=0):
-#             from scipy.ndimage import label
-#             grayscale_image = image.convert("L")
-#             binary_image = grayscale_image.point(lambda x: 255 if x > 128 else 0, mode="1")
-#             labeled_image, num_labels = label(np.array(binary_image))
-#             largest_label = max(range(1, num_labels + 1), key=lambda i: np.sum(labeled_image == i))
-#             largest_region_mask = (labeled_image == largest_label).astype(np.uint8) * 255
-#             bbox = Image.fromarray(largest_region_mask, mode="L").getbbox()
-#             cropped_image = image.crop(bbox)
-#             size = max(cropped_image.size)
-#             padded_size = size + 2 * padding
-#             centered_crop = Image.new("L", (padded_size, padded_size), color="black")
-#             left = (padded_size - cropped_image.width) // 2
-#             top = (padded_size - cropped_image.height) // 2
-#             centered_crop.paste(cropped_image, (left, top), mask=cropped_image)
-
-#             return ImageOps.invert(centered_crop)
-
-#         @staticmethod
-#         def crop_minority_region(image, padding=0):
-#             from scipy.ndimage import label
-#             grayscale_image = image.convert("L")
-#             binary_image = grayscale_image.point(lambda x: 255 if x > 128 else 0, mode="1")
-#             labeled_image, num_labels = label(np.array(binary_image))
-#             smallest_label = min(range(1, num_labels + 1), key=lambda i: np.sum(labeled_image == i))
-#             smallest_region_mask = (labeled_image == smallest_label).astype(np.uint8) * 255
-#             bbox = Image.fromarray(smallest_region_mask, mode="L").getbbox()
-#             cropped_image = image.crop(bbox)
-#             size = max(cropped_image.size)
-#             padded_size = size + 2 * padding
-#             centered_crop = Image.new("L", (padded_size, padded_size), color="black")
-#             left = (padded_size - cropped_image.width) // 2
-#             top = (padded_size - cropped_image.height) // 2
-#             centered_crop.paste(cropped_image, (left, top), mask=cropped_image)
-
-#             return ImageOps.invert(centered_crop)
-
-#         @staticmethod
-#         def crop_region(mask, region_type, padding=0):
-#             from scipy.ndimage import label, find_objects
-#             binary_mask = np.array(mask.convert("L")) > 0
-#             bbox = mask.getbbox()
-#             if bbox is None:
-#                 return mask, (mask.size, (0, 0, 0, 0))
-
-#             bbox_width = bbox[2] - bbox[0]
-#             bbox_height = bbox[3] - bbox[1]
-
-#             side_length = max(bbox_width, bbox_height) + 2 * padding
-
-#             center_x = (bbox[2] + bbox[0]) // 2
-#             center_y = (bbox[3] + bbox[1]) // 2
-
-#             crop_x = center_x - side_length // 2
-#             crop_y = center_y - side_length // 2
-
-#             crop_x = max(crop_x, 0)
-#             crop_y = max(crop_y, 0)
-#             crop_x2 = min(crop_x + side_length, mask.width)
-#             crop_y2 = min(crop_y + side_length, mask.height)
-
-#             cropped_mask = mask.crop((crop_x, crop_y, crop_x2, crop_y2))
-#             crop_data = (cropped_mask.size, (crop_x, crop_y, crop_x2, crop_y2))
-
-#             return cropped_mask, crop_data
-
-#         @staticmethod
-#         def dominant_region(image, threshold=128):
-#             from scipy.ndimage import label
-#             image = ImageOps.invert(image.convert("L"))
-#             binary_image = image.point(lambda x: 255 if x > threshold else 0, mode="1")
-#             l, n = label(np.array(binary_image))
-#             sizes = np.bincount(l.flatten())
-#             dominant = 0
-#             try:
-#                 dominant = np.argmax(sizes[1:]) + 1
-#             except ValueError:
-#                 pass
-#             dominant_region_mask = (l == dominant).astype(np.uint8) * 255
-#             result = Image.fromarray(dominant_region_mask, mode="L")
-#             return result.convert("RGB")
-
-#         @staticmethod
-#         def minority_region(image, threshold=128):
-#             from scipy.ndimage import label
-#             image = image.convert("L")
-#             binary_image = image.point(lambda x: 255 if x > threshold else 0, mode="1")
-#             labeled_array, num_features = label(np.array(binary_image))
-#             sizes = np.bincount(labeled_array.flatten())
-#             smallest_region = 0
-#             try:
-#                 smallest_region = np.argmin(sizes[1:]) + 1
-#             except ValueError:
-#                 pass
-#             smallest_region_mask = (labeled_array == smallest_region).astype(np.uint8) * 255
-#             inverted_mask = Image.fromarray(smallest_region_mask, mode="L")
-#             rgb_image = Image.merge("RGB", [inverted_mask, inverted_mask, inverted_mask])
-
-#             return rgb_image
-
-#         @staticmethod
-#         def arbitrary_region(image, size, threshold=128):
-#             from skimage.measure import label, regionprops
-#             image = image.convert("L")
-#             binary_image = image.point(lambda x: 255 if x > threshold else 0, mode="1")
-#             labeled_image = label(np.array(binary_image))
-#             regions = regionprops(labeled_image)
-
-#             image_area = binary_image.size[0] * binary_image.size[1]
-#             scaled_size = size * image_area / 10000
-
-#             filtered_regions = [region for region in regions if region.area >= scaled_size]
-#             if len(filtered_regions) > 0:
-#                 filtered_regions.sort(key=lambda region: region.area)
-#                 smallest_region = filtered_regions[0]
-#                 region_mask = (labeled_image == smallest_region.label).astype(np.uint8) * 255
-#                 result = Image.fromarray(region_mask, mode="L")
-#                 return result
-
-#             return image
-
-#         @staticmethod
-#         def smooth_region(image, tolerance):
-#             from scipy.ndimage import gaussian_filter
-#             image = image.convert("L")
-#             mask_array = np.array(image)
-#             smoothed_array = gaussian_filter(mask_array, sigma=tolerance)
-#             threshold = np.max(smoothed_array) / 2
-#             smoothed_mask = np.where(smoothed_array >= threshold, 255, 0).astype(np.uint8)
-#             smoothed_image = Image.fromarray(smoothed_mask, mode="L")
-#             return ImageOps.invert(smoothed_image.convert("RGB"))
-
-#         @staticmethod
-#         def erode_region(image, iterations=1):
-#             from scipy.ndimage import binary_erosion
-#             image = image.convert("L")
-#             binary_mask = np.array(image) > 0
-#             eroded_mask = binary_erosion(binary_mask, iterations=iterations)
-#             eroded_image = Image.fromarray(eroded_mask.astype(np.uint8) * 255, mode="L")
-#             return ImageOps.invert(eroded_image.convert("RGB"))
-
-#         @staticmethod
-#         def dilate_region(image, iterations=1):
-#             from scipy.ndimage import binary_dilation
-#             image = image.convert("L")
-#             binary_mask = np.array(image) > 0
-#             dilated_mask = binary_dilation(binary_mask, iterations=iterations)
-#             dilated_image = Image.fromarray(dilated_mask.astype(np.uint8) * 255, mode="L")
-#             return ImageOps.invert(dilated_image.convert("RGB"))
-
-#         @staticmethod
-#         def fill_region(image):
-#             from scipy.ndimage import binary_fill_holes
-#             image = image.convert("L")
-#             binary_mask = np.array(image) > 0
-#             filled_mask = binary_fill_holes(binary_mask)
-#             filled_image = Image.fromarray(filled_mask.astype(np.uint8) * 255, mode="L")
-#             return ImageOps.invert(filled_image.convert("RGB"))
-
-#         @staticmethod
-#         def combine_masks(*masks):
-#             if len(masks) < 1:
-#                 raise ValueError("\033[34mWAS NS\033[0m Error: At least one mask must be provided.")
-#             dimensions = masks[0].size
-#             for mask in masks:
-#                 if mask.size != dimensions:
-#                     raise ValueError("\033[34mWAS NS\033[0m Error: All masks must have the same dimensions.")
-
-#             inverted_masks = [mask.convert("L") for mask in masks]
-#             combined_mask = Image.new("L", dimensions, 255)
-#             for mask in inverted_masks:
-#                 combined_mask = Image.fromarray(np.minimum(np.array(combined_mask), np.array(mask)), mode="L")
-
-#             return combined_mask
-
-#         @staticmethod
-#         def threshold_region(image, black_threshold=0, white_threshold=255):
-#             gray_image = image.convert("L")
-#             mask_array = np.array(gray_image)
-#             mask_array[mask_array < black_threshold] = 0
-#             mask_array[mask_array > white_threshold] = 255
-#             thresholded_image = Image.fromarray(mask_array, mode="L")
-#             return ImageOps.invert(thresholded_image)
-
-#         @staticmethod
-#         def floor_region(image):
-#             gray_image = image.convert("L")
-#             mask_array = np.array(gray_image)
-#             non_black_pixels = mask_array[mask_array > 0]
-
-#             if non_black_pixels.size > 0:
-#                 threshold_value = non_black_pixels.min()
-#                 mask_array[mask_array > threshold_value] = 255  # Set whites to 255
-#                 mask_array[mask_array <= threshold_value] = 0  # Set blacks to 0
-
-#             thresholded_image = Image.fromarray(mask_array, mode="L")
-#             return ImageOps.invert(thresholded_image)
-
-#         @staticmethod
-#         def ceiling_region(image, offset=30):
-#             if offset < 0:
-#                 offset = 0
-#             elif offset > 255:
-#                 offset = 255
-#             grayscale_image = image.convert("L")
-#             mask_array = np.array(grayscale_image)
-#             mask_array[mask_array < 255 - offset] = 0
-#             mask_array[mask_array >= 250] = 255
-#             filtered_image = Image.fromarray(mask_array, mode="L")
-#             return ImageOps.invert(filtered_image)
-
-#         @staticmethod
-#         def gaussian_region(image, radius=5.0):
-#             image = ImageOps.invert(image.convert("L"))
-#             image = image.filter(ImageFilter.GaussianBlur(radius=int(radius)))
-#             return image.convert("RGB")
-
-#     # SHADOWS AND HIGHLIGHTS ADJUSTMENTS
-
-#     def shadows_and_highlights(self, image, shadow_thresh=30, highlight_thresh=220, shadow_factor=0.5, highlight_factor=1.5, shadow_smooth=None, highlight_smooth=None, simplify_masks=None):
-
-#         if 'pilgram' not in packages():
-#             install_package('pilgram')
-
-#         import pilgram
-
-#         alpha = None
-#         if image.mode.endswith('A'):
-#             alpha = image.getchannel('A')
-#             image = image.convert('RGB')
-
-#         grays = image.convert('L')
-
-#         if shadow_smooth is not None or highlight_smooth is not None and simplify_masks is not None:
-#             simplify = float(simplify_masks)
-#             grays = grays.filter(ImageFilter.GaussianBlur(radius=simplify))
-
-#         shadow_mask = Image.eval(grays, lambda x: 255 if x < shadow_thresh else 0)
-#         highlight_mask = Image.eval(grays, lambda x: 255 if x > highlight_thresh else 0)
-
-#         image_shadow = image.copy()
-#         image_highlight = image.copy()
-
-#         if shadow_smooth is not None:
-#             shadow_mask = shadow_mask.filter(ImageFilter.GaussianBlur(radius=shadow_smooth))
-#         if highlight_smooth is not None:
-#             highlight_mask = highlight_mask.filter(ImageFilter.GaussianBlur(radius=highlight_smooth))
-
-#         image_shadow = Image.eval(image_shadow, lambda x: x * shadow_factor)
-#         image_highlight = Image.eval(image_highlight, lambda x: x * highlight_factor)
-
-#         if shadow_smooth is not None:
-#             shadow_mask = shadow_mask.filter(ImageFilter.GaussianBlur(radius=shadow_smooth))
-#         if highlight_smooth is not None:
-#             highlight_mask = highlight_mask.filter(ImageFilter.GaussianBlur(radius=highlight_smooth))
-
-#         result = image.copy()
-#         result.paste(image_shadow, shadow_mask)
-#         result.paste(image_highlight, highlight_mask)
-#         result = pilgram.css.blending.color(result, image)
-
-#         if alpha:
-#             result.putalpha(alpha)
-
-#         return (result, shadow_mask, highlight_mask)
-
-#     # DRAGAN PHOTOGRAPHY FILTER
-
-
-#     def dragan_filter(self, image, saturation=1, contrast=1, sharpness=1, brightness=1, highpass_radius=3, highpass_samples=1, highpass_strength=1, colorize=True):
-
-#         if 'pilgram' not in packages():
-#             install_package('pilgram')
-
-#         import pilgram
-
-#         alpha = None
-#         if image.mode == 'RGBA':
-#             alpha = image.getchannel('A')
-
-#         grayscale_image = image if image.mode == 'L' else image.convert('L')
-
-#         contrast_enhancer = ImageEnhance.Contrast(grayscale_image)
-#         contrast_image = contrast_enhancer.enhance(contrast)
-
-#         saturation_enhancer = ImageEnhance.Color(contrast_image) if image.mode != 'L' else None
-#         saturation_image = contrast_image if saturation_enhancer is None else saturation_enhancer.enhance(saturation)
-
-#         sharpness_enhancer = ImageEnhance.Sharpness(saturation_image)
-#         sharpness_image = sharpness_enhancer.enhance(sharpness)
-
-#         brightness_enhancer = ImageEnhance.Brightness(sharpness_image)
-#         brightness_image = brightness_enhancer.enhance(brightness)
-
-#         blurred_image = brightness_image.filter(ImageFilter.GaussianBlur(radius=-highpass_radius))
-#         highpass_filter = ImageChops.subtract(image, blurred_image.convert('RGB'))
-#         blank_image = Image.new('RGB', image.size, (127, 127, 127))
-#         highpass_image = ImageChops.screen(blank_image, highpass_filter.resize(image.size))
-#         if not colorize:
-#             highpass_image = highpass_image.convert('L').convert('RGB')
-#         highpassed_image = pilgram.css.blending.overlay(brightness_image.convert('RGB'), highpass_image)
-#         for _ in range((highpass_samples if highpass_samples > 0 else 1)):
-#             highpassed_image = pilgram.css.blending.overlay(highpassed_image, highpass_image)
-
-#         final_image = ImageChops.blend(brightness_image.convert('RGB'), highpassed_image, highpass_strength)
-
-#         if colorize:
-#             final_image = pilgram.css.blending.color(final_image, image)
-
-#         if alpha:
-#             final_image.putalpha(alpha)
-
-#         return final_image
-
-#     def sparkle(self, image):
-
-#         if 'pilgram' not in packages():
-#             install_package('pilgram')
-
-#         import pilgram
-
-#         image = image.convert('RGBA')
-#         contrast_enhancer = ImageEnhance.Contrast(image)
-#         image = contrast_enhancer.enhance(1.25)
-#         saturation_enhancer = ImageEnhance.Color(image)
-#         image = saturation_enhancer.enhance(1.5)
-
-#         bloom = image.filter(ImageFilter.GaussianBlur(radius=20))
-#         bloom = ImageEnhance.Brightness(bloom).enhance(1.2)
-#         bloom.putalpha(128)
-#         bloom = bloom.convert(image.mode)
-#         image = Image.alpha_composite(image, bloom)
-
-#         width, height = image.size
-
-#         particles = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-#         draw = ImageDraw.Draw(particles)
-#         for i in range(5000):
-#             x = random.randint(0, width)
-#             y = random.randint(0, height)
-#             r = random.randint(0, 255)
-#             g = random.randint(0, 255)
-#             b = random.randint(0, 255)
-#             draw.point((x, y), fill=(r, g, b, 255))
-#         particles = particles.filter(ImageFilter.GaussianBlur(radius=1))
-#         particles.putalpha(128)
-
-#         particles2 = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-#         draw = ImageDraw.Draw(particles2)
-#         for i in range(5000):
-#             x = random.randint(0, width)
-#             y = random.randint(0, height)
-#             r = random.randint(0, 255)
-#             g = random.randint(0, 255)
-#             b = random.randint(0, 255)
-#             draw.point((x, y), fill=(r, g, b, 255))
-#         particles2 = particles2.filter(ImageFilter.GaussianBlur(radius=1))
-#         particles2.putalpha(128)
-
-#         image = pilgram.css.blending.color_dodge(image, particles)
-#         image = pilgram.css.blending.lighten(image, particles2)
-
-#         return image
-
-#     def digital_distortion(self, image, amplitude=5, line_width=2):
-
-#         im = np.array(image)
-
-#         x, y, z = im.shape
-#         sine_wave = amplitude * np.sin(np.linspace(-np.pi, np.pi, y))
-#         sine_wave = sine_wave.astype(int)
-
-#         left_distortion = np.zeros((x, y, z), dtype=np.uint8)
-#         right_distortion = np.zeros((x, y, z), dtype=np.uint8)
-#         for i in range(y):
-#             left_distortion[:, i, :] = np.roll(im[:, i, :], -sine_wave[i], axis=0)
-#             right_distortion[:, i, :] = np.roll(im[:, i, :], sine_wave[i], axis=0)
-
-#         distorted_image = np.maximum(left_distortion, right_distortion)
-#         scan_lines = np.zeros((x, y), dtype=np.float32)
-#         scan_lines[::line_width, :] = 1
-#         scan_lines = np.minimum(scan_lines * amplitude*50.0, 1)  # Scale scan line values
-#         scan_lines = np.tile(scan_lines[:, :, np.newaxis], (1, 1, z))  # Add channel dimension
-#         distorted_image = np.where(scan_lines > 0, np.random.permutation(im), distorted_image)
-#         distorted_image = np.roll(distorted_image, np.random.randint(0, y), axis=1)
-
-#         distorted_image = Image.fromarray(distorted_image)
-
-#         return distorted_image
-
-#     def signal_distortion(self, image, amplitude):
-
-#         img_array = np.array(image)
-#         row_shifts = np.random.randint(-amplitude, amplitude + 1, size=img_array.shape[0])
-#         distorted_array = np.zeros_like(img_array)
-
-#         for y in range(img_array.shape[0]):
-#             x_shift = row_shifts[y]
-#             x_shift = x_shift + y % (amplitude * 2) - amplitude
-#             distorted_array[y,:] = np.roll(img_array[y,:], x_shift, axis=0)
-
-#         distorted_image = Image.fromarray(distorted_array)
-
-#         return distorted_image
-
-#     def tv_vhs_distortion(self, image, amplitude=10):
-#         np_image = np.array(image)
-#         offset_variance = int(image.height / amplitude)
-#         row_shifts = np.random.randint(-offset_variance, offset_variance + 1, size=image.height)
-#         distorted_array = np.zeros_like(np_image)
-
-#         for y in range(np_image.shape[0]):
-#             x_shift = row_shifts[y]
-#             x_shift = x_shift + y % (offset_variance * 2) - offset_variance
-#             distorted_array[y,:] = np.roll(np_image[y,:], x_shift, axis=0)
-
-#         h, w, c = distorted_array.shape
-#         x_scale = np.linspace(0, 1, w)
-#         y_scale = np.linspace(0, 1, h)
-#         x_idx = np.broadcast_to(x_scale, (h, w))
-#         y_idx = np.broadcast_to(y_scale.reshape(h, 1), (h, w))
-#         noise = np.random.rand(h, w, c) * 0.1
-#         distortion = np.sin(x_idx * 50) * 0.5 + np.sin(y_idx * 50) * 0.5
-#         distorted_array = distorted_array + distortion[:, :, np.newaxis] + noise
-
-#         distorted_image = Image.fromarray(np.uint8(distorted_array))
-#         distorted_image = distorted_image.resize((image.width, image.height))
-
-#         image_enhance = ImageEnhance.Color(image)
-#         image = image_enhance.enhance(0.5)
-
-#         effect_image = ImageChops.overlay(image, distorted_image)
-#         result_image = ImageChops.overlay(image, effect_image)
-#         result_image = ImageChops.blend(image, result_image, 0.25)
-
-#         return result_image
-
-#     def gradient(self, size, mode='horizontal', colors=None, tolerance=0):
-
-#         if isinstance(colors, str):
-#             colors = json.loads(colors)
-
-#         if colors is None:
-#             colors = {0: [255, 0, 0], 50: [0, 255, 0], 100: [0, 0, 255]}
-
-#         colors = {int(k): [int(c) for c in v] for k, v in colors.items()}
-
-#         colors[0] = colors[min(colors.keys())]
-#         colors[255] = colors[max(colors.keys())]
-
-#         img = Image.new('RGB', size, color=(0, 0, 0))
-
-#         color_stop_positions = sorted(colors.keys())
-#         color_stop_count = len(color_stop_positions)
-#         spectrum = []
-#         for i in range(256):
-#             start_pos = max(p for p in color_stop_positions if p <= i)
-#             end_pos = min(p for p in color_stop_positions if p >= i)
-#             start = colors[start_pos]
-#             end = colors[end_pos]
-
-#             if start_pos == end_pos:
-#                 factor = 0
-#             else:
-#                 factor = (i - start_pos) / (end_pos - start_pos)
-
-#             r = round(start[0] + (end[0] - start[0]) * factor)
-#             g = round(start[1] + (end[1] - start[1]) * factor)
-#             b = round(start[2] + (end[2] - start[2]) * factor)
-#             spectrum.append((r, g, b))
-
-#         draw = ImageDraw.Draw(img)
-#         if mode == 'horizontal':
-#             for x in range(size[0]):
-#                 pos = int(x * 100 / (size[0] - 1))
-#                 color = spectrum[pos]
-#                 if tolerance > 0:
-#                     color = tuple([round(c / tolerance) * tolerance for c in color])
-#                 draw.line((x, 0, x, size[1]), fill=color)
-#         elif mode == 'vertical':
-#             for y in range(size[1]):
-#                 pos = int(y * 100 / (size[1] - 1))
-#                 color = spectrum[pos]
-#                 if tolerance > 0:
-#                     color = tuple([round(c / tolerance) * tolerance for c in color])
-#                 draw.line((0, y, size[0], y), fill=color)
-
-#         blur = 1.5
-#         if size[0] > 512 or size[1] > 512:
-#             multiplier = max(size[0], size[1]) / 512
-#             if multiplier < 1.5:
-#                 multiplier = 1.5
-#             blur =  blur * multiplier
-
-#         img = img.filter(ImageFilter.GaussianBlur(radius=blur))
-
-#         return img
+class WAS_Tools_Class():
+    """
+    Contains various tools and filters for WAS Node Suite
+    """
+    # TOOLS
+
+    def fig2img(self, plot):
+        import io
+        buf = io.BytesIO()
+        plot.savefig(buf)
+        buf.seek(0)
+        img = Image.open(buf)
+        return img
+
+    def stitch_image(self, image_a, image_b, mode='right', fuzzy_zone=50):
+
+        def linear_gradient(start_color, end_color, size, start, end, mode='horizontal'):
+            width, height = size
+            gradient = Image.new('RGB', (width, height), end_color)
+            draw = ImageDraw.Draw(gradient)
+
+            for i in range(0, start):
+                if mode == "horizontal":
+                    draw.line((i, 0, i, height-1), start_color)
+                elif mode == "vertical":
+                    draw.line((0, i, width-1, i), start_color)
+
+            for i in range(start, end):
+                if mode == "horizontal":
+                    curr_color = (
+                        int(start_color[0] + (float(i - start) / (end - start)) * (end_color[0] - start_color[0])),
+                        int(start_color[1] + (float(i - start) / (end - start)) * (end_color[1] - start_color[1])),
+                        int(start_color[2] + (float(i - start) / (end - start)) * (end_color[2] - start_color[2]))
+                    )
+                    draw.line((i, 0, i, height-1), curr_color)
+                elif mode == "vertical":
+                    curr_color = (
+                        int(start_color[0] + (float(i - start) / (end - start)) * (end_color[0] - start_color[0])),
+                        int(start_color[1] + (float(i - start) / (end - start)) * (end_color[1] - start_color[1])),
+                        int(start_color[2] + (float(i - start) / (end - start)) * (end_color[2] - start_color[2]))
+                    )
+                    draw.line((0, i, width-1, i), curr_color)
+
+            for i in range(end, width if mode == 'horizontal' else height):
+                if mode == "horizontal":
+                    draw.line((i, 0, i, height-1), end_color)
+                elif mode == "vertical":
+                    draw.line((0, i, width-1, i), end_color)
+
+            return gradient
+
+        image_a = image_a.convert('RGB')
+        image_b = image_b.convert('RGB')
+
+        offset = int(fuzzy_zone / 2)
+        canvas_width = int(image_a.size[0] + image_b.size[0] - fuzzy_zone) if mode == 'right' or mode == 'left' else image_a.size[0]
+        canvas_height = int(image_a.size[1] + image_b.size[1] - fuzzy_zone) if mode == 'top' or mode == 'bottom' else image_a.size[1]
+        canvas = Image.new('RGB', (canvas_width, canvas_height), (0,0,0))
+
+        im_ax = 0
+        im_ay = 0
+        im_bx = 0
+        im_by = 0
+
+        image_a_mask = None
+        image_b_mask = None
+
+        if mode == 'top':
+
+            image_a_mask = linear_gradient((0,0,0), (255,255,255), image_a.size, 0, fuzzy_zone, 'vertical')
+            image_b_mask = linear_gradient((255,255,255), (0,0,0), image_b.size, int(image_b.size[1] - fuzzy_zone), image_b.size[1], 'vertical')
+            im_ay = image_b.size[1] - fuzzy_zone
+
+        elif mode == 'bottom':
+
+            image_a_mask = linear_gradient((255,255,255), (0,0,0), image_a.size, int(image_a.size[1] - fuzzy_zone), image_a.size[1], 'vertical')
+            image_b_mask = linear_gradient((0,0,0), (255,255,255), image_b.size, 0, fuzzy_zone, 'vertical').convert('L')
+            im_by = image_a.size[1] - fuzzy_zone
+
+        elif mode == 'left':
+
+            image_a_mask = linear_gradient((0,0,0), (255,255,255), image_a.size, 0, fuzzy_zone, 'horizontal')
+            image_b_mask = linear_gradient((255,255,255), (0,0,0), image_b.size, int(image_b.size[0] - fuzzy_zone), image_b.size[0], 'horizontal')
+            im_ax = image_b.size[0] - fuzzy_zone
+
+        elif mode == 'right':
+
+            image_a_mask = linear_gradient((255,255,255), (0,0,0), image_a.size, int(image_a.size[0] - fuzzy_zone), image_a.size[0], 'horizontal')
+            image_b_mask = linear_gradient((0,0,0), (255,255,255), image_b.size, 0, fuzzy_zone, 'horizontal')
+            im_bx = image_a.size[0] - fuzzy_zone
+
+        Image.Image.paste(canvas, image_a, (im_ax, im_ay), image_a_mask.convert('L'))
+        Image.Image.paste(canvas, image_b, (im_bx, im_by), image_b_mask.convert('L'))
+
+
+        return canvas
+
+
+    def morph_images(self, images, steps=10, max_size=512, loop=None, still_duration=30, duration=0.1, output_path='output', filename="morph", filetype="GIF"):
+
+        import cv2
+        import imageio
+
+        output_file = os.path.abspath(os.path.join(os.path.join(*output_path.split('/')), filename))
+        output_file += ( '.png' if filetype == 'APNG' else '.gif' )
+
+        max_width = max(im.size[0] for im in images)
+        max_height = max(im.size[1] for im in images)
+        max_aspect_ratio = max_width / max_height
+
+        def padded_images():
+            for im in images:
+                aspect_ratio = im.size[0] / im.size[1]
+                if aspect_ratio > max_aspect_ratio:
+                    new_height = int(max_width / aspect_ratio)
+                    padding = (max_height - new_height) // 2
+                    padded_im = Image.new('RGB', (max_width, max_height), color=(0, 0, 0))
+                    padded_im.paste(im.resize((max_width, new_height)), (0, padding))
+                else:
+                    new_width = int(max_height * aspect_ratio)
+                    padding = (max_width - new_width) // 2
+                    padded_im = Image.new('RGB', (max_width, max_height), color=(0, 0, 0))
+                    padded_im.paste(im.resize((new_width, max_height)), (padding, 0))
+                yield np.array(padded_im)
+
+        padded_images = list(padded_images())
+        padded_images.append(padded_images[0].copy())
+        images = padded_images
+        frames = []
+        durations = []
+
+        for i in range(len(images)-1):
+            frames.append(Image.fromarray(images[i]).convert('RGB'))
+            durations.append(still_duration)
+
+            for j in range(steps):
+                alpha = j / float(steps)
+                morph = cv2.addWeighted(images[i], 1 - alpha, images[i+1], alpha, 0)
+                frames.append(Image.fromarray(morph).convert('RGB'))
+                durations.append(duration)
+
+        frames.append(Image.fromarray(images[-1]).convert('RGB'))
+        durations.insert(0, still_duration)
+
+        if loop is not None:
+            for i in range(loop):
+                durations.insert(0, still_duration)
+                durations.append(still_duration)
+
+        try:
+            imageio.mimsave(output_file, frames, filetype, duration=durations, loop=loop)
+        except OSError as e:
+            cstr(f"Unable to save output to {output_file} due to the following error:").error.print()
+            print(e)
+            return
+        except Exception as e:
+            cstr(f"\033[34mWAS NS\033[0m Error: Unable to generate GIF due to the following error:").error.print()
+            print(e)
+
+        cstr(f"Morphing completed. Output saved as {output_file}").msg.print()
+
+        return output_file
+
+    class GifMorphWriter:
+        def __init__(self, transition_frames=30, duration_ms=100, still_image_delay_ms=2500, loop=0):
+            self.transition_frames = transition_frames
+            self.duration_ms = duration_ms
+            self.still_image_delay_ms = still_image_delay_ms
+            self.loop = loop
+
+        def write(self, image, gif_path):
+
+            import cv2
+
+            if not os.path.isfile(gif_path):
+                with Image.new("RGBA", image.size) as new_gif:
+                    new_gif.paste(image.convert("RGBA"))
+                    new_gif.info["duration"] = self.still_image_delay_ms
+                    new_gif.save(gif_path, format="GIF", save_all=True, append_images=[], duration=self.still_image_delay_ms, loop=0)
+                cstr(f"Created new GIF animation at: {gif_path}").msg.print()
+            else:
+                with Image.open(gif_path) as gif:
+                    n_frames = gif.n_frames
+                    if n_frames > 0:
+                        gif.seek(n_frames - 1)
+                        last_frame = gif.copy()
+                    else:
+                        last_frame = None
+
+                    end_image = image
+                    steps = self.transition_frames - 1 if last_frame is not None else self.transition_frames
+
+                    if last_frame is not None:
+                        image = self.pad_to_size(image, last_frame.size)
+
+                    frames = self.generate_transition_frames(last_frame, image, steps)
+
+                    still_frame = end_image.copy()
+
+                    gif_frames = []
+                    for i in range(n_frames):
+                        gif.seek(i)
+                        gif_frame = gif.copy()
+                        gif_frames.append(gif_frame)
+
+                    for frame in frames:
+                        frame.info["duration"] = self.duration_ms
+                        gif_frames.append(frame)
+
+                    still_frame.info['duration'] = self.still_image_delay_ms
+                    gif_frames.append(still_frame)
+
+                    gif_frames[0].save(
+                        gif_path,
+                        format="GIF",
+                        save_all=True,
+                        append_images=gif_frames[1:],
+                        optimize=True,
+                        loop=self.loop,
+                    )
+
+                    cstr(f"Edited existing GIF animation at: {gif_path}").msg.print()
+
+
+        def pad_to_size(self, image, size):
+            new_image = Image.new("RGBA", size, color=(0, 0, 0, 0))
+            x_offset = (size[0] - image.width) // 2
+            y_offset = (size[1] - image.height) // 2
+            new_image.paste(image, (x_offset, y_offset))
+            return new_image
+
+        def generate_transition_frames(self, start_frame, end_image, num_frames):
+
+            if start_frame is None:
+                return []
+
+            start_frame = start_frame.convert("RGBA")
+            end_image = end_image.convert("RGBA")
+
+            frames = []
+            for i in range(1, num_frames + 1):
+                weight = i / (num_frames + 1)
+                frame = Image.blend(start_frame, end_image, weight)
+                frames.append(frame)
+            return frames
+
+    class VideoWriter:
+        def __init__(self, transition_frames=30, fps=25, still_image_delay_sec=2,
+                        max_size=512, codec="mp4v"):
+            conf = getSuiteConfig()
+            self.transition_frames = transition_frames
+            self.fps = fps
+            self.still_image_delay_frames = round(still_image_delay_sec * fps)
+            self.max_size = int(max_size)
+            self.valid_codecs = ["ffv1","mp4v"]
+            self.extensions = {"ffv1":".mkv","mp4v":".mp4"}
+            if conf.__contains__('ffmpeg_extra_codecs'):
+                self.add_codecs(conf['ffmpeg_extra_codecs'])
+            self.codec = codec.lower() if codec.lower() in self.valid_codecs else "mp4v"
+
+        def write(self, image, video_path):
+            video_path += self.extensions[self.codec]
+            end_image = self.rescale(self.pil2cv(image), self.max_size)
+
+            if os.path.isfile(video_path):
+                cap = cv2.VideoCapture(video_path)
+
+                width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                fps = int(cap.get(cv2.CAP_PROP_FPS))
+                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+                if width <= 0 or height <= 0:
+                    raise ValueError("Invalid video dimensions")
+
+                temp_file_path = video_path.replace(self.extensions[self.codec], '_temp' + self.extensions[self.codec])
+                fourcc = cv2.VideoWriter_fourcc(*self.codec)
+                out = cv2.VideoWriter(temp_file_path, fourcc, fps, (width, height), isColor=True)
+
+                for i in tqdm(range(total_frames), desc="Copying original frames"):
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+                    out.write(frame)
+
+                if self.transition_frames > 0:
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames - 1)
+                    ret, last_frame = cap.read()
+                    if ret:
+                        transition_frames = self.generate_transition_frames(last_frame, end_image, self.transition_frames)
+                        for i, transition_frame in tqdm(enumerate(transition_frames), desc="Generating transition frames", total=self.transition_frames):
+                            try:
+                                transition_frame_resized = cv2.resize(transition_frame, (width, height))
+                                out.write(transition_frame_resized)
+                            except cv2.error as e:
+                                print(f"Error resizing frame {i}: {e}")
+                                continue
+
+                for i in tqdm(range(self.still_image_delay_frames), desc="Adding new frames"):
+                    out.write(end_image)
+
+                cap.release()
+                out.release()
+
+                os.remove(video_path)
+                os.rename(temp_file_path, video_path)
+
+                cstr(f"Edited video at: {video_path}").msg.print()
+
+                return video_path
+
+            else:
+                fourcc = cv2.VideoWriter_fourcc(*self.codec)
+                height, width, _ = end_image.shape
+                if width <= 0 or height <= 0:
+                    raise ValueError("Invalid image dimensions")
+
+                out = cv2.VideoWriter(video_path, fourcc, self.fps, (width, height), isColor=True)
+
+                for i in tqdm(range(self.still_image_delay_frames), desc="Adding new frames"):
+                    out.write(end_image)
+
+                out.release()
+
+                cstr(f"Created new video at: {video_path}").msg.print()
+
+                return video_path
+
+            return ""
+
+        def create_video(self, image_folder, video_path):
+            import cv2
+            from tqdm import tqdm
+
+            image_paths = sorted([os.path.join(image_folder, f) for f in os.listdir(image_folder)
+                                  if os.path.isfile(os.path.join(image_folder, f))
+                                  and os.path.join(image_folder, f).lower().endswith(ALLOWED_EXT)])
+
+            if len(image_paths) == 0:
+                cstr(f"No valid image files found in `{image_folder}` directory.").error.print()
+                cstr(f"The valid formats are: {', '.join(sorted(ALLOWED_EXT))}").error.print()
+                return
+
+            output_file = video_path + self.extensions[self.codec]
+            image = self.rescale(cv2.imread(image_paths[0]), self.max_size)
+            height, width = image.shape[:2]
+            fourcc = cv2.VideoWriter_fourcc(*self.codec)
+            out = cv2.VideoWriter(output_file, fourcc, self.fps, (width, height), isColor=True)
+            out.write(image)
+            for _ in range(self.still_image_delay_frames - 1):
+                out.write(image)
+
+            for i in tqdm(range(len(image_paths)), desc="Writing video frames"):
+                start_frame = cv2.imread(image_paths[i])
+                end_frame = None
+                if i+1 <= len(image_paths)-1:
+                    end_frame = self.rescale(cv2.imread(image_paths[i+1]), self.max_size)
+
+                if isinstance(end_frame, np.ndarray):
+                    transition_frames = self.generate_transition_frames(start_frame, end_frame, self.transition_frames)
+                    transition_frames = [cv2.resize(frame, (width, height)) for frame in transition_frames]
+                    for _, frame in enumerate(transition_frames):
+                        out.write(frame)
+
+                    for _ in range(self.still_image_delay_frames - self.transition_frames):
+                        out.write(end_frame)
+
+                else:
+                    out.write(start_frame)
+                    for _ in range(self.still_image_delay_frames - 1):
+                        out.write(start_frame)
+
+            out.release()
+
+            if os.path.exists(output_file):
+                cstr(f"Created video at: {output_file}").msg.print()
+                return output_file
+            else:
+                cstr(f"Unable to create video at: {output_file}").error.print()
+                return ""
+
+        def extract(self, video_file, output_folder, prefix='frame_', extension="png", zero_padding_digits=-1):
+            os.makedirs(output_folder, exist_ok=True)
+
+            video = cv2.VideoCapture(video_file)
+
+            fps = video.get(cv2.CAP_PROP_FPS)
+            frame_number = 0
+
+            while True:
+                success, frame = video.read()
+
+                if success:
+                    if zero_padding_digits > 0:
+                        frame_path = os.path.join(output_folder, f"{prefix}{frame_number:0{zero_padding_digits}}.{extension}")
+                    else:
+                        frame_path = os.path.join(output_folder, f"{prefix}{frame_number}.{extension}")
+
+                    cv2.imwrite(frame_path, frame)
+                    print(f"Saved frame {frame_number} to {frame_path}")
+                    frame_number += 1
+                else:
+                    break
+
+            video.release()
+
+        def rescale(self, image, max_size):
+            f1 = max_size / image.shape[1]
+            f2 = max_size / image.shape[0]
+            f = min(f1, f2)
+            dim = (int(image.shape[1] * f), int(image.shape[0] * f))
+            resized = cv2.resize(image, dim)
+            return resized
+
+        def generate_transition_frames(self, img1, img2, num_frames):
+            import cv2
+            if img1 is None and img2 is None:
+                return []
+
+            if img1 is not None and img2 is not None:
+                if img1.shape != img2.shape:
+                    img2 = cv2.resize(img2, img1.shape[:2][::-1])
+            elif img1 is not None:
+                img2 = np.zeros_like(img1)
+            else:
+                img1 = np.zeros_like(img2)
+
+            height, width, _ = img2.shape
+
+            frame_sequence = []
+            for i in range(num_frames):
+                alpha = i / float(num_frames)
+                blended = cv2.addWeighted(img1, 1 - alpha, img2, alpha,
+                                              gamma=0.0, dtype=cv2.CV_8U)
+                frame_sequence.append(blended)
+
+            return frame_sequence
+
+        def pil2cv(self, img):
+            import cv2
+            img = np.array(img)
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            return img
+
+        def add_codecs(self, codecs):
+            if isinstance(codecs, dict):
+                codec_forcc_codes = codecs.keys()
+                self.valid_codecs.extend(codec_forcc_codes)
+                self.extensions.update(codecs)
+
+        def get_codecs(self):
+            return self.valid_codecs
+
+
+    # FILTERS
+
+    class Masking:
+
+        @staticmethod
+        def crop_dominant_region(image, padding=0):
+            from scipy.ndimage import label
+            grayscale_image = image.convert("L")
+            binary_image = grayscale_image.point(lambda x: 255 if x > 128 else 0, mode="1")
+            labeled_image, num_labels = label(np.array(binary_image))
+            largest_label = max(range(1, num_labels + 1), key=lambda i: np.sum(labeled_image == i))
+            largest_region_mask = (labeled_image == largest_label).astype(np.uint8) * 255
+            bbox = Image.fromarray(largest_region_mask, mode="L").getbbox()
+            cropped_image = image.crop(bbox)
+            size = max(cropped_image.size)
+            padded_size = size + 2 * padding
+            centered_crop = Image.new("L", (padded_size, padded_size), color="black")
+            left = (padded_size - cropped_image.width) // 2
+            top = (padded_size - cropped_image.height) // 2
+            centered_crop.paste(cropped_image, (left, top), mask=cropped_image)
+
+            return ImageOps.invert(centered_crop)
+
+        @staticmethod
+        def crop_minority_region(image, padding=0):
+            from scipy.ndimage import label
+            grayscale_image = image.convert("L")
+            binary_image = grayscale_image.point(lambda x: 255 if x > 128 else 0, mode="1")
+            labeled_image, num_labels = label(np.array(binary_image))
+            smallest_label = min(range(1, num_labels + 1), key=lambda i: np.sum(labeled_image == i))
+            smallest_region_mask = (labeled_image == smallest_label).astype(np.uint8) * 255
+            bbox = Image.fromarray(smallest_region_mask, mode="L").getbbox()
+            cropped_image = image.crop(bbox)
+            size = max(cropped_image.size)
+            padded_size = size + 2 * padding
+            centered_crop = Image.new("L", (padded_size, padded_size), color="black")
+            left = (padded_size - cropped_image.width) // 2
+            top = (padded_size - cropped_image.height) // 2
+            centered_crop.paste(cropped_image, (left, top), mask=cropped_image)
+
+            return ImageOps.invert(centered_crop)
+
+        @staticmethod
+        def crop_region(mask, region_type, padding=0):
+            from scipy.ndimage import label, find_objects
+            binary_mask = np.array(mask.convert("L")) > 0
+            bbox = mask.getbbox()
+            if bbox is None:
+                return mask, (mask.size, (0, 0, 0, 0))
+
+            bbox_width = bbox[2] - bbox[0]
+            bbox_height = bbox[3] - bbox[1]
+
+            side_length = max(bbox_width, bbox_height) + 2 * padding
+
+            center_x = (bbox[2] + bbox[0]) // 2
+            center_y = (bbox[3] + bbox[1]) // 2
+
+            crop_x = center_x - side_length // 2
+            crop_y = center_y - side_length // 2
+
+            crop_x = max(crop_x, 0)
+            crop_y = max(crop_y, 0)
+            crop_x2 = min(crop_x + side_length, mask.width)
+            crop_y2 = min(crop_y + side_length, mask.height)
+
+            cropped_mask = mask.crop((crop_x, crop_y, crop_x2, crop_y2))
+            crop_data = (cropped_mask.size, (crop_x, crop_y, crop_x2, crop_y2))
+
+            return cropped_mask, crop_data
+
+        @staticmethod
+        def dominant_region(image, threshold=128):
+            from scipy.ndimage import label
+            image = ImageOps.invert(image.convert("L"))
+            binary_image = image.point(lambda x: 255 if x > threshold else 0, mode="1")
+            l, n = label(np.array(binary_image))
+            sizes = np.bincount(l.flatten())
+            dominant = 0
+            try:
+                dominant = np.argmax(sizes[1:]) + 1
+            except ValueError:
+                pass
+            dominant_region_mask = (l == dominant).astype(np.uint8) * 255
+            result = Image.fromarray(dominant_region_mask, mode="L")
+            return result.convert("RGB")
+
+        @staticmethod
+        def minority_region(image, threshold=128):
+            from scipy.ndimage import label
+            image = image.convert("L")
+            binary_image = image.point(lambda x: 255 if x > threshold else 0, mode="1")
+            labeled_array, num_features = label(np.array(binary_image))
+            sizes = np.bincount(labeled_array.flatten())
+            smallest_region = 0
+            try:
+                smallest_region = np.argmin(sizes[1:]) + 1
+            except ValueError:
+                pass
+            smallest_region_mask = (labeled_array == smallest_region).astype(np.uint8) * 255
+            inverted_mask = Image.fromarray(smallest_region_mask, mode="L")
+            rgb_image = Image.merge("RGB", [inverted_mask, inverted_mask, inverted_mask])
+
+            return rgb_image
+
+        @staticmethod
+        def arbitrary_region(image, size, threshold=128):
+            from skimage.measure import label, regionprops
+            image = image.convert("L")
+            binary_image = image.point(lambda x: 255 if x > threshold else 0, mode="1")
+            labeled_image = label(np.array(binary_image))
+            regions = regionprops(labeled_image)
+
+            image_area = binary_image.size[0] * binary_image.size[1]
+            scaled_size = size * image_area / 10000
+
+            filtered_regions = [region for region in regions if region.area >= scaled_size]
+            if len(filtered_regions) > 0:
+                filtered_regions.sort(key=lambda region: region.area)
+                smallest_region = filtered_regions[0]
+                region_mask = (labeled_image == smallest_region.label).astype(np.uint8) * 255
+                result = Image.fromarray(region_mask, mode="L")
+                return result
+
+            return image
+
+        @staticmethod
+        def smooth_region(image, tolerance):
+            from scipy.ndimage import gaussian_filter
+            image = image.convert("L")
+            mask_array = np.array(image)
+            smoothed_array = gaussian_filter(mask_array, sigma=tolerance)
+            threshold = np.max(smoothed_array) / 2
+            smoothed_mask = np.where(smoothed_array >= threshold, 255, 0).astype(np.uint8)
+            smoothed_image = Image.fromarray(smoothed_mask, mode="L")
+            return ImageOps.invert(smoothed_image.convert("RGB"))
+
+        @staticmethod
+        def erode_region(image, iterations=1):
+            from scipy.ndimage import binary_erosion
+            image = image.convert("L")
+            binary_mask = np.array(image) > 0
+            eroded_mask = binary_erosion(binary_mask, iterations=iterations)
+            eroded_image = Image.fromarray(eroded_mask.astype(np.uint8) * 255, mode="L")
+            return ImageOps.invert(eroded_image.convert("RGB"))
+
+        @staticmethod
+        def dilate_region(image, iterations=1):
+            from scipy.ndimage import binary_dilation
+            image = image.convert("L")
+            binary_mask = np.array(image) > 0
+            dilated_mask = binary_dilation(binary_mask, iterations=iterations)
+            dilated_image = Image.fromarray(dilated_mask.astype(np.uint8) * 255, mode="L")
+            return ImageOps.invert(dilated_image.convert("RGB"))
+
+        @staticmethod
+        def fill_region(image):
+            from scipy.ndimage import binary_fill_holes
+            image = image.convert("L")
+            binary_mask = np.array(image) > 0
+            filled_mask = binary_fill_holes(binary_mask)
+            filled_image = Image.fromarray(filled_mask.astype(np.uint8) * 255, mode="L")
+            return ImageOps.invert(filled_image.convert("RGB"))
+
+        @staticmethod
+        def combine_masks(*masks):
+            if len(masks) < 1:
+                raise ValueError("\033[34mWAS NS\033[0m Error: At least one mask must be provided.")
+            dimensions = masks[0].size
+            for mask in masks:
+                if mask.size != dimensions:
+                    raise ValueError("\033[34mWAS NS\033[0m Error: All masks must have the same dimensions.")
+
+            inverted_masks = [mask.convert("L") for mask in masks]
+            combined_mask = Image.new("L", dimensions, 255)
+            for mask in inverted_masks:
+                combined_mask = Image.fromarray(np.minimum(np.array(combined_mask), np.array(mask)), mode="L")
+
+            return combined_mask
+
+        @staticmethod
+        def threshold_region(image, black_threshold=0, white_threshold=255):
+            gray_image = image.convert("L")
+            mask_array = np.array(gray_image)
+            mask_array[mask_array < black_threshold] = 0
+            mask_array[mask_array > white_threshold] = 255
+            thresholded_image = Image.fromarray(mask_array, mode="L")
+            return ImageOps.invert(thresholded_image)
+
+        @staticmethod
+        def floor_region(image):
+            gray_image = image.convert("L")
+            mask_array = np.array(gray_image)
+            non_black_pixels = mask_array[mask_array > 0]
+
+            if non_black_pixels.size > 0:
+                threshold_value = non_black_pixels.min()
+                mask_array[mask_array > threshold_value] = 255  # Set whites to 255
+                mask_array[mask_array <= threshold_value] = 0  # Set blacks to 0
+
+            thresholded_image = Image.fromarray(mask_array, mode="L")
+            return ImageOps.invert(thresholded_image)
+
+        @staticmethod
+        def ceiling_region(image, offset=30):
+            if offset < 0:
+                offset = 0
+            elif offset > 255:
+                offset = 255
+            grayscale_image = image.convert("L")
+            mask_array = np.array(grayscale_image)
+            mask_array[mask_array < 255 - offset] = 0
+            mask_array[mask_array >= 250] = 255
+            filtered_image = Image.fromarray(mask_array, mode="L")
+            return ImageOps.invert(filtered_image)
+
+        @staticmethod
+        def gaussian_region(image, radius=5.0):
+            image = ImageOps.invert(image.convert("L"))
+            image = image.filter(ImageFilter.GaussianBlur(radius=int(radius)))
+            return image.convert("RGB")
+
+    # SHADOWS AND HIGHLIGHTS ADJUSTMENTS
+
+    def shadows_and_highlights(self, image, shadow_thresh=30, highlight_thresh=220, shadow_factor=0.5, highlight_factor=1.5, shadow_smooth=None, highlight_smooth=None, simplify_masks=None):
+
+        if 'pilgram' not in packages():
+            install_package('pilgram')
+
+        import pilgram
+
+        alpha = None
+        if image.mode.endswith('A'):
+            alpha = image.getchannel('A')
+            image = image.convert('RGB')
+
+        grays = image.convert('L')
+
+        if shadow_smooth is not None or highlight_smooth is not None and simplify_masks is not None:
+            simplify = float(simplify_masks)
+            grays = grays.filter(ImageFilter.GaussianBlur(radius=simplify))
+
+        shadow_mask = Image.eval(grays, lambda x: 255 if x < shadow_thresh else 0)
+        highlight_mask = Image.eval(grays, lambda x: 255 if x > highlight_thresh else 0)
+
+        image_shadow = image.copy()
+        image_highlight = image.copy()
+
+        if shadow_smooth is not None:
+            shadow_mask = shadow_mask.filter(ImageFilter.GaussianBlur(radius=shadow_smooth))
+        if highlight_smooth is not None:
+            highlight_mask = highlight_mask.filter(ImageFilter.GaussianBlur(radius=highlight_smooth))
+
+        image_shadow = Image.eval(image_shadow, lambda x: x * shadow_factor)
+        image_highlight = Image.eval(image_highlight, lambda x: x * highlight_factor)
+
+        if shadow_smooth is not None:
+            shadow_mask = shadow_mask.filter(ImageFilter.GaussianBlur(radius=shadow_smooth))
+        if highlight_smooth is not None:
+            highlight_mask = highlight_mask.filter(ImageFilter.GaussianBlur(radius=highlight_smooth))
+
+        result = image.copy()
+        result.paste(image_shadow, shadow_mask)
+        result.paste(image_highlight, highlight_mask)
+        result = pilgram.css.blending.color(result, image)
+
+        if alpha:
+            result.putalpha(alpha)
+
+        return (result, shadow_mask, highlight_mask)
+
+    # DRAGAN PHOTOGRAPHY FILTER
+
+
+    def dragan_filter(self, image, saturation=1, contrast=1, sharpness=1, brightness=1, highpass_radius=3, highpass_samples=1, highpass_strength=1, colorize=True):
+
+        if 'pilgram' not in packages():
+            install_package('pilgram')
+
+        import pilgram
+
+        alpha = None
+        if image.mode == 'RGBA':
+            alpha = image.getchannel('A')
+
+        grayscale_image = image if image.mode == 'L' else image.convert('L')
+
+        contrast_enhancer = ImageEnhance.Contrast(grayscale_image)
+        contrast_image = contrast_enhancer.enhance(contrast)
+
+        saturation_enhancer = ImageEnhance.Color(contrast_image) if image.mode != 'L' else None
+        saturation_image = contrast_image if saturation_enhancer is None else saturation_enhancer.enhance(saturation)
+
+        sharpness_enhancer = ImageEnhance.Sharpness(saturation_image)
+        sharpness_image = sharpness_enhancer.enhance(sharpness)
+
+        brightness_enhancer = ImageEnhance.Brightness(sharpness_image)
+        brightness_image = brightness_enhancer.enhance(brightness)
+
+        blurred_image = brightness_image.filter(ImageFilter.GaussianBlur(radius=-highpass_radius))
+        highpass_filter = ImageChops.subtract(image, blurred_image.convert('RGB'))
+        blank_image = Image.new('RGB', image.size, (127, 127, 127))
+        highpass_image = ImageChops.screen(blank_image, highpass_filter.resize(image.size))
+        if not colorize:
+            highpass_image = highpass_image.convert('L').convert('RGB')
+        highpassed_image = pilgram.css.blending.overlay(brightness_image.convert('RGB'), highpass_image)
+        for _ in range((highpass_samples if highpass_samples > 0 else 1)):
+            highpassed_image = pilgram.css.blending.overlay(highpassed_image, highpass_image)
+
+        final_image = ImageChops.blend(brightness_image.convert('RGB'), highpassed_image, highpass_strength)
+
+        if colorize:
+            final_image = pilgram.css.blending.color(final_image, image)
+
+        if alpha:
+            final_image.putalpha(alpha)
+
+        return final_image
+
+    def sparkle(self, image):
+
+        if 'pilgram' not in packages():
+            install_package('pilgram')
+
+        import pilgram
+
+        image = image.convert('RGBA')
+        contrast_enhancer = ImageEnhance.Contrast(image)
+        image = contrast_enhancer.enhance(1.25)
+        saturation_enhancer = ImageEnhance.Color(image)
+        image = saturation_enhancer.enhance(1.5)
+
+        bloom = image.filter(ImageFilter.GaussianBlur(radius=20))
+        bloom = ImageEnhance.Brightness(bloom).enhance(1.2)
+        bloom.putalpha(128)
+        bloom = bloom.convert(image.mode)
+        image = Image.alpha_composite(image, bloom)
+
+        width, height = image.size
+
+        particles = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(particles)
+        for i in range(5000):
+            x = random.randint(0, width)
+            y = random.randint(0, height)
+            r = random.randint(0, 255)
+            g = random.randint(0, 255)
+            b = random.randint(0, 255)
+            draw.point((x, y), fill=(r, g, b, 255))
+        particles = particles.filter(ImageFilter.GaussianBlur(radius=1))
+        particles.putalpha(128)
+
+        particles2 = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(particles2)
+        for i in range(5000):
+            x = random.randint(0, width)
+            y = random.randint(0, height)
+            r = random.randint(0, 255)
+            g = random.randint(0, 255)
+            b = random.randint(0, 255)
+            draw.point((x, y), fill=(r, g, b, 255))
+        particles2 = particles2.filter(ImageFilter.GaussianBlur(radius=1))
+        particles2.putalpha(128)
+
+        image = pilgram.css.blending.color_dodge(image, particles)
+        image = pilgram.css.blending.lighten(image, particles2)
+
+        return image
+
+    def digital_distortion(self, image, amplitude=5, line_width=2):
+
+        im = np.array(image)
+
+        x, y, z = im.shape
+        sine_wave = amplitude * np.sin(np.linspace(-np.pi, np.pi, y))
+        sine_wave = sine_wave.astype(int)
+
+        left_distortion = np.zeros((x, y, z), dtype=np.uint8)
+        right_distortion = np.zeros((x, y, z), dtype=np.uint8)
+        for i in range(y):
+            left_distortion[:, i, :] = np.roll(im[:, i, :], -sine_wave[i], axis=0)
+            right_distortion[:, i, :] = np.roll(im[:, i, :], sine_wave[i], axis=0)
+
+        distorted_image = np.maximum(left_distortion, right_distortion)
+        scan_lines = np.zeros((x, y), dtype=np.float32)
+        scan_lines[::line_width, :] = 1
+        scan_lines = np.minimum(scan_lines * amplitude*50.0, 1)  # Scale scan line values
+        scan_lines = np.tile(scan_lines[:, :, np.newaxis], (1, 1, z))  # Add channel dimension
+        distorted_image = np.where(scan_lines > 0, np.random.permutation(im), distorted_image)
+        distorted_image = np.roll(distorted_image, np.random.randint(0, y), axis=1)
+
+        distorted_image = Image.fromarray(distorted_image)
+
+        return distorted_image
+
+    def signal_distortion(self, image, amplitude):
+
+        img_array = np.array(image)
+        row_shifts = np.random.randint(-amplitude, amplitude + 1, size=img_array.shape[0])
+        distorted_array = np.zeros_like(img_array)
+
+        for y in range(img_array.shape[0]):
+            x_shift = row_shifts[y]
+            x_shift = x_shift + y % (amplitude * 2) - amplitude
+            distorted_array[y,:] = np.roll(img_array[y,:], x_shift, axis=0)
+
+        distorted_image = Image.fromarray(distorted_array)
+
+        return distorted_image
+
+    def tv_vhs_distortion(self, image, amplitude=10):
+        np_image = np.array(image)
+        offset_variance = int(image.height / amplitude)
+        row_shifts = np.random.randint(-offset_variance, offset_variance + 1, size=image.height)
+        distorted_array = np.zeros_like(np_image)
+
+        for y in range(np_image.shape[0]):
+            x_shift = row_shifts[y]
+            x_shift = x_shift + y % (offset_variance * 2) - offset_variance
+            distorted_array[y,:] = np.roll(np_image[y,:], x_shift, axis=0)
+
+        h, w, c = distorted_array.shape
+        x_scale = np.linspace(0, 1, w)
+        y_scale = np.linspace(0, 1, h)
+        x_idx = np.broadcast_to(x_scale, (h, w))
+        y_idx = np.broadcast_to(y_scale.reshape(h, 1), (h, w))
+        noise = np.random.rand(h, w, c) * 0.1
+        distortion = np.sin(x_idx * 50) * 0.5 + np.sin(y_idx * 50) * 0.5
+        distorted_array = distorted_array + distortion[:, :, np.newaxis] + noise
+
+        distorted_image = Image.fromarray(np.uint8(distorted_array))
+        distorted_image = distorted_image.resize((image.width, image.height))
+
+        image_enhance = ImageEnhance.Color(image)
+        image = image_enhance.enhance(0.5)
+
+        effect_image = ImageChops.overlay(image, distorted_image)
+        result_image = ImageChops.overlay(image, effect_image)
+        result_image = ImageChops.blend(image, result_image, 0.25)
+
+        return result_image
+
+    def gradient(self, size, mode='horizontal', colors=None, tolerance=0):
+
+        if isinstance(colors, str):
+            colors = json.loads(colors)
+
+        if colors is None:
+            colors = {0: [255, 0, 0], 50: [0, 255, 0], 100: [0, 0, 255]}
+
+        colors = {int(k): [int(c) for c in v] for k, v in colors.items()}
+
+        colors[0] = colors[min(colors.keys())]
+        colors[255] = colors[max(colors.keys())]
+
+        img = Image.new('RGB', size, color=(0, 0, 0))
+
+        color_stop_positions = sorted(colors.keys())
+        color_stop_count = len(color_stop_positions)
+        spectrum = []
+        for i in range(256):
+            start_pos = max(p for p in color_stop_positions if p <= i)
+            end_pos = min(p for p in color_stop_positions if p >= i)
+            start = colors[start_pos]
+            end = colors[end_pos]
+
+            if start_pos == end_pos:
+                factor = 0
+            else:
+                factor = (i - start_pos) / (end_pos - start_pos)
+
+            r = round(start[0] + (end[0] - start[0]) * factor)
+            g = round(start[1] + (end[1] - start[1]) * factor)
+            b = round(start[2] + (end[2] - start[2]) * factor)
+            spectrum.append((r, g, b))
+
+        draw = ImageDraw.Draw(img)
+        if mode == 'horizontal':
+            for x in range(size[0]):
+                pos = int(x * 100 / (size[0] - 1))
+                color = spectrum[pos]
+                if tolerance > 0:
+                    color = tuple([round(c / tolerance) * tolerance for c in color])
+                draw.line((x, 0, x, size[1]), fill=color)
+        elif mode == 'vertical':
+            for y in range(size[1]):
+                pos = int(y * 100 / (size[1] - 1))
+                color = spectrum[pos]
+                if tolerance > 0:
+                    color = tuple([round(c / tolerance) * tolerance for c in color])
+                draw.line((0, y, size[0], y), fill=color)
+
+        blur = 1.5
+        if size[0] > 512 or size[1] > 512:
+            multiplier = max(size[0], size[1]) / 512
+            if multiplier < 1.5:
+                multiplier = 1.5
+            blur =  blur * multiplier
+
+        img = img.filter(ImageFilter.GaussianBlur(radius=blur))
+
+        return img
     
 
-#     # Version 2 optimized based on Mark Setchell's ideas
-#     def gradient_map(self, image, gradient_map, reverse=False):
+    # Version 2 optimized based on Mark Setchell's ideas
+    def gradient_map(self, image, gradient_map, reverse=False):
 
-#         # Reverse the image
-#         if reverse:
-#             gradient_map = gradient_map.transpose(Image.FLIP_LEFT_RIGHT)
+        # Reverse the image
+        if reverse:
+            gradient_map = gradient_map.transpose(Image.FLIP_LEFT_RIGHT)
 
-#         # Convert image to Numpy array and average RGB channels
-#         na = np.array(image)
-#         grey = np.mean(na, axis=2).astype(np.uint8)
+        # Convert image to Numpy array and average RGB channels
+        na = np.array(image)
+        grey = np.mean(na, axis=2).astype(np.uint8)
 
-#         # Convert gradient map to Numpy array
-#         cmap = np.array(gradient_map.convert('RGB'))
+        # Convert gradient map to Numpy array
+        cmap = np.array(gradient_map.convert('RGB'))
 
-#         # Make output image, same height and width as grey image, but 3-channel RGB
-#         result = np.zeros((*grey.shape, 3), dtype=np.uint8)
+        # Make output image, same height and width as grey image, but 3-channel RGB
+        result = np.zeros((*grey.shape, 3), dtype=np.uint8)
 
-#         # Reshape grey to match the shape of result
-#         grey_reshaped = grey.reshape(-1)
+        # Reshape grey to match the shape of result
+        grey_reshaped = grey.reshape(-1)
 
-#         # Take entries from RGB gradient map according to grayscale values in image
-#         np.take(cmap.reshape(-1, 3), grey_reshaped, axis=0, out=result.reshape(-1, 3))
+        # Take entries from RGB gradient map according to grayscale values in image
+        np.take(cmap.reshape(-1, 3), grey_reshaped, axis=0, out=result.reshape(-1, 3))
 
-#         # Convert result to PIL image
-#         result_image = Image.fromarray(result)
+        # Convert result to PIL image
+        result_image = Image.fromarray(result)
 
-#         return result_image
+        return result_image
 
 
-#     # Generate Perlin Noise (Finally in house version)
+    # Generate Perlin Noise (Finally in house version)
 
-#     def perlin_noise(self, width, height, octaves, persistence, scale, seed=None):
+    def perlin_noise(self, width, height, octaves, persistence, scale, seed=None):
 
-#         @jit(nopython=True)
-#         def fade(t):
-#             return 6 * t**5 - 15 * t**4 + 10 * t**3
+        @jit(nopython=True)
+        def fade(t):
+            return 6 * t**5 - 15 * t**4 + 10 * t**3
 
 
-#         @jit(nopython=True)
-#         def lerp(t, a, b):
-#             return a + t * (b - a)
+        @jit(nopython=True)
+        def lerp(t, a, b):
+            return a + t * (b - a)
 
 
-#         @jit(nopython=True)
-#         def grad(hash, x, y, z):
-#             h = hash & 15
-#             u = x if h < 8 else y
-#             v = y if h < 4 else (x if h == 12 or h == 14 else z)
-#             return (u if (h & 1) == 0 else -u) + (v if (h & 2) == 0 else -v)
+        @jit(nopython=True)
+        def grad(hash, x, y, z):
+            h = hash & 15
+            u = x if h < 8 else y
+            v = y if h < 4 else (x if h == 12 or h == 14 else z)
+            return (u if (h & 1) == 0 else -u) + (v if (h & 2) == 0 else -v)
 
 
-#         @jit(nopython=True)
-#         def noise(x, y, z, p):
-#             X = np.int32(np.floor(x)) & 255
-#             Y = np.int32(np.floor(y)) & 255
-#             Z = np.int32(np.floor(z)) & 255
+        @jit(nopython=True)
+        def noise(x, y, z, p):
+            X = np.int32(np.floor(x)) & 255
+            Y = np.int32(np.floor(y)) & 255
+            Z = np.int32(np.floor(z)) & 255
 
-#             x -= np.floor(x)
-#             y -= np.floor(y)
-#             z -= np.floor(z)
+            x -= np.floor(x)
+            y -= np.floor(y)
+            z -= np.floor(z)
 
-#             u = fade(x)
-#             v = fade(y)
-#             w = fade(z)
+            u = fade(x)
+            v = fade(y)
+            w = fade(z)
 
-#             A = p[X] + Y
-#             AA = p[A] + Z
-#             AB = p[A + 1] + Z
-#             B = p[X + 1] + Y
-#             BA = p[B] + Z
-#             BB = p[B + 1] + Z
+            A = p[X] + Y
+            AA = p[A] + Z
+            AB = p[A + 1] + Z
+            B = p[X + 1] + Y
+            BA = p[B] + Z
+            BB = p[B + 1] + Z
 
-#             return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)),
-#                                     lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))),
-#                         lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)),
-#                                     lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))))
+            return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)),
+                                    lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))),
+                        lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)),
+                                    lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))))
 
-#         if seed:
-#             random.seed(seed)
+        if seed:
+            random.seed(seed)
 
-#         p = np.arange(256, dtype=np.int32)
-#         random.shuffle(p)
-#         p = np.concatenate((p, p))
+        p = np.arange(256, dtype=np.int32)
+        random.shuffle(p)
+        p = np.concatenate((p, p))
 
-#         noise_map = np.zeros((height, width))
-#         amplitude = 1.0
-#         total_amplitude = 0.0
+        noise_map = np.zeros((height, width))
+        amplitude = 1.0
+        total_amplitude = 0.0
 
-#         for octave in range(octaves):
-#             frequency = 2 ** octave
-#             total_amplitude += amplitude
+        for octave in range(octaves):
+            frequency = 2 ** octave
+            total_amplitude += amplitude
 
-#             for y in range(height):
-#                 for x in range(width):
-#                     nx = x / scale * frequency
-#                     ny = y / scale * frequency
-#                     noise_value = noise(nx, ny, 0, p) * amplitude
-#                     current_value = noise_map[y, x]
-#                     noise_map[y, x] = current_value + noise_value
+            for y in range(height):
+                for x in range(width):
+                    nx = x / scale * frequency
+                    ny = y / scale * frequency
+                    noise_value = noise(nx, ny, 0, p) * amplitude
+                    current_value = noise_map[y, x]
+                    noise_map[y, x] = current_value + noise_value
 
-#             amplitude *= persistence
-
-#         min_value = np.min(noise_map)
-#         max_value = np.max(noise_map)
-#         noise_map = np.interp(noise_map, (min_value, max_value), (0, 255)).astype(np.uint8)
-#         image = Image.fromarray(noise_map, mode='L').convert("RGB")
-
-#         return image
-
-
-#     # Generate Perlin Power Fractal (Based on in-house perlin noise)
-
-#     def perlin_power_fractal(self, width, height, octaves, persistence, lacunarity, exponent, scale, seed=None):
-
-#         @jit(nopython=True)
-#         def fade(t):
-#             return 6 * t**5 - 15 * t**4 + 10 * t**3
-
-#         @jit(nopython=True)
-#         def lerp(t, a, b):
-#             return a + t * (b - a)
-
-#         @jit(nopython=True)
-#         def grad(hash, x, y, z):
-#             h = hash & 15
-#             u = x if h < 8 else y
-#             v = y if h < 4 else (x if h == 12 or h == 14 else z)
-#             return (u if (h & 1) == 0 else -u) + (v if (h & 2) == 0 else -v)
-
-#         @jit(nopython=True)
-#         def noise(x, y, z, p):
-#             X = np.int32(np.floor(x)) & 255
-#             Y = np.int32(np.floor(y)) & 255
-#             Z = np.int32(np.floor(z)) & 255
-
-#             x -= np.floor(x)
-#             y -= np.floor(y)
-#             z -= np.floor(z)
-
-#             u = fade(x)
-#             v = fade(y)
-#             w = fade(z)
-
-#             A = p[X] + Y
-#             AA = p[A] + Z
-#             AB = p[A + 1] + Z
-#             B = p[X + 1] + Y
-#             BA = p[B] + Z
-#             BB = p[B + 1] + Z
-
-#             return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)),
-#                                     lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))),
-#                         lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)),
-#                                     lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))))
-
-#         if seed:
-#             random.seed(seed)
-
-#         p = np.arange(256, dtype=np.int32)
-#         random.shuffle(p)
-#         p = np.concatenate((p, p))
-
-#         noise_map = np.zeros((height, width))
-#         amplitude = 1.0
-#         total_amplitude = 0.0
-
-#         for octave in range(octaves):
-#             frequency = lacunarity ** octave
-#             amplitude *= persistence
-#             total_amplitude += amplitude
-
-#             for y in range(height):
-#                 for x in range(width):
-#                     nx = x / scale * frequency
-#                     ny = y / scale * frequency
-#                     noise_value = noise(nx, ny, 0, p) * amplitude ** exponent
-#                     current_value = noise_map[y, x]
-#                     noise_map[y, x] = current_value + noise_value
-
-#         min_value = np.min(noise_map)
-#         max_value = np.max(noise_map)
-#         noise_map = np.interp(noise_map, (min_value, max_value), (0, 255)).astype(np.uint8)
-#         image = Image.fromarray(noise_map, mode='L').convert("RGB")
-
-#         return image
-
-#     # Worley Noise Generator
-#     class worley_noise:
-
-#         def __init__(self, height=512, width=512, density=50, option=0, use_broadcast_ops=True, flat=False, seed=None):
-
-#             self.height = height
-#             self.width = width
-#             self.density = density
-#             self.use_broadcast_ops = use_broadcast_ops
-#             self.seed = seed
-#             self.generate_points_and_colors()
-#             self.calculate_noise(option)
-#             self.image = self.generateImage(option, flat_mode=flat)
-
-#         def generate_points_and_colors(self):
-#             rng = np.random.default_rng(self.seed)
-#             self.points = rng.integers(0, self.width, (self.density, 2))
-#             self.colors = rng.integers(0, 256, (self.density, 3))
-
-#         def calculate_noise(self, option):
-#             self.data = np.zeros((self.height, self.width))
-#             for h in range(self.height):
-#                 for w in range(self.width):
-#                     distances = np.sqrt(np.sum((self.points - np.array([w, h])) ** 2, axis=1))
-#                     self.data[h, w] = np.sort(distances)[option]
-
-#         def broadcast_calculate_noise(self, option):
-#             xs = np.arange(self.width)
-#             ys = np.arange(self.height)
-#             x_dist = np.power(self.points[:, 0, np.newaxis] - xs, 2)
-#             y_dist = np.power(self.points[:, 1, np.newaxis] - ys, 2)
-#             d = np.sqrt(x_dist[:, :, np.newaxis] + y_dist[:, np.newaxis, :])
-#             distances = np.sort(d, axis=0)
-#             self.data = distances[option]
-
-#         def generateImage(self, option, flat_mode=False):
-#             if flat_mode:
-#                 flat_color_data = np.zeros((self.height, self.width, 3), dtype=np.uint8)
-#                 for h in range(self.height):
-#                     for w in range(self.width):
-#                         closest_point_idx = np.argmin(np.sum((self.points - np.array([w, h])) ** 2, axis=1))
-#                         flat_color_data[h, w, :] = self.colors[closest_point_idx]
-#                 return Image.fromarray(flat_color_data, 'RGB')
-#             else:
-#                 min_val, max_val = np.min(self.data), np.max(self.data)
-#                 data_scaled = (self.data - min_val) / (max_val - min_val) * 255
-#                 data_scaled = data_scaled.astype(np.uint8)
-#                 return Image.fromarray(data_scaled, 'L')
-
-#     # Make Image Seamless
-
-#     def make_seamless(self, image, blending=0.5, tiled=False, tiles=2):
-
-#         if 'img2texture' not in packages():
-#             install_package('git+https://github.com/WASasquatch/img2texture.git')
-
-#         from img2texture import img2tex
-#         from img2texture._tiling import tile
-
-#         texture = img2tex(src=image, dst=None, pct=blending, return_result=True)
-#         if tiled:
-#             texture = tile(source=texture, target=None, horizontal=tiles, vertical=tiles, return_result=True)
-
-#         return texture
-
-#     # Image Displacement Warp
-
-#     def displace_image(self, image, displacement_map, amplitude):
-
-#         image = image.convert('RGB')
-#         displacement_map = displacement_map.convert('L')
-#         width, height = image.size
-#         result = Image.new('RGB', (width, height))
-
-#         for y in range(height):
-#             for x in range(width):
-
-#                 # Calculate the displacements n' stuff
-#                 displacement = displacement_map.getpixel((x, y))
-#                 displacement_amount = amplitude * (displacement / 255)
-#                 new_x = x + int(displacement_amount)
-#                 new_y = y + int(displacement_amount)
-
-#                 # Apply mirror reflection at edges and corners
-#                 if new_x < 0:
-#                     new_x = abs(new_x)
-#                 elif new_x >= width:
-#                     new_x = 2 * width - new_x - 1
-
-#                 if new_y < 0:
-#                     new_y = abs(new_y)
-#                 elif new_y >= height:
-#                     new_y = 2 * height - new_y - 1
-
-#                 if new_x < 0:
-#                     new_x = abs(new_x)
-#                 if new_y < 0:
-#                     new_y = abs(new_y)
-
-#                 if new_x >= width:
-#                     new_x = 2 * width - new_x - 1
-#                 if new_y >= height:
-#                     new_y = 2 * height - new_y - 1
-
-#                 # Consider original image color at new location for RGB results, oops
-#                 pixel = image.getpixel((new_x, new_y))
-#                 result.putpixel((x, y), pixel)
-
-#         return result
-
-#     # Analyze Filters
-
-#     def black_white_levels(self, image):
-
-#         if 'matplotlib' not in packages():
-#             install_package('matplotlib')
-
-#         import matplotlib.pyplot as plt
-
-#         # convert to grayscale
-#         image = image.convert('L')
-
-#         # Calculate the histogram of grayscale intensities
-#         hist = image.histogram()
-
-#         # Find the minimum and maximum grayscale intensity values
-#         min_val = 0
-#         max_val = 255
-#         for i in range(256):
-#             if hist[i] > 0:
-#                 min_val = i
-#                 break
-#         for i in range(255, -1, -1):
-#             if hist[i] > 0:
-#                 max_val = i
-#                 break
-
-#         # Create a graph of the grayscale histogram
-#         plt.figure(figsize=(16, 8))
-#         plt.hist(image.getdata(), bins=256, range=(0, 256), color='black', alpha=0.7)
-#         plt.xlim([0, 256])
-#         plt.ylim([0, max(hist)])
-#         plt.axvline(min_val, color='red', linestyle='dashed')
-#         plt.axvline(max_val, color='red', linestyle='dashed')
-#         plt.title('Black and White Levels')
-#         plt.xlabel('Intensity')
-#         plt.ylabel('Frequency')
-
-#         return self.fig2img(plt)
-
-#     def channel_frequency(self, image):
-
-#         if 'matplotlib' not in packages():
-#             install_package('matplotlib')
-
-#         import matplotlib.pyplot as plt
-
-#         # Split the image into its RGB channels
-#         r, g, b = image.split()
-
-#         # Calculate the frequency of each color in each channel
-#         r_freq = r.histogram()
-#         g_freq = g.histogram()
-#         b_freq = b.histogram()
-
-#         # Create a graph to hold the frequency maps
-#         fig, axs = plt.subplots(1, 3, figsize=(16, 4))
-#         axs[0].set_title('Red Channel')
-#         axs[1].set_title('Green Channel')
-#         axs[2].set_title('Blue Channel')
-
-#         # Plot the frequency of each color in each channel
-#         axs[0].plot(range(256), r_freq, color='red')
-#         axs[1].plot(range(256), g_freq, color='green')
-#         axs[2].plot(range(256), b_freq, color='blue')
-
-#         # Set the axis limits and labels
-#         for ax in axs:
-#             ax.set_xlim([0, 255])
-#             ax.set_xlabel('Color Intensity')
-#             ax.set_ylabel('Frequency')
-
-#         return self.fig2img(plt)
-
-#     def generate_palette(self, img, n_colors=16, cell_size=128, padding=0, font_path=None, font_size=15, mode='chart'):
-#         if 'scikit-learn' not in packages():
-#             install_package('scikit-learn')
-
-#         from sklearn.cluster import KMeans
-
-#         img = img.resize((img.width // 2, img.height // 2), resample=Image.BILINEAR)
-#         pixels = np.array(img)
-#         pixels = pixels.reshape((-1, 3))
-#         kmeans = KMeans(n_clusters=n_colors, random_state=0, n_init='auto').fit(pixels)
-#         cluster_centers = np.uint8(kmeans.cluster_centers_)
-
-#         # Get the sorted indices based on luminance
-#         luminance = np.sqrt(np.dot(cluster_centers, [0.299, 0.587, 0.114]))
-#         sorted_indices = np.argsort(luminance)
-
-#         # Rearrange the cluster centers and luminance based on sorted indices
-#         cluster_centers = cluster_centers[sorted_indices]
-#         luminance = luminance[sorted_indices]
-
-#         # Group colors by their individual types
-#         reds = []
-#         greens = []
-#         blues = []
-#         others = []
-
-#         for i in range(n_colors):
-#             color = cluster_centers[i]
-#             color_type = np.argmax(color)  # Find the dominant color component
-
-#             if color_type == 0:
-#                 reds.append((color, luminance[i]))
-#             elif color_type == 1:
-#                 greens.append((color, luminance[i]))
-#             elif color_type == 2:
-#                 blues.append((color, luminance[i]))
-#             else:
-#                 others.append((color, luminance[i]))
-
-#         # Sort each color group by luminance
-#         reds.sort(key=lambda x: x[1])
-#         greens.sort(key=lambda x: x[1])
-#         blues.sort(key=lambda x: x[1])
-#         others.sort(key=lambda x: x[1])
-
-#         # Combine the sorted color groups
-#         sorted_colors = reds + greens + blues + others
-
-#         if mode == 'back_to_back':
-#             # Calculate the size of the palette image based on the number of colors
-#             palette_width = n_colors * cell_size
-#             palette_height = cell_size
-#         else:
-#             # Calculate the number of rows and columns based on the number of colors
-#             num_rows = int(np.sqrt(n_colors))
-#             num_cols = int(np.ceil(n_colors / num_rows))
-
-#             # Calculate the size of the palette image based on the number of rows and columns
-#             palette_width = num_cols * cell_size
-#             palette_height = num_rows * cell_size
-
-#         palette_size = (palette_width, palette_height)
-
-#         palette = Image.new('RGB', palette_size, color='white')
-#         draw = ImageDraw.Draw(palette)
-#         if font_path:
-#             font = ImageFont.truetype(font_path, font_size)
-#         else:
-#             font = ImageFont.load_default()
-
-#         hex_palette = []
-#         for i, (color, _) in enumerate(sorted_colors):
-#             if mode == 'back_to_back':
-#                 cell_x = i * cell_size
-#                 cell_y = 0
-#             else:
-#                 row = i % num_rows
-#                 col = i // num_rows
-#                 cell_x = col * cell_size
-#                 cell_y = row * cell_size
-
-#             cell_width = cell_size
-#             cell_height = cell_size
-
-#             color = tuple(color)
-
-#             cell = Image.new('RGB', (cell_width, cell_height), color=color)
-#             palette.paste(cell, (cell_x, cell_y))
-
-#             if mode != 'back_to_back':
-#                 text_x = cell_x + (cell_width / 2)
-#                 text_y = cell_y + cell_height + padding
-
-#                 draw.text((text_x + 1, text_y + 1), f"R: {color[0]} G: {color[1]} B: {color[2]}", font=font, fill='black', anchor='ms')
-#                 draw.text((text_x, text_y), f"R: {color[0]} G: {color[1]} B: {color[2]}", font=font, fill='white', anchor='ms')
-
-#             hex_palette.append('#%02x%02x%02x' % color)
-
-#         return palette, '\n'.join(hex_palette)
+            amplitude *= persistence
+
+        min_value = np.min(noise_map)
+        max_value = np.max(noise_map)
+        noise_map = np.interp(noise_map, (min_value, max_value), (0, 255)).astype(np.uint8)
+        image = Image.fromarray(noise_map, mode='L').convert("RGB")
+
+        return image
+
+
+    # Generate Perlin Power Fractal (Based on in-house perlin noise)
+
+    def perlin_power_fractal(self, width, height, octaves, persistence, lacunarity, exponent, scale, seed=None):
+
+        @jit(nopython=True)
+        def fade(t):
+            return 6 * t**5 - 15 * t**4 + 10 * t**3
+
+        @jit(nopython=True)
+        def lerp(t, a, b):
+            return a + t * (b - a)
+
+        @jit(nopython=True)
+        def grad(hash, x, y, z):
+            h = hash & 15
+            u = x if h < 8 else y
+            v = y if h < 4 else (x if h == 12 or h == 14 else z)
+            return (u if (h & 1) == 0 else -u) + (v if (h & 2) == 0 else -v)
+
+        @jit(nopython=True)
+        def noise(x, y, z, p):
+            X = np.int32(np.floor(x)) & 255
+            Y = np.int32(np.floor(y)) & 255
+            Z = np.int32(np.floor(z)) & 255
+
+            x -= np.floor(x)
+            y -= np.floor(y)
+            z -= np.floor(z)
+
+            u = fade(x)
+            v = fade(y)
+            w = fade(z)
+
+            A = p[X] + Y
+            AA = p[A] + Z
+            AB = p[A + 1] + Z
+            B = p[X + 1] + Y
+            BA = p[B] + Z
+            BB = p[B + 1] + Z
+
+            return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)),
+                                    lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))),
+                        lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)),
+                                    lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))))
+
+        if seed:
+            random.seed(seed)
+
+        p = np.arange(256, dtype=np.int32)
+        random.shuffle(p)
+        p = np.concatenate((p, p))
+
+        noise_map = np.zeros((height, width))
+        amplitude = 1.0
+        total_amplitude = 0.0
+
+        for octave in range(octaves):
+            frequency = lacunarity ** octave
+            amplitude *= persistence
+            total_amplitude += amplitude
+
+            for y in range(height):
+                for x in range(width):
+                    nx = x / scale * frequency
+                    ny = y / scale * frequency
+                    noise_value = noise(nx, ny, 0, p) * amplitude ** exponent
+                    current_value = noise_map[y, x]
+                    noise_map[y, x] = current_value + noise_value
+
+        min_value = np.min(noise_map)
+        max_value = np.max(noise_map)
+        noise_map = np.interp(noise_map, (min_value, max_value), (0, 255)).astype(np.uint8)
+        image = Image.fromarray(noise_map, mode='L').convert("RGB")
+
+        return image
+
+    # Worley Noise Generator
+    class worley_noise:
+
+        def __init__(self, height=512, width=512, density=50, option=0, use_broadcast_ops=True, flat=False, seed=None):
+
+            self.height = height
+            self.width = width
+            self.density = density
+            self.use_broadcast_ops = use_broadcast_ops
+            self.seed = seed
+            self.generate_points_and_colors()
+            self.calculate_noise(option)
+            self.image = self.generateImage(option, flat_mode=flat)
+
+        def generate_points_and_colors(self):
+            rng = np.random.default_rng(self.seed)
+            self.points = rng.integers(0, self.width, (self.density, 2))
+            self.colors = rng.integers(0, 256, (self.density, 3))
+
+        def calculate_noise(self, option):
+            self.data = np.zeros((self.height, self.width))
+            for h in range(self.height):
+                for w in range(self.width):
+                    distances = np.sqrt(np.sum((self.points - np.array([w, h])) ** 2, axis=1))
+                    self.data[h, w] = np.sort(distances)[option]
+
+        def broadcast_calculate_noise(self, option):
+            xs = np.arange(self.width)
+            ys = np.arange(self.height)
+            x_dist = np.power(self.points[:, 0, np.newaxis] - xs, 2)
+            y_dist = np.power(self.points[:, 1, np.newaxis] - ys, 2)
+            d = np.sqrt(x_dist[:, :, np.newaxis] + y_dist[:, np.newaxis, :])
+            distances = np.sort(d, axis=0)
+            self.data = distances[option]
+
+        def generateImage(self, option, flat_mode=False):
+            if flat_mode:
+                flat_color_data = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+                for h in range(self.height):
+                    for w in range(self.width):
+                        closest_point_idx = np.argmin(np.sum((self.points - np.array([w, h])) ** 2, axis=1))
+                        flat_color_data[h, w, :] = self.colors[closest_point_idx]
+                return Image.fromarray(flat_color_data, 'RGB')
+            else:
+                min_val, max_val = np.min(self.data), np.max(self.data)
+                data_scaled = (self.data - min_val) / (max_val - min_val) * 255
+                data_scaled = data_scaled.astype(np.uint8)
+                return Image.fromarray(data_scaled, 'L')
+
+    # Make Image Seamless
+
+    def make_seamless(self, image, blending=0.5, tiled=False, tiles=2):
+
+        if 'img2texture' not in packages():
+            install_package('git+https://github.com/WASasquatch/img2texture.git')
+
+        from img2texture import img2tex
+        from img2texture._tiling import tile
+
+        texture = img2tex(src=image, dst=None, pct=blending, return_result=True)
+        if tiled:
+            texture = tile(source=texture, target=None, horizontal=tiles, vertical=tiles, return_result=True)
+
+        return texture
+
+    # Image Displacement Warp
+
+    def displace_image(self, image, displacement_map, amplitude):
+
+        image = image.convert('RGB')
+        displacement_map = displacement_map.convert('L')
+        width, height = image.size
+        result = Image.new('RGB', (width, height))
+
+        for y in range(height):
+            for x in range(width):
+
+                # Calculate the displacements n' stuff
+                displacement = displacement_map.getpixel((x, y))
+                displacement_amount = amplitude * (displacement / 255)
+                new_x = x + int(displacement_amount)
+                new_y = y + int(displacement_amount)
+
+                # Apply mirror reflection at edges and corners
+                if new_x < 0:
+                    new_x = abs(new_x)
+                elif new_x >= width:
+                    new_x = 2 * width - new_x - 1
+
+                if new_y < 0:
+                    new_y = abs(new_y)
+                elif new_y >= height:
+                    new_y = 2 * height - new_y - 1
+
+                if new_x < 0:
+                    new_x = abs(new_x)
+                if new_y < 0:
+                    new_y = abs(new_y)
+
+                if new_x >= width:
+                    new_x = 2 * width - new_x - 1
+                if new_y >= height:
+                    new_y = 2 * height - new_y - 1
+
+                # Consider original image color at new location for RGB results, oops
+                pixel = image.getpixel((new_x, new_y))
+                result.putpixel((x, y), pixel)
+
+        return result
+
+    # Analyze Filters
+
+    def black_white_levels(self, image):
+
+        if 'matplotlib' not in packages():
+            install_package('matplotlib')
+
+        import matplotlib.pyplot as plt
+
+        # convert to grayscale
+        image = image.convert('L')
+
+        # Calculate the histogram of grayscale intensities
+        hist = image.histogram()
+
+        # Find the minimum and maximum grayscale intensity values
+        min_val = 0
+        max_val = 255
+        for i in range(256):
+            if hist[i] > 0:
+                min_val = i
+                break
+        for i in range(255, -1, -1):
+            if hist[i] > 0:
+                max_val = i
+                break
+
+        # Create a graph of the grayscale histogram
+        plt.figure(figsize=(16, 8))
+        plt.hist(image.getdata(), bins=256, range=(0, 256), color='black', alpha=0.7)
+        plt.xlim([0, 256])
+        plt.ylim([0, max(hist)])
+        plt.axvline(min_val, color='red', linestyle='dashed')
+        plt.axvline(max_val, color='red', linestyle='dashed')
+        plt.title('Black and White Levels')
+        plt.xlabel('Intensity')
+        plt.ylabel('Frequency')
+
+        return self.fig2img(plt)
+
+    def channel_frequency(self, image):
+
+        if 'matplotlib' not in packages():
+            install_package('matplotlib')
+
+        import matplotlib.pyplot as plt
+
+        # Split the image into its RGB channels
+        r, g, b = image.split()
+
+        # Calculate the frequency of each color in each channel
+        r_freq = r.histogram()
+        g_freq = g.histogram()
+        b_freq = b.histogram()
+
+        # Create a graph to hold the frequency maps
+        fig, axs = plt.subplots(1, 3, figsize=(16, 4))
+        axs[0].set_title('Red Channel')
+        axs[1].set_title('Green Channel')
+        axs[2].set_title('Blue Channel')
+
+        # Plot the frequency of each color in each channel
+        axs[0].plot(range(256), r_freq, color='red')
+        axs[1].plot(range(256), g_freq, color='green')
+        axs[2].plot(range(256), b_freq, color='blue')
+
+        # Set the axis limits and labels
+        for ax in axs:
+            ax.set_xlim([0, 255])
+            ax.set_xlabel('Color Intensity')
+            ax.set_ylabel('Frequency')
+
+        return self.fig2img(plt)
+
+    def generate_palette(self, img, n_colors=16, cell_size=128, padding=0, font_path=None, font_size=15, mode='chart'):
+        if 'scikit-learn' not in packages():
+            install_package('scikit-learn')
+
+        from sklearn.cluster import KMeans
+
+        img = img.resize((img.width // 2, img.height // 2), resample=Image.BILINEAR)
+        pixels = np.array(img)
+        pixels = pixels.reshape((-1, 3))
+        kmeans = KMeans(n_clusters=n_colors, random_state=0, n_init='auto').fit(pixels)
+        cluster_centers = np.uint8(kmeans.cluster_centers_)
+
+        # Get the sorted indices based on luminance
+        luminance = np.sqrt(np.dot(cluster_centers, [0.299, 0.587, 0.114]))
+        sorted_indices = np.argsort(luminance)
+
+        # Rearrange the cluster centers and luminance based on sorted indices
+        cluster_centers = cluster_centers[sorted_indices]
+        luminance = luminance[sorted_indices]
+
+        # Group colors by their individual types
+        reds = []
+        greens = []
+        blues = []
+        others = []
+
+        for i in range(n_colors):
+            color = cluster_centers[i]
+            color_type = np.argmax(color)  # Find the dominant color component
+
+            if color_type == 0:
+                reds.append((color, luminance[i]))
+            elif color_type == 1:
+                greens.append((color, luminance[i]))
+            elif color_type == 2:
+                blues.append((color, luminance[i]))
+            else:
+                others.append((color, luminance[i]))
+
+        # Sort each color group by luminance
+        reds.sort(key=lambda x: x[1])
+        greens.sort(key=lambda x: x[1])
+        blues.sort(key=lambda x: x[1])
+        others.sort(key=lambda x: x[1])
+
+        # Combine the sorted color groups
+        sorted_colors = reds + greens + blues + others
+
+        if mode == 'back_to_back':
+            # Calculate the size of the palette image based on the number of colors
+            palette_width = n_colors * cell_size
+            palette_height = cell_size
+        else:
+            # Calculate the number of rows and columns based on the number of colors
+            num_rows = int(np.sqrt(n_colors))
+            num_cols = int(np.ceil(n_colors / num_rows))
+
+            # Calculate the size of the palette image based on the number of rows and columns
+            palette_width = num_cols * cell_size
+            palette_height = num_rows * cell_size
+
+        palette_size = (palette_width, palette_height)
+
+        palette = Image.new('RGB', palette_size, color='white')
+        draw = ImageDraw.Draw(palette)
+        if font_path:
+            font = ImageFont.truetype(font_path, font_size)
+        else:
+            font = ImageFont.load_default()
+
+        hex_palette = []
+        for i, (color, _) in enumerate(sorted_colors):
+            if mode == 'back_to_back':
+                cell_x = i * cell_size
+                cell_y = 0
+            else:
+                row = i % num_rows
+                col = i // num_rows
+                cell_x = col * cell_size
+                cell_y = row * cell_size
+
+            cell_width = cell_size
+            cell_height = cell_size
+
+            color = tuple(color)
+
+            cell = Image.new('RGB', (cell_width, cell_height), color=color)
+            palette.paste(cell, (cell_x, cell_y))
+
+            if mode != 'back_to_back':
+                text_x = cell_x + (cell_width / 2)
+                text_y = cell_y + cell_height + padding
+
+                draw.text((text_x + 1, text_y + 1), f"R: {color[0]} G: {color[1]} B: {color[2]}", font=font, fill='black', anchor='ms')
+                draw.text((text_x, text_y), f"R: {color[0]} G: {color[1]} B: {color[2]}", font=font, fill='white', anchor='ms')
+
+            hex_palette.append('#%02x%02x%02x' % color)
+
+        return palette, '\n'.join(hex_palette)
 
 
 # from transformers import BlipProcessor, BlipForConditionalGeneration, BlipForQuestionAnswering
