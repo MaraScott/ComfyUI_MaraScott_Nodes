@@ -62,25 +62,33 @@ class KSampler_InpaintingTileByMask_v1:
             },
         }
 
-    INPUT_IS_LIST = False
+    # INPUT_IS_LIST = False
     RETURN_TYPES = (
+        'IMAGE',
         'IMAGE',
         'STRING',
         'STRING',
     )
     RETURN_NAMES = (
         'image_inpainted',
+        'image_noised',
         'text_pos_image_inpainted',
         'text_neg_image_inpainted',
     )
     RETURN_LABELS = (
         'Image',
+        'Noised Tile',
         'positive (text)',
         'negative (text)',
     )
+    # OUTPUT_IS_LIST = (
+    #     False,
+    #     False,
+    #     False,
+    #     False,
+    # )
     FUNCTION = "fn"
     OUTPUT_NODE = True
-    OUTPUT_IS_LIST = (False,)
 
     CATEGORY = "MaraScott/Ksampler"
 
@@ -127,7 +135,7 @@ class KSampler_InpaintingTileByMask_v1:
         # Noise Upscale
         noise_image = ImageScale.upscale(ImageScale, noise_image, self.upscale_methos, inpaint_size, inpaint_size, "center")[0]
 
-        image_inpaint = ImageBlendV2.image_blend_v2(
+        image_noised = ImageBlendV2.image_blend_v2(
             ImageBlendV2,
             background_image=image_inpaint_cropped, 
             layer_image=noise_image, 
@@ -137,7 +145,7 @@ class KSampler_InpaintingTileByMask_v1:
             layer_mask=mask_cropped
         )[0]
 
-        latent_inpaint = VAEEncodeTiled.encode(VAEEncodeTiled, vae, image_inpaint, tile_size=512)[0]
+        latent_inpaint = VAEEncodeTiled.encode(VAEEncodeTiled, vae, image_noised, tile_size=512)[0]
 
         latent_inpaint = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent_inpaint, mask_cropped)[0]
 
@@ -165,6 +173,7 @@ class KSampler_InpaintingTileByMask_v1:
 
         return (
             image_inpainted, 
+            image_noised,
             text_pos_image_inpainted, 
             text_neg_image_inpainted
         )
