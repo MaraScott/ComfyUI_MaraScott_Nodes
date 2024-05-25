@@ -44,7 +44,7 @@ import subprocess
 import sys
 # import datetime
 # import time
-# import torch
+import torch
 from tqdm import tqdm
 
 import cv2
@@ -362,11 +362,11 @@ def install_package(package, uninstall_first: Union[List[str], str] = None):
 # def pil2hex(image):
 #     return hashlib.sha256(np.array(tensor2pil(image)).astype(np.uint16).tobytes()).hexdigest()
 
-# # PIL to Mask
-# def pil2mask(image):
-#     image_np = np.array(image.convert("L")).astype(np.float32) / 255.0
-#     mask = torch.from_numpy(image_np)
-#     return 1.0 - mask
+# PIL to Mask
+def pil2mask(image):
+    image_np = np.array(image.convert("L")).astype(np.float32) / 255.0
+    mask = torch.from_numpy(image_np)
+    return 1.0 - mask
 
 # # Mask to PIL
 # def mask2pil(mask):
