@@ -143,12 +143,12 @@ class cstr(str):
 # cstr.color.add_code("error", f"{cstr.color.RED}WAS Node Suite {cstr.color.END}Error: {cstr.color.END}")
 
 # #! GLOBALS
-# NODE_FILE = os.path.abspath(__file__)
+NODE_FILE = os.path.abspath(__file__)
 # MIDAS_INSTALLED = False
 # CUSTOM_NODES_DIR = comfy_paths.folder_names_and_paths["custom_nodes"][0][0]
 # MODELS_DIR =  comfy_paths.models_dir
-# WAS_SUITE_ROOT = os.path.dirname(NODE_FILE)
-# WAS_CONFIG_DIR = os.environ.get('WAS_CONFIG_DIR', WAS_SUITE_ROOT)
+WAS_SUITE_ROOT = os.path.dirname(NODE_FILE)
+WAS_CONFIG_DIR = os.environ.get('WAS_CONFIG_DIR', WAS_SUITE_ROOT)
 # WAS_DATABASE = os.path.join(WAS_CONFIG_DIR, 'was_suite_settings.json')
 # WAS_HISTORY_DATABASE = os.path.join(WAS_CONFIG_DIR, 'was_history.json')
 WAS_CONFIG_FILE = os.path.join(WAS_CONFIG_DIR, 'was_suite_config.json')
