@@ -12,14 +12,16 @@
 
 import torch
 import comfy
-from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images as extra_images, nodes_mask as extra_mask, nodes_compositing as extra_compo
+from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images as extra_images, nodes_mask as extra_mask, nodes_compositing as extra_compo, nodes_upscale_model as extra_upscale_model
 from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEDecodeTiled, ImageScale, SetLatentNoiseMask
 import folder_paths
 
 from ...vendor.ComfyUI_LayerStyle.py.image_blend_v2 import ImageBlendV2, chop_mode_v2
+from ...vendor.ComfyUI_LayerStyle.py.image_opacity import ImageOpacity
 from ...vendor.was_node_suite_comfyui.WAS_Node_Suite import WAS_Mask_Crop_Region, WAS_Image_Blend
 from ...vendor.ComfyUI_Impact_Pack.modules.impact.util_nodes import RemoveNoiseMask
 from ...vendor.mikey_nodes.mikey_nodes import ImagePaste
+from ...vendor.ComfyUI_tinyterraNodes.ttNpy.tinyterraNodes import ttN_imageREMBG
 
 from ...utils.log import *
 from ...utils.helper import MS_Image, MS_Mask
@@ -266,6 +268,8 @@ class KSampler_pasteInpaintingTileByMask_v1:
                 "upscale_model": (folder_paths.get_filename_list("upscale_models"),),
                 "ms_pipe": ("MS_INPAINTINGTILEBYMASK_PIPE", { "label": "pipe (InpaintingTileByMask)" }),
 
+                "subject_opacity": ("INT", { "label": "Opacity (Mask)", "default": 95, "min": 0, "max": 100, "step": 1 }),
+
                 "seed": ("INT", { "label": "Seed", "default": 4, "min": 0, "max": 0xffffffffffffffff}),
                 "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", { "label": "CFG", "default": 8, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
@@ -311,9 +315,11 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
     def fn(self, **kwargs):
 
+        unique_id = kwargs.get('unique_id', None)
         image_tile = kwargs.get('image_tile', None)
         mask_tile = kwargs.get('mask_tile', None)
         upscale_model = kwargs.get('upscale_model', None)
+        subject_opacity = kwargs.get('subject_opacity', None)
         ms_pipe = kwargs.get('ms_pipe', None)
 
         image, mask, noise_image, model, clip, vae, text_pos_inpaint, text_neg_inpaint, seed, mask_cropped, image_inpaint_cropped, width, height, x, y, inpaint_size = ms_pipe
@@ -335,7 +341,47 @@ class KSampler_pasteInpaintingTileByMask_v1:
             text_pos_image_inpainted = text_pos_inpaint
             text_neg_image_inpainted = text_neg_inpaint
         else:
-            output_image = image
+            region = WAS_Mask_Crop_Region.mask_crop_region(WAS_Mask_Crop_Region(), mask_tile, padding=0, region_type="dominant")
+            x_subject = region[3]
+            y_subject = region[2]
+            width_subject = region[6]
+            height_subject = region[7]
+
+            subject = extra_images.ImageCrop.crop(extra_images.ImageCrop, image_tile, width_subject, height_subject, x_subject, y_subject)[0]
+            subject_only = ttN_imageREMBG.remove_background(ttN_imageREMBG(), image=subject, image_output="Hide", save_prefix="MaraScott_", prompt=None, extra_pnginfo=None, my_unique_id="{unique_id}")[0]
+            subject_only = ImageOpacity.image_opacity(ImageOpacity, image=subject_only, opacity=subject_opacity, invert_mask=True)[0]
+            subject = ImagePaste.paste(ImagePaste,background_image=image_inpaint_cropped, foreground_image=subject_only, x_position=x_subject, y_position=y_subject)[0]
+            subject = ImageOpacity.image_opacity(ImageOpacity, image=subject, opacity=100, invert_mask=False)[0]
+            subject_upscaled = ImageScale.upscale(ImageScale, subject, self.upscale_methos, width, height, "center")[0]
+            output_image = ImagePaste.paste(ImagePaste,background_image=image, foreground_image=subject_upscaled, x_position=x, y_position=y)[0]
+            output_image_upscaled = extra_upscale_model.ImageUpscaleWithModel.upscale(extra_upscale_model.ImageUpscaleWithModel, upscale_model, output_image)[0]
+            mask_image = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask)[0]
+            mask_image = ImageScale.upscale(ImageScale, mask_image, self.upscale_methos, width, height, "center")[0]
+            mask = extra_mask.ImageToMask.image_to_mask(extra_mask.ImageToMask, mask_image, 'red')[0]
+            
+
+            latent = VAEEncodeTiled.encode(VAEEncodeTiled, vae, output_image_upscaled, tile_size=512)[0]
+            latent_inpaint = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent, mask)[0]
+
+            latent_inpainted = KSampler.sample(
+                KSampler,
+                model=model_inpaint, 
+                seed=seed, 
+                steps=steps, 
+                cfg=cfg, 
+                sampler_name=sampler_name, 
+                scheduler=scheduler, 
+                positive=positive_inpaint, 
+                negative=negative_inpaint, 
+                latent_image=latent_inpaint, 
+                denoise=denoise
+            )[0]
+
+            latent_inpainted = RemoveNoiseMask.doit(RemoveNoiseMask, latent_inpainted)[0]
+            output_image = VAEDecodeTiled.decode(VAEDecodeTiled, vae, latent_inpainted, tile_size=512)[0]
+
+
+            output_image = output_image
             image = image
             text_pos_image_inpainted = text_pos_inpaint
             text_neg_image_inpainted = text_neg_inpaint
