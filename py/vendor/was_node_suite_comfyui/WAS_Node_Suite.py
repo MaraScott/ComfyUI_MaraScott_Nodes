@@ -350,13 +350,13 @@ def install_package(package, uninstall_first: Union[List[str], str] = None):
         cstr("Installing package...").msg.print()
         subprocess.check_call([sys.executable, '-s', '-m', 'pip', '-q', 'install', package])
 
-# # Tensor to PIL
-# def tensor2pil(image):
-#     return Image.fromarray(np.clip(255. * image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
+# Tensor to PIL
+def tensor2pil(image):
+    return Image.fromarray(np.clip(255. * image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
 
-# # PIL to Tensor
-# def pil2tensor(image):
-#     return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
+# PIL to Tensor
+def pil2tensor(image):
+    return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
 
 # # PIL Hex
 # def pil2hex(image):
@@ -4160,43 +4160,43 @@ class WAS_Tools_Class():
 #         return (pil2tensor(out_image), )
 
 
-# # IMAGE BLEND NODE
+# IMAGE BLEND NODE
 
-# class WAS_Image_Blend:
-#     def __init__(self):
-#         pass
+class WAS_Image_Blend:
+    def __init__(self):
+        pass
 
-#     @classmethod
-#     def INPUT_TYPES(cls):
-#         return {
-#             "required": {
-#                 "image_a": ("IMAGE",),
-#                 "image_b": ("IMAGE",),
-#                 "blend_percentage": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
-#             },
-#         }
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image_a": ("IMAGE",),
+                "image_b": ("IMAGE",),
+                "blend_percentage": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+            },
+        }
 
-#     RETURN_TYPES = ("IMAGE",)
-#     RETURN_NAMES = ("image",)
-#     FUNCTION = "image_blend"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+    FUNCTION = "image_blend"
 
-#     CATEGORY = "WAS Suite/Image"
+    CATEGORY = "WAS Suite/Image"
 
-#     def image_blend(self, image_a, image_b, blend_percentage):
+    def image_blend(self, image_a, image_b, blend_percentage):
 
-#         # Convert images to PIL
-#         img_a = tensor2pil(image_a)
-#         img_b = tensor2pil(image_b)
+        # Convert images to PIL
+        img_a = tensor2pil(image_a)
+        img_b = tensor2pil(image_b)
 
-#         # Blend image
-#         blend_mask = Image.new(mode="L", size=img_a.size,
-#                                color=(round(blend_percentage * 255)))
-#         blend_mask = ImageOps.invert(blend_mask)
-#         img_result = Image.composite(img_a, img_b, blend_mask)
+        # Blend image
+        blend_mask = Image.new(mode="L", size=img_a.size,
+                               color=(round(blend_percentage * 255)))
+        blend_mask = ImageOps.invert(blend_mask)
+        img_result = Image.composite(img_a, img_b, blend_mask)
 
-#         del img_a, img_b, blend_mask
+        del img_a, img_b, blend_mask
 
-#         return (pil2tensor(img_result), )
+        return (pil2tensor(img_result), )
 
 
 
