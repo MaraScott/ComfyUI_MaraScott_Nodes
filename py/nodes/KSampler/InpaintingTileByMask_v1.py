@@ -10,14 +10,16 @@
 #
 ###
 
+import torch
 import comfy
-from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images as extra_images, nodes_mask as extra_mask
+from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images as extra_images, nodes_mask as extra_mask, nodes_compositing as extra_compo
 from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEDecodeTiled, ImageScale, SetLatentNoiseMask
 import folder_paths
 
 from ...vendor.ComfyUI_LayerStyle.py.image_blend_v2 import ImageBlendV2
 from ...vendor.was_node_suite_comfyui.WAS_Node_Suite import WAS_Mask_Crop_Region
 from ...vendor.ComfyUI_Impact_Pack.modules.impact.util_nodes import RemoveNoiseMask
+from ...vendor.mikey_nodes.mikey_nodes import ImagePaste
 
 from ...utils.log import *
 
@@ -54,8 +56,6 @@ class KSampler_InpaintingTileByMask_v1:
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.51, "min": 0.0, "max": 1.0, "step": 0.01}),
 
-                "inpaint_treshold": ("INT", { "label": "Mask Treshold", "default": 200, "min": 0, "max": 255, "step": 1}),
-
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
@@ -66,17 +66,20 @@ class KSampler_InpaintingTileByMask_v1:
     RETURN_TYPES = (
         'IMAGE',
         'IMAGE',
+        'IMAGE',
         'STRING',
         'STRING',
     )
     RETURN_NAMES = (
+        'output_image',
         'image_inpainted',
         'image_noised',
         'text_pos_image_inpainted',
         'text_neg_image_inpainted',
     )
     RETURN_LABELS = (
-        'Image',
+        'Inpainted Image',
+        'Inpainted Tile',
         'Noised Tile',
         'positive (text)',
         'negative (text)',
@@ -116,63 +119,76 @@ class KSampler_InpaintingTileByMask_v1:
         inpaint_size = kwargs.get('inpaint_size', None)
         noise_opacity = kwargs.get('noise_opacity', None)
 
-        region = WAS_Mask_Crop_Region.mask_crop_region(WAS_Mask_Crop_Region(), mask, padding=0, region_type="dominant")
-        mask_cropped = region[0]
-        x = region[3]
-        y = region[2]
-        width = region[6]
-        height = region[7]
+        if torch.all(mask == 0):
+            output_image = image
+            image_inpainted = image
+            image_noised = noise_image
+            text_pos_image_inpainted = text_pos_image
+            text_neg_image_inpainted = text_neg_inpaint
+        else:
+            region = WAS_Mask_Crop_Region.mask_crop_region(WAS_Mask_Crop_Region(), mask, padding=0, region_type="dominant")
+            mask_cropped = region[0]
+            x = region[3]
+            y = region[2]
+            width = region[6]
+            height = region[7]
 
-        # Mask Upscale
-        mask_cropped_img = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask_cropped)[0]
-        image_mask_cropped = ImageScale.upscale(ImageScale, mask_cropped_img, self.upscale_methos, inpaint_size, inpaint_size, "center")[0]
-        mask_cropped = extra_mask.ImageToMask.image_to_mask(extra_mask.ImageToMask, image_mask_cropped, 'red')[0]
+            # Mask Upscale
+            mask_cropped_img = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask_cropped)[0]
+            image_mask_cropped = ImageScale.upscale(ImageScale, mask_cropped_img, self.upscale_methos, inpaint_size, inpaint_size, "center")[0]
+            mask_cropped = extra_mask.ImageToMask.image_to_mask(extra_mask.ImageToMask, image_mask_cropped, 'red')[0]
 
-        # Image Upscale
-        image_inpaint = extra_images.ImageCrop.crop(extra_images.ImageCrop, image, width, height, x, y)[0]
-        image_inpaint_cropped = ImageScale.upscale(ImageScale, image_inpaint, self.upscale_methos, inpaint_size, inpaint_size, "disabled")[0]
+            # Image Upscale
+            image_inpaint = extra_images.ImageCrop.crop(extra_images.ImageCrop, image, width, height, x, y)[0]
+            image_inpaint_cropped = ImageScale.upscale(ImageScale, image_inpaint, self.upscale_methos, inpaint_size, inpaint_size, "disabled")[0]
 
-        # Noise Upscale
-        noise_image = ImageScale.upscale(ImageScale, noise_image, self.upscale_methos, inpaint_size, inpaint_size, "center")[0]
+            # Noise Upscale
+            noise_image = extra_images.ImageCrop.crop(extra_images.ImageCrop, noise_image, width, height, x, y)[0]
+            noise_image_cropped = ImageScale.upscale(ImageScale, noise_image, self.upscale_methos, inpaint_size, inpaint_size, "center")[0]
 
-        image_noised = ImageBlendV2.image_blend_v2(
-            ImageBlendV2,
-            background_image=image_inpaint_cropped, 
-            layer_image=noise_image, 
-            invert_mask=False, 
-            blend_mode="overlay", 
-            opacity=noise_opacity, 
-            layer_mask=mask_cropped
-        )[0]
+            image_noised = ImageBlendV2.image_blend_v2(
+                ImageBlendV2,
+                background_image=image_inpaint_cropped, 
+                layer_image=noise_image_cropped, 
+                invert_mask=False, 
+                blend_mode="overlay", 
+                opacity=noise_opacity, 
+                layer_mask=mask_cropped
+            )[0]
 
-        latent_inpaint = VAEEncodeTiled.encode(VAEEncodeTiled, vae, image_noised, tile_size=512)[0]
+            latent_inpaint = VAEEncodeTiled.encode(VAEEncodeTiled, vae, image_noised, tile_size=512)[0]
 
-        latent_inpaint = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent_inpaint, mask_cropped)[0]
+            latent_inpaint = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent_inpaint, mask_cropped)[0]
 
-        latent_inpainted = KSampler.sample(
-            KSampler,
-            model=model_inpaint, 
-            seed=seed, 
-            steps=steps, 
-            cfg=cfg, 
-            sampler_name=sampler_name, 
-            scheduler=scheduler, 
-            positive=positive_inpaint, 
-            negative=negative_inpaint, 
-            latent_image=latent_inpaint, 
-            denoise=denoise
-        )[0]
+            latent_inpainted = KSampler.sample(
+                KSampler,
+                model=model_inpaint, 
+                seed=seed, 
+                steps=steps, 
+                cfg=cfg, 
+                sampler_name=sampler_name, 
+                scheduler=scheduler, 
+                positive=positive_inpaint, 
+                negative=negative_inpaint, 
+                latent_image=latent_inpaint, 
+                denoise=denoise
+            )[0]
 
-        latent_inpainted = RemoveNoiseMask.doit(RemoveNoiseMask, latent_inpainted)[0]
+            latent_inpainted = RemoveNoiseMask.doit(RemoveNoiseMask, latent_inpainted)[0]
 
-        image_inpainted = VAEDecodeTiled.decode(VAEDecodeTiled, vae, latent_inpainted, tile_size=512)[0]
+            image_inpainted = VAEDecodeTiled.decode(VAEDecodeTiled, vae, latent_inpainted, tile_size=512)[0]
+            image_inpainted_upscaled = ImageScale.upscale(ImageScale, image_inpainted, self.upscale_methos, width, height, "disabled")[0]
 
+            output_image = ImagePaste.paste(ImagePaste, image, image_inpainted_upscaled, x, y)[0]
 
-        text_pos_image_inpainted = f"{text_pos_image}, {text_pos_inpaint}"
-        text_neg_image_inpainted = text_neg_inpaint
+            output_image = extra_compo.SplitImageWithAlpha.split_image_with_alpha(extra_compo.SplitImageWithAlpha, output_image)[0]
+
+            text_pos_image_inpainted = f"{text_pos_image}, {text_pos_inpaint}"
+            text_neg_image_inpainted = text_neg_inpaint
 
         return (
-            image_inpainted, 
+            output_image,
+            image_inpainted,
             image_noised,
             text_pos_image_inpainted, 
             text_neg_image_inpainted
