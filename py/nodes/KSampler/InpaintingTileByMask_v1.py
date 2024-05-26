@@ -318,7 +318,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
         unique_id = kwargs.get('unique_id', None)
         image_tile = kwargs.get('image_tile', None)
         mask_tile = kwargs.get('mask_tile', None)
-        upscale_model = kwargs.get('upscale_model', None)
+        upscale_model_name = kwargs.get('upscale_model', None)
         subject_opacity = kwargs.get('subject_opacity', None)
         ms_pipe = kwargs.get('ms_pipe', None)
 
@@ -354,6 +354,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
             subject = ImageOpacity.image_opacity(ImageOpacity, image=subject, opacity=100, invert_mask=False)[0]
             subject_upscaled = ImageScale.upscale(ImageScale, subject, self.upscale_methos, width, height, "center")[0]
             output_image = ImagePaste.paste(ImagePaste,background_image=image, foreground_image=subject_upscaled, x_position=x, y_position=y)[0]
+            upscale_model = extra_upscale_model.UpscaleModelLoader.load_model(extra_upscale_model.UpscaleModelLoader, upscale_model_name)[0]
             output_image_upscaled = extra_upscale_model.ImageUpscaleWithModel.upscale(extra_upscale_model.ImageUpscaleWithModel, upscale_model, output_image)[0]
             mask_image = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask)[0]
             mask_image = ImageScale.upscale(ImageScale, mask_image, self.upscale_methos, width, height, "center")[0]
