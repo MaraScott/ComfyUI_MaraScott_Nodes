@@ -362,7 +362,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
             
 
             latent = VAEEncodeTiled.encode(VAEEncodeTiled, vae, output_image_upscaled, tile_size=512)[0]
-            latent_inpaint = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent, mask)[0]
+            latent = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent, mask)[0]
 
             latent_inpainted = KSampler.sample(
                 KSampler,
@@ -374,7 +374,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
                 scheduler=scheduler, 
                 positive=positive_inpaint, 
                 negative=negative_inpaint, 
-                latent_image=latent_inpaint, 
+                latent_image=latent, 
                 denoise=denoise
             )[0]
 
