@@ -267,6 +267,8 @@ class KSampler_pasteInpaintingTileByMask_v1:
                 "mask_tile": ("MASK", { "label": "Mask (Tile)" }),
                 "upscale_model": (folder_paths.get_filename_list("upscale_models"),),
                 "ms_pipe": ("MS_INPAINTINGTILEBYMASK_PIPE", { "label": "pipe (InpaintingTileByMask)" }),
+                "text_pos_inpaint": ("STRING", { "label": "Positive (text) optional" }),
+                "text_neg_inpaint": ("STRING", { "label": "Negative (text) optional" }),
 
                 "subject_opacity": ("INT", { "label": "Opacity (Mask)", "default": 95, "min": 0, "max": 100, "step": 1 }),
 
@@ -323,6 +325,9 @@ class KSampler_pasteInpaintingTileByMask_v1:
         ms_pipe = kwargs.get('ms_pipe', None)
 
         image, mask, noise_image, model, clip, vae, text_pos_inpaint, text_neg_inpaint, seed, mask_cropped, image_inpaint_cropped, width, height, x, y, inpaint_size = ms_pipe
+
+        text_pos_inpaint = kwargs.get('text_pos_inpaint', text_pos_inpaint)
+        text_neg_inpaint = kwargs.get('text_neg_inpaint', text_neg_inpaint)
 
         model_diff = DiffDiff.DifferentialDiffusion.apply(DiffDiff.DifferentialDiffusion(), model)[0]
         model_inpaint = model_diff
