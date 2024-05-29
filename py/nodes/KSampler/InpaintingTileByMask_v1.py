@@ -16,8 +16,8 @@ from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images 
 from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEDecodeTiled, ImageScale, SetLatentNoiseMask, ImageScaleBy
 import folder_paths
 
-from ...inc.lib.image import Image as MS_Image
-from ...inc.lib.mask import Mask as MS_Mask
+from ...inc.lib.image import MS_Image
+from ...inc.lib.mask import MS_Mask
 
 from ...vendor.ComfyUI_LayerStyle.py.image_blend_v2 import ImageBlendV2, chop_mode_v2
 from ...vendor.ComfyUI_LayerStyle.py.image_opacity import ImageOpacity
@@ -138,7 +138,7 @@ class KSampler_setInpaintingTileByMask_v1:
         denoise = kwargs.get('denoise', None)
 
 
-        image, image_width, image_height, image_divisible_by_8 = MS_Image.format_2_divby8(image)
+        image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(image)
 
         painted_image = ImageScale.upscale(ImageScale, painted_image, self.upscale_method, image_width, image_height, "center")[0]
         mask_image = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask)[0]

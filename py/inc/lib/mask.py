@@ -6,7 +6,7 @@
 import torch
 import torch.nn.functional as F
 
-class Mask:
+class MS_Mask:
 
     @staticmethod
     def empty(width, height):

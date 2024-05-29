@@ -14,7 +14,7 @@ import comfy_extras
 
 from ...utils.log import *
 
-class Image:
+class MS_Image:
     
     @classmethod
     def is_divisible_by_8(self, image):
@@ -30,7 +30,7 @@ class Image:
         return new_width, new_height
     
     @classmethod
-    def format_2_divby8(image):
+    def format_2_divby8(self, image):
 
         if image is None:
             raise ValueError("MaraScott Image: No image provided")
@@ -40,10 +40,10 @@ class Image:
         
         width = image.shape[2]
         height = image.shape[1]
-        is_dviby8 = Image.is_divisible_by_8(image)
+        is_dviby8 = self.is_divisible_by_8(image)
         if not is_dviby8:
             is_dviby8 = False
-            width, height = Image.calculate_new_dimensions(width, height)
+            width, height = self.calculate_new_dimensions(width, height)
 
         image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", width, height, "center")[0]
 

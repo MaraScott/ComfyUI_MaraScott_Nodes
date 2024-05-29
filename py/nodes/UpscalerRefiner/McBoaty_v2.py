@@ -18,7 +18,7 @@ import folder_paths
 
 from ...inc.lib.upscaler_refiner import McBoaty
 
-from ...inc.lib.image import Image
+from ...inc.lib.image import MS_Image
 
 from ...utils.log import *
 
@@ -100,7 +100,7 @@ class UpscalerRefiner_McBoaty_v2(McBoaty):
         tile_rows = math.floor(upscaled_width // tile_size)
         tile_cols = math.floor(upscaled_height // tile_size)
         
-        grid_images = Image.get_grid_images(image, tile_rows, tile_cols)
+        grid_images = MS_Image().get_grid_images(image, tile_rows, tile_cols)
 
         grid_upscales = []
         grid_latents = []
@@ -149,7 +149,7 @@ class UpscalerRefiner_McBoaty_v2(McBoaty):
             
             output_images.append(output[0])
             
-        output_image, tiles_order = Image.rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask, rows = tile_rows, cols = tile_cols)
+        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled_image, feather_mask, rows = tile_rows, cols = tile_cols)
 
         tiles_order.sort(key=lambda x: x[0])
         output_tiles = tuple(output for _, output in tiles_order)
@@ -195,7 +195,7 @@ class UpscalerRefiner_McBoaty_v2(McBoaty):
         
         log(f"McBoaty is starting to do its magic")
         
-        image, image_width, image_height, image_divisible_by_8 = Image.format_2_divby8(image)
+        image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(image)
 
         current_image = image
         for index in range(max_iterations):

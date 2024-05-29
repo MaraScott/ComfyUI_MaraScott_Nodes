@@ -2,7 +2,7 @@ from .imagefunc import *
 
 from ....utils.log import log
 
-# NODE_NAME = 'ImageOpacity'
+NODE_NAME = 'MaraScott:ImageOpacity'
 
 class ImageOpacity:
 
