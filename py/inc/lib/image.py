@@ -6,6 +6,7 @@
 import torch
 import math
 import numpy as np
+from PIL import Image
 
 import nodes
 import comfy
@@ -27,6 +28,27 @@ class Image:
         new_width = round_up_to_nearest_8(image_width)
         new_height = round_up_to_nearest_8(image_height)
         return new_width, new_height
+    
+    @classmethod
+    def format_2_divby8(image):
+
+        if image is None:
+            raise ValueError("MaraScott Image: No image provided")
+
+        if not isinstance(image, torch.Tensor):
+            raise ValueError("MaraScott Image: Image provided is not a Tensor")
+        
+        width = image.shape[2]
+        height = image.shape[1]
+        is_dviby8 = Image.is_divisible_by_8(image)
+        if not is_dviby8:
+            is_dviby8 = False
+            width, height = Image.calculate_new_dimensions(width, height)
+
+        image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", width, height, "center")[0]
+
+        return image, width, height, is_dviby8
+
 
     @classmethod
     def get_dynamic_grid_specs(self, width, height, tile_rows = 3, tile_cols =3):
@@ -148,3 +170,16 @@ class Image:
         full_image = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, full_image, outputMiddleRow, x = 0, y = (1 * tile_height) - (1 * height_unit), resize_source = False, mask = grid_feathermask_horizontal)[0]
         
         return full_image, tiles_order
+
+    @staticmethod
+    def empty(width, height):
+        return torch.zeros((height, width, 3), dtype=torch.uint8),
+
+    @staticmethod
+    def tensor2pil(t_image: torch.Tensor)  -> Image:
+        return Image.fromarray(np.clip(255.0 * t_image.cpu().numpy().squeeze(), 0, 255).astype(np.uint8))
+
+    @staticmethod
+    def pil2tensor(image:Image) -> torch.Tensor:
+        return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
+

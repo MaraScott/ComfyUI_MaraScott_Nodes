@@ -12,12 +12,12 @@
 #
 ###
 
-from ..inc.nodes import Configuration as _CONF
-from ..inc.profiles.any import Node as ProfileNodeAny
+from ...inc.nodes import Configuration as _CONF
+from ...inc.profiles.any import Node as ProfileNodeAny
 # from ..inc.profiles.pipe_basic import Node as ProfileNodePipeBasic
 # from ..inc.profiles.pipe_detailer import Node as ProfileNodePipeDetailer
 
-class AnyBusNode:
+class AnyBus_v2:
 
     @classmethod
     def INPUT_TYPES(cls):

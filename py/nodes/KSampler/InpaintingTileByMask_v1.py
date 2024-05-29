@@ -16,6 +16,9 @@ from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images 
 from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEDecodeTiled, ImageScale, SetLatentNoiseMask, ImageScaleBy
 import folder_paths
 
+from ...inc.lib.image import Image as MS_Image
+from ...inc.lib.mask import Mask as MS_Mask
+
 from ...vendor.ComfyUI_LayerStyle.py.image_blend_v2 import ImageBlendV2, chop_mode_v2
 from ...vendor.ComfyUI_LayerStyle.py.image_opacity import ImageOpacity
 from ...vendor.was_node_suite_comfyui.WAS_Node_Suite import WAS_Mask_Crop_Region, WAS_Image_Blend
@@ -24,7 +27,6 @@ from ...vendor.mikey_nodes.mikey_nodes import ImagePaste
 from ...vendor.ComfyUI_tinyterraNodes.ttNpy.tinyterraNodes import ttN_imageREMBG
 
 from ...utils.log import *
-from ...utils.helper import MS_Image, MS_Mask
 
 class KSampler_setInpaintingTileByMask_v1:
 
@@ -135,16 +137,14 @@ class KSampler_setInpaintingTileByMask_v1:
         scheduler = kwargs.get('basic_scheduler', None)
         denoise = kwargs.get('denoise', None)
 
-        _image = image
-        if _image.shape[0] > 0:
-            _image = torch.unsqueeze(_image[0], 0)
-        _image = MS_Image.tensor2pil(_image)
 
-        painted_image = ImageScale.upscale(ImageScale, painted_image, self.upscale_method, _image.width, _image.height, "center")[0]
+        image, image_width, image_height, image_divisible_by_8 = MS_Image.format_2_divby8(image)
+
+        painted_image = ImageScale.upscale(ImageScale, painted_image, self.upscale_method, image_width, image_height, "center")[0]
         mask_image = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask)[0]
-        mask_image = ImageScale.upscale(ImageScale, mask_image, self.upscale_method, _image.width, _image.height, "center")[0]
+        mask_image = ImageScale.upscale(ImageScale, mask_image, self.upscale_method, image_width, image_height, "center")[0]
         mask = extra_mask.ImageToMask.image_to_mask(extra_mask.ImageToMask, mask_image, 'red')[0]
-        noise_image = ImageScale.upscale(ImageScale, noise_image, self.upscale_method, _image.width, _image.height, "center")[0]
+        noise_image = ImageScale.upscale(ImageScale, noise_image, self.upscale_method, image_width, image_height, "center")[0]
 
         painted_image_noised = WAS_Image_Blend.image_blend(
             WAS_Image_Blend,
@@ -169,10 +169,10 @@ class KSampler_setInpaintingTileByMask_v1:
                 text_pos_image_inpainted, 
                 text_neg_image_inpainted,
                 seed,
-                MS_Mask.empty(_image.width, _image.height),
-                MS_Image.empty(_image.width, _image.height),
-                _image.width,
-                _image.height,
+                MS_Mask.empty(image_width, image_height),
+                MS_Image.empty(image_width, image_height),
+                image_width,
+                image_height,
                 0, 
                 0,
                 inpaint_size
@@ -407,7 +407,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
             latent_inpainted = RemoveNoiseMask.doit(RemoveNoiseMask, latent_inpainted)[0]
             output_image = VAEDecodeTiled.decode(VAEDecodeTiled, vae, latent_inpainted, tile_size=512)[0]
 
-            output_image = ImageScale().upscale(output_image, self.upscale_method, _image.width, _image.height, "center")[0]
+            output_image = ImageScale().upscale(output_image, self.upscale_method, image_width, image_height, "center")[0]
 
             output_image = output_image
             image_inpainted = output_image_upscaled
