@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 #
@@ -102,167 +101,215 @@ class KSampler_setInpaintingTileByMask_v1:
 
     CATEGORY = "MaraScott/Ksampler"
 
-    def fn(self, **kwargs):
+    def fn(s, **kwargs):
+        s.extract_and_process_kwargs(**kwargs)
+        s.format_inputs_sizes()
 
-        image = kwargs.get('image', None)
-        painted_image = kwargs.get('painted_image', None)
-        mask = kwargs.get('mask', None)
-        noise_image = kwargs.get('noise_image', None)
-
-        inpaint_size = kwargs.get('inpaint_size', None)
-        noise_blend = kwargs.get('noise_blend', None)
-        tile_blend_mode = kwargs.get('tile_blend_mode', None)
-        tile_opacity = kwargs.get('tile_opacity', None)
-
-        model = kwargs.get('model', None)
-        model_diffdiff = kwargs.get('model_diffdiff', True)
-        if model_diffdiff:
-            model_diff = DiffDiff.DifferentialDiffusion().apply(model)[0]
-            model_inpaint = model_diff
+        if torch.all(s.colored_mask == 0):
+            s.set_default_output()
         else:
-            model_inpaint = model
-        clip = kwargs.get('clip', None)
-        vae = kwargs.get('vae', None)
+            s.set_mask_crop_region()
+            s.upscale_inputs_cropped()
+            s.set_painted_image_cropped_noised()
+            s.set_inpaint_area_noised()
+            s.ksample_inpainting()
 
-        text_pos_image = kwargs.get('text_pos_image', None)
-        text_pos_inpaint = kwargs.get('text_pos_inpaint', None)
-        text_neg_inpaint = kwargs.get('text_neg_inpaint', None)
-        positive_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_pos_inpaint)[0]
-        negative_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_neg_inpaint)[0]
-
-        seed = kwargs.get('seed', None)
-        steps = kwargs.get('steps', None)
-        cfg = kwargs.get('cfg', None)
-        sampler_name = kwargs.get('sampler_name', None)
-        scheduler = kwargs.get('basic_scheduler', None)
-        denoise = kwargs.get('denoise', None)
-
-        image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(image)
-
-
-        painted_image = ImageScale.upscale(ImageScale, painted_image, self.upscale_method, image_width, image_height, "center")[0]
-        mask_image = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask)[0]
-        mask_image = ImageScale.upscale(ImageScale, mask_image, self.upscale_method, image_width, image_height, "center")[0]
-        mask = extra_mask.ImageToMask.image_to_mask(extra_mask.ImageToMask, mask_image, 'red')[0]
-        noise_image = ImageScale.upscale(ImageScale, noise_image, self.upscale_method, image_width, image_height, "center")[0]
-
-        painted_image_noised = WAS_Image_Blend.image_blend(
-            WAS_Image_Blend,
-            image_a=painted_image, 
-            image_b=noise_image, 
-            blend_percentage=noise_blend
-        )[0]
-
-
-        if torch.all(mask == 0):
-            image_inpainted = image
-            image_noised = noise_image
-            text_pos_image_inpainted = text_pos_image
-            text_neg_image_inpainted = text_neg_inpaint
-            pipe = (
-                image,
-                mask,
-                noise_image,
-                model, 
-                clip, 
-                vae, 
-                text_pos_image_inpainted, 
-                text_neg_image_inpainted,
-                seed,
-                MS_Mask.empty(image_width, image_height),
-                MS_Image.empty(image_width, image_height),
-                image_width,
-                image_height,
-                0, 
-                0,
-                inpaint_size
-            )
-        else:
-            region = WAS_Mask_Crop_Region.mask_crop_region(WAS_Mask_Crop_Region(), mask, padding=0, region_type="dominant")
-            mask_cropped = region[0]
-            x = region[3]
-            y = region[2]
-            width = region[6]
-            height = region[7]
-
-            # Mask Upscale
-            mask_cropped_img = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask_cropped)[0]
-            image_mask_cropped = ImageScale.upscale(ImageScale, mask_cropped_img, self.upscale_method, inpaint_size, inpaint_size, "center")[0]
-            mask_cropped = extra_mask.ImageToMask.image_to_mask(extra_mask.ImageToMask, image_mask_cropped, 'red')[0]
-
-            # Image Upscale
-            image_inpaint = extra_images.ImageCrop.crop(extra_images.ImageCrop, image, width, height, x, y)[0]
-            image_inpaint_cropped = ImageScale.upscale(ImageScale, image_inpaint, self.upscale_method, inpaint_size, inpaint_size, "disabled")[0]
-
-            # Noise Upscale
-            noise_image = extra_images.ImageCrop.crop(extra_images.ImageCrop, painted_image_noised, width, height, x, y)[0]
-            noise_image_cropped = ImageScale.upscale(ImageScale, noise_image, self.upscale_method, inpaint_size, inpaint_size, "center")[0]
-
-            image_noised = ImageBlendV2.image_blend_v2(
-                ImageBlendV2,
-                background_image=image_inpaint_cropped, 
-                layer_image=noise_image_cropped, 
-                invert_mask=False, 
-                blend_mode=tile_blend_mode, 
-                opacity=tile_opacity, 
-                layer_mask=mask_cropped
-            )[0]
-
-            latent_inpaint = VAEEncodeTiled.encode(VAEEncodeTiled, vae, image_noised, tile_size=512)[0]
-
-            latent_inpaint = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent_inpaint, mask_cropped)[0]
-
-            latent_inpainted = KSampler.sample(
-                KSampler,
-                model=model_inpaint, 
-                seed=seed, 
-                steps=steps, 
-                cfg=cfg, 
-                sampler_name=sampler_name, 
-                scheduler=scheduler, 
-                positive=positive_inpaint, 
-                negative=negative_inpaint, 
-                latent_image=latent_inpaint, 
-                denoise=denoise
-            )[0]
-
-            latent_inpainted = RemoveNoiseMask.doit(RemoveNoiseMask, latent_inpainted)[0]
-
-            image_inpainted = VAEDecodeTiled.decode(VAEDecodeTiled, vae, latent_inpainted, tile_size=512)[0]
-
-            text_pos_image_inpainted = f"{text_pos_image}, {text_pos_inpaint}"
-            text_neg_image_inpainted = text_neg_inpaint
+            s.text_pos_image_inpainted = f"{s.text_pos_image}, {s.text_pos_inpaint}"
+            s.text_neg_image_inpainted = s.text_neg_inpaint
 
             pipe = (
-                image,
-                mask,
-                noise_image,
-                model_inpaint, 
-                clip, 
-                vae, 
-                text_pos_image_inpainted, 
-                text_neg_image_inpainted,
-                seed,
-                mask_cropped,
-                image_inpaint_cropped,
-                width,
-                height,
-                x,
-                y,
-                inpaint_size,
+                s.image,
+                s.colored_mask,
+                s.noise_image,
+                s.model_inpaint, 
+                s.clip, 
+                s.vae, 
+                s.text_pos_image_inpainted, 
+                s.text_neg_image_inpainted,
+                s.seed,
+                s.mask_cropped,
+                s.image_inpaint_cropped,
+                s.width,
+                s.height,
+                s.x,
+                s.y,
+                s.inpaint_size,
             )
 
         return (
-            image_inpainted,
-            image_noised,
-            text_pos_image_inpainted, 
-            text_neg_image_inpainted,
+            s.image_inpainted,
+            s.image_noised,
+            s.text_pos_image_inpainted, 
+            s.text_neg_image_inpainted,
             pipe
         )
-    
+
+    def extract_and_process_kwargs(s, **kwargs):
+        s.image = kwargs.get('image', None)
+        s.colored_image = kwargs.get('painted_image', None)
+        s.colored_mask = kwargs.get('mask', None)
+        s.noise_image = kwargs.get('noise_image', None)
+
+        s.inpaint_size = kwargs.get('inpaint_size', None)
+        s.noise_blend = kwargs.get('noise_blend', None)
+        s.tile_blend_mode = kwargs.get('tile_blend_mode', None)
+        s.tile_opacity = kwargs.get('tile_opacity', None)
+
+        s.model = kwargs.get('model', None)
+        s.model_diffdiff = kwargs.get('model_diffdiff', True)
+        if s.model_diffdiff:
+            s.model_diff = DiffDiff.DifferentialDiffusion().apply(s.model)[0]
+            s.model_inpaint = s.model_diff
+        else:
+            s.model_inpaint = s.model
+        s.clip = kwargs.get('clip', None)
+        s.vae = kwargs.get('vae', None)
+
+        s.text_pos_image = kwargs.get('text_pos_image', None)
+        s.text_pos_inpaint = kwargs.get('text_pos_inpaint', None)
+        s.text_neg_inpaint = kwargs.get('text_neg_inpaint', None)
+        s.positive_inpaint = CLIPTextEncode().encode(s.clip, s.text_pos_inpaint)[0]
+        s.negative_inpaint = CLIPTextEncode().encode(s.clip, s.text_neg_inpaint)[0]
+
+        s.seed = kwargs.get('seed', None)
+        s.steps = kwargs.get('steps', None)
+        s.cfg = kwargs.get('cfg', None)
+        s.sampler_name = kwargs.get('sampler_name', None)
+        s.scheduler = kwargs.get('basic_scheduler', None)
+        s.denoise = kwargs.get('denoise', None)
+
+    def format_inputs_sizes(s):
+
+        # format and get size from input image
+        s.image, s.image_width, s.image_height, s.image_divisible_by_8 = MS_Image().format_2_divby8(s.image)
+
+        # Upscale and process painted image and mask
+        s.colored_image = ImageScale().upscale(s.colored_image, s.upscale_method, s.image_width, s.image_height, "center")[0]
+
+        mask_image = extra_mask.MaskToImage().mask_to_image(s.colored_mask)[0]
+        mask_image = ImageScale().upscale(mask_image, s.upscale_method, s.image_width, s.image_height, "center")[0]
+        s.colored_mask = extra_mask.ImageToMask().image_to_mask(mask_image, 'red')[0]
+
+        s.noise_image = ImageScale().upscale(s.noise_image, s.upscale_method, s.image_width, s.image_height, "center")[0]
+
+    def set_mask_crop_region(s):
+
+        region = WAS_Mask_Crop_Region().mask_crop_region(s.colored_mask, padding=0, region_type="dominant")
+        s.mask_cropped = region[0]
+        s.x = region[3]
+        s.y = region[2]
+        s.width = region[6]
+        s.height = region[7]
+
+        # image
+        s.image_inpaint = extra_images.ImageCrop().crop(s.image, s.width, s.height, s.x, s.y)[0]
+        s.painted_image_inpaint = extra_images.ImageCrop().crop(s.colored_image, s.width, s.height, s.x, s.y)[0]
+        s.noise_image_inpaint = extra_images.ImageCrop().crop(s.noise_image, s.width, s.height, s.x, s.y)[0]
+
+    def set_painted_image_cropped_noised(s):
+        # Blend painted image with noise image
+        s.painted_image_noised = WAS_Image_Blend().image_blend(
+            image_a=s.painted_image_inpaint, 
+            image_b=s.noise_image_inpaint, 
+            blend_percentage=s.noise_blend
+        )[0]
+
+    def upscale_inputs_cropped(s):
+        # Mask Upscale
+        mask_cropped_img = extra_mask.MaskToImage().mask_to_image(s.mask_cropped)[0]
+        s.image_mask_cropped = ImageScale().upscale(mask_cropped_img, s.upscale_method, s.inpaint_size, s.inpaint_size, "center")[0]
+        s.mask_cropped = extra_mask.ImageToMask().image_to_mask(s.image_mask_cropped, 'red')[0]
+
+        # Image Upscale
+        s.image_inpaint_cropped = ImageScale().upscale(s.image_inpaint, s.upscale_method, s.inpaint_size, s.inpaint_size, "disabled")[0]
+
+        # Noise Upscale
+        s.noise_image_cropped = ImageScale().upscale(s.noise_image, s.upscale_method, s.inpaint_size, s.inpaint_size, "center")[0]
+
+    def set_inpaint_area_noised(s):
+        s.image_noised = ImageBlendV2.image_blend_v2(
+            ImageBlendV2,
+            background_image=s.image_inpaint_cropped, 
+            layer_image=s.noise_image_cropped, 
+            invert_mask=False, 
+            blend_mode=s.tile_blend_mode, 
+            opacity=s.tile_opacity, 
+            layer_mask=s.mask_cropped
+        )[0]
+
+    def ksample_inpainting(s):
+        latent_inpaint = VAEEncodeTiled().encode(s.vae, s.image_noised, tile_size=512)[0]
+
+        latent_inpaint = SetLatentNoiseMask().set_mask(latent_inpaint, s.mask_cropped)[0]
+
+        latent_inpainted = KSampler().sample(
+            model=s.model_inpaint, 
+            seed=s.seed, 
+            steps=s.steps, 
+            cfg=s.cfg, 
+            sampler_name=s.sampler_name, 
+            scheduler=s.scheduler, 
+            positive=s.positive_inpaint, 
+            negative=s.negative_inpaint, 
+            latent_image=latent_inpaint, 
+            denoise=s.denoise
+        )[0]
+
+        latent_inpainted = RemoveNoiseMask().doit(latent_inpainted)[0]
+        s.image_inpainted = VAEDecodeTiled().decode(s.vae, latent_inpainted, tile_size=512)[0]
+
+    def set_default_output(s):
+        s.image_inpainted = s.image
+        s.image_noised = s.noise_image
+        s.text_pos_image_inpainted = s.text_pos_image
+        s.text_neg_image_inpainted = s.text_neg_inpaint
+        s.pipe = (
+            s.image,
+            s.colored_mask,
+            s.noise_image,
+            s.model, 
+            s.clip, 
+            s.vae, 
+            s.text_pos_image_inpainted, 
+            s.text_neg_image_inpainted,
+            s.seed,
+            MS_Mask.empty(s.image_width, s.image_height),
+            MS_Image.empty(s.image_width, s.image_height),
+            s.image_width,
+            s.image_height,
+            0, 
+            0,
+            s.inpaint_size
+        )
+
+
 class KSampler_pasteInpaintingTileByMask_v1:
 
     upscale_method = "lanczos"
+
+    def extract_and_process_kwargs(s, **kwargs):
+        s.unique_id = kwargs.get('unique_id', None)
+        s.image_tile = kwargs.get('image_tile', None)
+        s.mask_tile = kwargs.get('mask_tile', None)
+        s.upscale_model_name = kwargs.get('upscale_model', None)
+        s.upscale_by_model = kwargs.get('upscale_by_model', None)
+        s.subject_opacity = kwargs.get('subject_opacity', None)
+        s.ms_pipe = kwargs.get('ms_pipe', None)
+
+        s.image, s.colored_mask, s.noise_image, s.model, s.clip, s.vae, s.text_pos_inpaint, s.text_neg_inpaint, s.seed, s.mask_cropped, s.image_inpaint_cropped, s.width, s.height, s.x, s.y, s.inpaint_size = s.ms_pipe
+
+        s.text_pos_inpaint = kwargs.get('text_pos_inpaint', s.text_pos_inpaint)
+        s.text_neg_inpaint = kwargs.get('text_neg_inpaint', s.text_neg_inpaint)
+
+        s.model_inpaint = s.model
+        s.positive_inpaint = CLIPTextEncode().encode(s.clip, s.text_pos_inpaint)[0]
+        s.negative_inpaint = CLIPTextEncode().encode(s.clip, s.text_neg_inpaint)[0]
+        s.seed = kwargs.get('seed', None)
+        s.steps = kwargs.get('steps', None)
+        s.cfg = kwargs.get('cfg', None)
+        s.sampler_name = kwargs.get('sampler_name', None)
+        s.scheduler = kwargs.get('basic_scheduler', None)
+        s.denoise = kwargs.get('denoise', None)
 
     @classmethod
     def INPUT_TYPES(s):
@@ -291,7 +338,6 @@ class KSampler_pasteInpaintingTileByMask_v1:
             },
         }
 
-    # INPUT_IS_LIST = False
     RETURN_TYPES = (
         'IMAGE',
         'IMAGE',
@@ -313,104 +359,75 @@ class KSampler_pasteInpaintingTileByMask_v1:
         'positive (text)',
         'negative (text)',
     )
-    # OUTPUT_IS_LIST = (
-    #     False,
-    #     False,
-    #     False,
-    #     False,
-    # )
     FUNCTION = "fn"
     OUTPUT_NODE = True
 
     CATEGORY = "MaraScott/Ksampler"
 
-    def fn(self, **kwargs):
+    def fn(s, **kwargs):
+        s.extract_and_process_kwargs(**kwargs)
+        s.image, s.image_width, s.image_height, s.image_divisible_by_8 = MS_Image().format_2_divby8(s.image)
 
-        unique_id = kwargs.get('unique_id', None)
-        image_tile = kwargs.get('image_tile', None)
-        mask_tile = kwargs.get('mask_tile', None)
-        upscale_model_name = kwargs.get('upscale_model', None)
-        upscale_by_model = kwargs.get('upscale_by_model', None)
-        subject_opacity = kwargs.get('subject_opacity', None)
-        ms_pipe = kwargs.get('ms_pipe', None)
-
-        image, mask, noise_image, model, clip, vae, text_pos_inpaint, text_neg_inpaint, seed, mask_cropped, image_inpaint_cropped, width, height, x, y, inpaint_size = ms_pipe
-
-        image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(image)
-
-        text_pos_inpaint = kwargs.get('text_pos_inpaint', text_pos_inpaint)
-        text_neg_inpaint = kwargs.get('text_neg_inpaint', text_neg_inpaint)
-
-        model_inpaint = model
-        positive_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_pos_inpaint)[0]
-        negative_inpaint = CLIPTextEncode.encode(CLIPTextEncode, clip, text_neg_inpaint)[0]
-        seed = kwargs.get('seed', None)
-        steps = kwargs.get('steps', None)
-        cfg = kwargs.get('cfg', None)
-        sampler_name = kwargs.get('sampler_name', None)
-        scheduler = kwargs.get('basic_scheduler', None)
-        denoise = kwargs.get('denoise', None)
-
-        if torch.all(mask == 0):
-            output_image = image
-            image = image
-            text_pos_image_inpainted = text_pos_inpaint
-            text_neg_image_inpainted = text_neg_inpaint
+        if torch.all(s.colored_mask == 0):
+            output_image = s.image
+            image = s.image
+            text_pos_image_inpainted = s.text_pos_inpaint
+            text_neg_image_inpainted = s.text_neg_inpaint
         else:
-            region = WAS_Mask_Crop_Region().mask_crop_region(mask_tile, padding=0, region_type="dominant")
+            region = WAS_Mask_Crop_Region().mask_crop_region(s.mask_tile, padding=0, region_type="dominant")
             x_subject = region[3]
             y_subject = region[2]
             width_subject = region[6]
             height_subject = region[7]
 
-            subject = extra_images.ImageCrop.crop(extra_images.ImageCrop, image_tile, width_subject, height_subject, x_subject, y_subject)[0]
+            subject = extra_images.ImageCrop.crop(extra_images.ImageCrop, s.image_tile, width_subject, height_subject, x_subject, y_subject)[0]
             subject_only = ttN_imageREMBG.remove_background(ttN_imageREMBG(), image=subject, image_output="Hide", save_prefix="MaraScott_", prompt=None, extra_pnginfo=None, my_unique_id="{unique_id}")[0]
-            subject_only = ImageOpacity.image_opacity(ImageOpacity, image=subject_only, opacity=subject_opacity, invert_mask=True)[0]
-            subject = ImagePaste.paste(ImagePaste,background_image=image_inpaint_cropped, foreground_image=subject_only, x_position=x_subject, y_position=y_subject)[0]
+            subject_only = ImageOpacity.image_opacity(ImageOpacity, image=subject_only, opacity=s.subject_opacity, invert_mask=True)[0]
+            subject = ImagePaste.paste(ImagePaste, background_image=s.image_inpaint_cropped, foreground_image=subject_only, x_position=x_subject, y_position=y_subject)[0]
             subject = ImageOpacity.image_opacity(ImageOpacity, image=subject, opacity=100, invert_mask=False)[0]
-            subject_upscaled = ImageScale.upscale(ImageScale, subject, self.upscale_method, width, height, "center")[0]
+            subject_upscaled = ImageScale().upscale(subject, s.upscale_method, s.width, s.height, "center")[0]
 
-            output_image = ImagePaste.paste(ImagePaste,background_image=image, foreground_image=subject_upscaled, x_position=x, y_position=y)[0]
+            output_image = ImagePaste.paste(ImagePaste, background_image=s.image, foreground_image=subject_upscaled, x_position=s.x, y_position=s.y)[0]
 
-            mask_image = extra_mask.MaskToImage().mask_to_image(mask)[0]
-            mask_image = ImageScale.upscale(ImageScale, mask_image, self.upscale_method, width, height, "center")[0]
+            mask_image = extra_mask.MaskToImage().mask_to_image(s.colored_mask)[0]
+            mask_image = ImageScale().upscale(mask_image, s.upscale_method, s.width, s.height, "center")[0]
 
-            if upscale_by_model:
-                upscale_model = extra_upscale_model.UpscaleModelLoader.load_model(extra_upscale_model.UpscaleModelLoader, upscale_model_name)[0]
+            if s.upscale_by_model:
+                upscale_model = extra_upscale_model.UpscaleModelLoader.load_model(extra_upscale_model.UpscaleModelLoader, s.upscale_model_name)[0]
                 output_image_upscaled = extra_upscale_model.ImageUpscaleWithModel.upscale(extra_upscale_model.ImageUpscaleWithModel, upscale_model, output_image)[0]
             else:
-                output_image_upscaled = ImageScaleBy().upscale(output_image, self.upscale_method, 1.5)[0]
-                mask_image = ImageScaleBy().upscale(mask_image, self.upscale_method, 1.5)[0]
+                output_image_upscaled = ImageScaleBy().upscale(output_image, s.upscale_method, 1.5)[0]
+                mask_image = ImageScaleBy().upscale(mask_image, s.upscale_method, 1.5)[0]
 
-            mask = extra_mask.ImageToMask().image_to_mask(mask_image, 'red')[0]
-            
-            latent = VAEEncodeTiled.encode(VAEEncodeTiled, vae, output_image_upscaled, tile_size=512)[0]
-            latent = SetLatentNoiseMask.set_mask(SetLatentNoiseMask, latent, mask)[0]
+            s.colored_mask = extra_mask.ImageToMask().image_to_mask(mask_image, 'red')[0]
+
+            latent = VAEEncodeTiled().encode(s.vae, output_image_upscaled, tile_size=512)[0]
+            latent = SetLatentNoiseMask().set_mask(latent, s.colored_mask)[0]
 
             latent_inpainted = KSampler.sample(
                 KSampler,
-                model=model_inpaint, 
-                seed=seed, 
-                steps=steps, 
-                cfg=cfg, 
-                sampler_name=sampler_name, 
-                scheduler=scheduler, 
-                positive=positive_inpaint, 
-                negative=negative_inpaint, 
+                model=s.model_inpaint, 
+                seed=s.seed, 
+                steps=s.steps, 
+                cfg=s.cfg, 
+                sampler_name=s.sampler_name, 
+                scheduler=s.scheduler, 
+                positive=s.positive_inpaint, 
+                negative=s.negative_inpaint, 
                 latent_image=latent, 
-                denoise=denoise
+                denoise=s.denoise
             )[0]
 
-            latent_inpainted = RemoveNoiseMask.doit(RemoveNoiseMask, latent_inpainted)[0]
-            output_image = VAEDecodeTiled.decode(VAEDecodeTiled, vae, latent_inpainted, tile_size=512)[0]
+            latent_inpainted = RemoveNoiseMask().doit(latent_inpainted)[0]
+            output_image = VAEDecodeTiled().decode(s.vae, latent_inpainted, tile_size=512)[0]
 
-            output_image = ImageScale().upscale(output_image, self.upscale_method, image_width, image_height, "center")[0]
+            output_image = ImageScale().upscale(output_image, s.upscale_method, s.image_width, s.image_height, "center")[0]
 
             output_image = output_image
             image_inpainted = output_image_upscaled
-            image = image
-            text_pos_image_inpainted = text_pos_inpaint
-            text_neg_image_inpainted = text_neg_inpaint
+            image = s.image
+            text_pos_image_inpainted = s.text_pos_inpaint
+            text_neg_image_inpainted = s.text_neg_inpaint
 
         return (
             output_image,
@@ -418,4 +435,4 @@ class KSampler_pasteInpaintingTileByMask_v1:
             image,
             text_pos_image_inpainted, 
             text_neg_image_inpainted
-        )    
+        )
