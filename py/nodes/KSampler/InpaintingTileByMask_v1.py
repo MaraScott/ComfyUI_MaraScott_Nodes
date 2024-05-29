@@ -137,8 +137,8 @@ class KSampler_setInpaintingTileByMask_v1:
         scheduler = kwargs.get('basic_scheduler', None)
         denoise = kwargs.get('denoise', None)
 
-
         image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(image)
+
 
         painted_image = ImageScale.upscale(ImageScale, painted_image, self.upscale_method, image_width, image_height, "center")[0]
         mask_image = extra_mask.MaskToImage.mask_to_image(extra_mask.MaskToImage, mask)[0]
@@ -336,10 +336,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
         image, mask, noise_image, model, clip, vae, text_pos_inpaint, text_neg_inpaint, seed, mask_cropped, image_inpaint_cropped, width, height, x, y, inpaint_size = ms_pipe
 
-        _image = image
-        if _image.shape[0] > 0:
-            _image = torch.unsqueeze(_image[0], 0)
-        _image = MS_Image.tensor2pil(_image)        
+        image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(image)
 
         text_pos_inpaint = kwargs.get('text_pos_inpaint', text_pos_inpaint)
         text_neg_inpaint = kwargs.get('text_neg_inpaint', text_neg_inpaint)
