@@ -2,7 +2,7 @@ from .imagefunc import *
 
 from ....utils.log import log
 
-NODE_NAME = 'ImageOpacity'
+# NODE_NAME = 'ImageOpacity'
 
 class ImageOpacity:
 
@@ -78,10 +78,10 @@ class ImageOpacity:
         log(f"{NODE_NAME} Processed {len(ret_images)} image(s).", None, None, prefix='finish')
         return (torch.cat(ret_images, dim=0), torch.cat(ret_masks, dim=0),)
 
-NODE_CLASS_MAPPINGS = {
-    "LayerUtility: ImageOpacity": ImageOpacity
-}
+# NODE_CLASS_MAPPINGS = {
+#     "LayerUtility: ImageOpacity": ImageOpacity
+# }
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "LayerUtility: ImageOpacity": "LayerUtility: ImageOpacity"
-}
+# NODE_DISPLAY_NAME_MAPPINGS = {
+#     "LayerUtility: ImageOpacity": "LayerUtility: ImageOpacity"
+# }
