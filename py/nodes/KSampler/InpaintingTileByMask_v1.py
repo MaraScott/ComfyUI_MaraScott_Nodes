@@ -40,7 +40,7 @@ class KSampler_setInpaintingTileByMask_v1:
                 "noise_image": ("IMAGE", { "label": "Image (Noise)" }),
 
                 "inpaint_size": ("INT", { "label": "Inpaint Size", "default": 1024, "min": 512, "max": 1024, "step": 512}),
-                "noise_blend": ("INT", { "label": "Blend (Noise)", "default": 100, "min": 0, "max": 100, "step": 1 }),
+                "noise_blend": ("FLOAT", {"label": "Blend (Noise)", "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "tile_blend_mode": (chop_mode_v2, { "label": "Blend Mode (tile)", "default": "normal" }),  # normal|overlay|pin light|dissolve|hue|linear light
                 "tile_opacity": ("INT", { "label": "Opacity (tile)", "default": 100, "min": 0, "max": 100, "step": 1 }),
 
@@ -117,7 +117,7 @@ class KSampler_setInpaintingTileByMask_v1:
             s.text_pos_image_inpainted = f"{s.inputs.text_pos_image}, {s.inputs.text_pos_inpaint}"
             s.text_neg_image_inpainted = s.inputs.text_neg_inpaint
 
-            pipe = (
+            s.pipe = (
                 s.inputs.source,
                 s.inputs.painted,
                 s.inputs.painted_mask,
@@ -142,7 +142,7 @@ class KSampler_setInpaintingTileByMask_v1:
             s.tile.noised_by_mask,
             s.text_pos_image_inpainted, 
             s.text_neg_image_inpainted,
-            pipe,
+            s.pipe,
         )
 
     def init(s, **kwargs):
@@ -187,16 +187,16 @@ class KSampler_setInpaintingTileByMask_v1:
         s.inputs.source, s.image_width, s.image_height, s.image_divisible_by_8 = MS_Image().format_2_divby8(s.inputs.source)
 
         # Upscale and process painted image and mask
-        s.inputs.painted = ImageScale().upscale(s.inputs.painted, s.params.upscale_method, s.image_width, s.image_height, "center")[0]
+        s.inputs.painted = ImageScale().upscale(s.inputs.painted, s.params.upscale_method, s.image_width, s.image_height, "disabled")[0]
 
         mask_image = extra_mask.MaskToImage().mask_to_image(s.inputs.painted_mask)[0]
-        mask_image = ImageScale().upscale(mask_image, s.params.upscale_method, s.image_width, s.image_height, "center")[0]
+        mask_image = ImageScale().upscale(mask_image, s.params.upscale_method, s.image_width, s.image_height, "disabled")[0]
         s.inputs.painted_mask = extra_mask.ImageToMask().image_to_mask(mask_image, 'red')[0]
 
-        s.inputs.noise = ImageScale().upscale(s.inputs.noise, s.params.upscale_method, s.image_width, s.image_height, "center")[0]
+        s.inputs.noise = ImageScale().upscale(s.inputs.noise, s.params.upscale_method, s.image_width, s.image_height, "disabled")[0]
 
     def set_default_outputs(s):
-        s.tile.noised_by_mask = s.inputs.source
+        s.tile.inpainted = s.inputs.source
         s.tile.noised_by_mask = s.inputs.noise
         s.text_pos_image_inpainted = s.inputs.text_pos_image
         s.text_neg_image_inpainted = s.inputs.text_neg_inpaint
@@ -256,11 +256,11 @@ class KSampler_setInpaintingTileByMask_v1:
 
         # Mask Upscale
         painted_mask = extra_mask.MaskToImage().mask_to_image(s.tile.painted_mask)[0]
-        painted_mask = ImageScale().upscale(painted_mask, s.params.upscale_method, s.params.inpaint_size, s.params.inpaint_size, "center")[0]
+        painted_mask = ImageScale().upscale(painted_mask, s.params.upscale_method, s.params.inpaint_size, s.params.inpaint_size, "disabled")[0]
         s.tile.painted_mask = extra_mask.ImageToMask().image_to_mask(painted_mask, 'red')[0]
 
         # Noise Upscale
-        s.tile.noise = ImageScale().upscale(s.tile.noise, s.params.upscale_method, s.params.inpaint_size, s.params.inpaint_size, "center")[0]
+        s.tile.noise = ImageScale().upscale(s.tile.noise, s.params.upscale_method, s.params.inpaint_size, s.params.inpaint_size, "disabled")[0]
 
     def set_tile_noise_by_mask(s):
         s.tile.noised_by_mask = ImageBlendV2().image_blend_v2(
@@ -328,6 +328,9 @@ class KSampler_pasteInpaintingTileByMask_v1:
         'IMAGE',
         'IMAGE',
         'IMAGE',
+        'IMAGE',
+        'MASK',
+        'IMAGE',
         'STRING',
         'STRING',
     )
@@ -335,6 +338,9 @@ class KSampler_pasteInpaintingTileByMask_v1:
         'output_image',
         'image_inpainted',
         'image',
+        'tile_inpainted',
+        'tile_mask',
+        'tile_source',
         'text_pos_image_inpainted',
         'text_neg_image_inpainted',
     )
@@ -342,6 +348,9 @@ class KSampler_pasteInpaintingTileByMask_v1:
         'Image',
         'Image Inpainting (input)',
         'Image (Original)',
+        'Tile Inpainting',
+        'Tile Mask',
+        'Tile (Original)',
         'positive (text)',
         'negative (text)',
     )
@@ -353,51 +362,34 @@ class KSampler_pasteInpaintingTileByMask_v1:
     def fn(s, **kwargs):
         
         s.init(**kwargs)
-        s.inputs.source, s.image_width, s.image_height, s.image_divisible_by_8 = MS_Image().format_2_divby8(s.inputs.source)
+        s.inputs.tile.image, s.tile_width, s.tile_height, s.image_divisible_by_8 = MS_Image().format_2_divby8(s.inputs.tile.image)
+        s.image_width, s.image_height = s.inputs.source.shape[2], s.inputs.source.shape[1]
 
-        if torch.all(s.inputs.painted_mask == 0):
+        if torch.all(s.inputs.tile.mask == 0):
             
             output_image = s.inputs.source
             image_inpainted = s.inputs.painted
             image = s.inputs.source
+            tile_inpainted = s.inputs.tile.image
+            tile_mask = MS_Mask.empty(s.tile_width, s.tile_height)
+            tile_source = s.inputs.tile.source            
             text_pos_image_inpainted = s.inputs.text_pos_inpaint
             text_neg_image_inpainted = s.inputs.text_neg_inpaint
         
         else:
 
-            s.set_subject_region()
-            s.paste_subject2tile()
-            # s.outputs.image = ImageScale().upscale(s.tile.inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "center")[0]
-            
             s.refine_tile()
             s.paste_tile2source()
-            
-            # latent = VAEEncodeTiled().encode(s.ksampler.vae, s.outputs.image, tile_size=512)[0]
-            # if s.params.is_model_diffdiff:
-            #     latent = SetLatentNoiseMask().set_mask(latent, s.inputs.painted_mask)[0]            
 
-            # latent = KSampler().sample(
-            #     model=s.ksampler.model_inpaint, 
-            #     seed=s.ksampler.seed, 
-            #     steps=s.ksampler.steps, 
-            #     cfg=s.ksampler.cfg, 
-            #     sampler_name=s.ksampler.sampler_name, 
-            #     scheduler=s.ksampler.scheduler, 
-            #     positive=s.ksampler.positive_inpaint, 
-            #     negative=s.ksampler.negative_inpaint, 
-            #     latent_image=latent, 
-            #     denoise=s.ksampler.denoise
-            # )[0]
-
-            # if s.params.is_model_diffdiff:
-            #     latent = RemoveNoiseMask().doit(latent)[0]
-            # s.outputs.image = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=512)[0]
-
-            s.outputs.image = ImageScale().upscale(s.outputs.image, s.params.upscale_method, s.image_width, s.image_height, "center")[0]
+            s.outputs.image = ImageScale().upscale(s.outputs.image, s.params.upscale_method, s.image_width, s.image_height, "disabled")[0]
+            s.outputs.image = extra_mask.ImageCompositeMasked().composite(s.outputs.image, s.outputs.image, x = s.params.mask_region.x, y = s.params.mask_region.y, resize_source = False, mask = s.inputs.painted_mask)[0]
 
             output_image = s.outputs.image
             image_inpainted = s.inputs.painted
             image = s.inputs.source
+            tile_inpainted = s.inputs.tile.image
+            tile_mask = s.inputs.tile.mask
+            tile_source = s.inputs.tile.source            
             text_pos_image_inpainted = s.inputs.text_pos_inpaint
             text_neg_image_inpainted = s.inputs.text_neg_inpaint
             
@@ -405,6 +397,9 @@ class KSampler_pasteInpaintingTileByMask_v1:
             output_image,
             image_inpainted,
             image,
+            tile_inpainted,
+            tile_mask,
+            tile_source,            
             text_pos_image_inpainted, 
             text_neg_image_inpainted
         )
@@ -450,27 +445,10 @@ class KSampler_pasteInpaintingTileByMask_v1:
         s.ksampler.positive_inpaint = CLIPTextEncode().encode(s.ksampler.clip, s.inputs.text_pos_inpaint)[0]
         s.ksampler.negative_inpaint = CLIPTextEncode().encode(s.ksampler.clip, s.inputs.text_neg_inpaint)[0]
 
-    def set_subject_region(s):
-
-        region = WAS_Mask_Crop_Region().mask_crop_region(s.inputs.tile.mask, padding=0, region_type="dominant")
-        
-        s.params.subject_region = SimpleNamespace(
-            mask_cropped = region[0],
-            x = region[3],
-            y = region[2],
-            width = region[6],
-            height = region[7],
-        )
-
-    def paste_subject2tile(s):
-        subject_tile = extra_mask.ImageCompositeMasked().composite(s.inputs.source, s.inputs.tile.source, x = s.params.subject_region.x, y = s.params.subject_region.y, resize_source = False, mask = s.inputs.tile.mask)[0]
-        subject_tile = ImageOpacity().image_opacity(image=subject_tile, opacity=100, invert_mask=False)[0]
-        s.tile.inpainted = ImageScale().upscale(subject_tile, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "center")[0]
-
     def refine_tile(s):
         
-        inpainted = ImageScaleBy().upscale(s.tile.inpainted, s.params.upscale_method, 1.5)[0]
-        mask_cropped = extra_mask.MaskToImage().mask_to_image(s.params.subject_region.mask_cropped)[0]
+        inpainted = ImageScaleBy().upscale(s.inputs.tile.image, s.params.upscale_method, 1.5)[0]
+        mask_cropped = extra_mask.MaskToImage().mask_to_image(s.params.mask_region.mask_cropped)[0]
         mask_cropped = ImageScaleBy().upscale(mask_cropped, s.params.upscale_method, 1.5)[0]
         mask_cropped = extra_mask.ImageToMask().image_to_mask(mask_cropped, 'red')[0]
         
@@ -497,6 +475,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
         s.tile.inpainted = ImageScale().upscale(inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "disabled")[0]
 
     def paste_tile2source(s):
+        s.tile.inpainted = ImageScale().upscale(s.tile.inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "disabled")[0]
         s.outputs.image = ImagePaste().paste(background_image=s.inputs.source, foreground_image=s.tile.inpainted, x_position=s.params.mask_region.x, y_position=s.params.mask_region.y)[0]
 
         
