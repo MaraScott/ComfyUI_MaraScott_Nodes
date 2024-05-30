@@ -109,9 +109,9 @@ class KSampler_setInpaintingTileByMask_v1:
         else:
             s.set_tile_region()
             s.crop_tiles()
-            s.upscale_tiles()
             s.set_painted_image_cropped_noised()
             s.set_tile_noise_by_mask()
+            s.upscale_tiles()
             s.ksample_tile()
 
             s.text_pos_image_inpainted = f"{s.inputs.text_pos_image}, {s.inputs.text_pos_inpaint}"
@@ -240,13 +240,19 @@ class KSampler_setInpaintingTileByMask_v1:
         s.tile.painted = extra_images.ImageCrop().crop(s.inputs.painted, s.params.mask_region.width, s.params.mask_region.height, s.params.mask_region.x, s.params.mask_region.y)[0]
         s.tile.painted_mask = s.params.mask_region.mask_cropped
         s.tile.noise = extra_images.ImageCrop().crop(s.inputs.noise, s.params.mask_region.width, s.params.mask_region.height, s.params.mask_region.x, s.params.mask_region.y)[0]
+        log(s.tile.noise.shape)
+        log('------')
 
     def set_painted_image_cropped_noised(s):
         # Blend painted image with noise image
-        s.tile.noised = WAS_Image_Blend().image_blend(
-            image_a=s.tile.painted, 
-            image_b=s.tile.noise, 
-            blend_percentage=s.params.noise_blend
+        log(s.tile.noise.shape)
+        s.tile.noised = ImageBlendV2().image_blend_v2(
+            background_image=s.tile.painted, 
+            layer_image=s.tile.noise, 
+            invert_mask=False, 
+            blend_mode=s.params.tile_blend_mode, 
+            opacity=50, 
+            layer_mask=None
         )[0]
 
     def upscale_tiles(s):
@@ -265,7 +271,7 @@ class KSampler_setInpaintingTileByMask_v1:
     def set_tile_noise_by_mask(s):
         s.tile.noised_by_mask = ImageBlendV2().image_blend_v2(
             background_image=s.tile.source, 
-            layer_image=s.tile.noise, 
+            layer_image=s.tile.noised, 
             invert_mask=False, 
             blend_mode=s.params.tile_blend_mode, 
             opacity=s.params.tile_opacity, 
@@ -449,9 +455,9 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
     def refine_tile(s):
         
-        inpainted = ImageScaleBy().upscale(s.inputs.tile.image, s.params.upscale_method, 1.1)[0]
+        inpainted = ImageScaleBy().upscale(s.inputs.tile.image, s.params.upscale_method, 1.5)[0]
         mask_cropped = extra_mask.MaskToImage().mask_to_image(s.params.mask_region.mask_cropped)[0]
-        mask_cropped = ImageScaleBy().upscale(mask_cropped, s.params.upscale_method, 1.1)[0]
+        mask_cropped = ImageScaleBy().upscale(mask_cropped, s.params.upscale_method, 1.5)[0]
         mask_cropped = extra_mask.ImageToMask().image_to_mask(mask_cropped, 'red')[0]
         
         latent = VAEEncodeTiled().encode(s.ksampler.vae, inpainted, tile_size=512)[0]
@@ -474,13 +480,13 @@ class KSampler_pasteInpaintingTileByMask_v1:
         # if s.params.is_model_diffdiff:
         #     latent = RemoveNoiseMask().doit(latent)[0]
         inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=512)[0]
-        s.inputs.tile.inpainted = ImageScaleBy().upscale(inpainted, s.params.upscale_method, (1/1.1))[0]
+        s.inputs.tile.inpainted = ImageScaleBy().upscale(inpainted, s.params.upscale_method, (1/1.5))[0]
 
     def refine_output(s):
         
-        output = ImageScaleBy().upscale(s.outputs.image, s.params.upscale_method, 1.1)[0]
+        output = ImageScaleBy().upscale(s.outputs.image, s.params.upscale_method, 1.5)[0]
         input_mask = extra_mask.MaskToImage().mask_to_image(s.inputs.painted_mask)[0]
-        input_mask = ImageScaleBy().upscale(input_mask, s.params.upscale_method, 1.1)[0]
+        input_mask = ImageScaleBy().upscale(input_mask, s.params.upscale_method, 1.5)[0]
         input_mask = extra_mask.ImageToMask().image_to_mask(input_mask, 'red')[0]
         
         latent = VAEEncodeTiled().encode(s.ksampler.vae, output, tile_size=512)[0]
@@ -503,7 +509,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
         if s.params.is_model_diffdiff:
             latent = RemoveNoiseMask().doit(latent)[0]
         output = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=512)[0]
-        s.outputs.image = ImageScaleBy().upscale(output, s.params.upscale_method, (1/1.1))[0]
+        s.outputs.image = ImageScaleBy().upscale(output, s.params.upscale_method, (1/1.5))[0]
 
     def paste_tile2source(s):
         s.inputs.tile.inpainted = ImageScale().upscale(s.inputs.tile.inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "disabled")[0]
