@@ -463,7 +463,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
         )
 
     def paste_subject2tile(s):
-        subject_tile = extra_mask.ImageCompositeMasked().composite(s.inputs.source, s.inputs.tile.source, x = s.params.subject_region.x, y = s.params.subject_region.y, resize_source = False, mask = s.inputs.tile.mask)[0]
+        subject_tile = extra_mask.ImageCompositeMasked().composite(s.inputs.tile.source, s.inputs.tile.source, x = s.params.subject_region.x, y = s.params.subject_region.y, resize_source = False, mask = s.inputs.tile.mask)[0]
         subject_tile = ImageOpacity().image_opacity(image=subject_tile, opacity=100, invert_mask=False)[0]
         s.tile.inpainted = ImageScale().upscale(subject_tile, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "center")[0]
 
