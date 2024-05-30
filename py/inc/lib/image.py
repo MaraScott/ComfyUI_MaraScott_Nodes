@@ -172,7 +172,7 @@ class MS_Image:
 
     @staticmethod
     def empty(width, height):
-        return torch.zeros((height, width, 3), dtype=torch.uint8),
+        return torch.zeros((height, width, 3), dtype=torch.float32)
 
     @staticmethod
     def tensor2pil(t_image: torch.Tensor)  -> Image:

@@ -10,7 +10,7 @@ class MS_Mask:
 
     @staticmethod
     def empty(width, height):
-        return torch.zeros((height, width), dtype=torch.uint8),
+        return (torch.zeros((height, width), dtype=torch.float32, device="cpu")).unsqueeze(0)
 
     # CREDITS ComfyUI-KJNodes\nodes\mask_nodes.py l.1201
     def resize(mask, width, height, keep_proportions):
