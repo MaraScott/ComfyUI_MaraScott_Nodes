@@ -44,8 +44,7 @@ class MS_Image:
         if not is_dviby8:
             is_dviby8 = False
             width, height = self.calculate_new_dimensions(width, height)
-
-        image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", width, height, "center")[0]
+            image = nodes.ImageScale.upscale(nodes.ImageScale, image, "nearest-exact", width, height, "center")[0]
 
         return image, width, height, is_dviby8
 
