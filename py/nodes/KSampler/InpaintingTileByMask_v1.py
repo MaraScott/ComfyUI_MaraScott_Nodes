@@ -367,6 +367,8 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
             s.set_subject_region()
             s.paste_subject2tile()
+            # s.outputs.image = ImageScale().upscale(s.tile.inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "center")[0]
+            
             s.refine_tile()
             s.paste_tile2source()
             
@@ -450,7 +452,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
     def set_subject_region(s):
 
-        region = WAS_Mask_Crop_Region().mask_crop_region(s.tile.mask, padding=0, region_type="dominant")
+        region = WAS_Mask_Crop_Region().mask_crop_region(s.inputs.tile.mask, padding=0, region_type="dominant")
         
         s.params.subject_region = SimpleNamespace(
             mask_cropped = region[0],
@@ -461,19 +463,21 @@ class KSampler_pasteInpaintingTileByMask_v1:
         )
 
     def paste_subject2tile(s):
-        subject_tile = extra_images.ImageCrop().crop(s.tile.image, s.params.subject_region.width, s.params.subject_region.height, s.params.subject_region.x, s.params.subject_region.y)[0]
-        subject_only = ttN_imageREMBG().remove_background(image=subject_tile, image_output="Hide", save_prefix="MaraScott_", prompt=None, extra_pnginfo=None, my_unique_id="{unique_id}")[0]
-        subject_only = ImageOpacity().image_opacity(image=subject_only, opacity=s.params.subject_opacity, invert_mask=True)[0]
-
-        subject_tile = ImagePaste().paste(background_image=s.tile.source, foreground_image=subject_only, x_position=s.params.subject_region.x, y_position=s.params.subject_region.y)[0]
+        subject_tile = extra_mask.ImageCompositeMasked().composite(s.inputs.source, s.inputs.tile.source, x = s.params.subject_region.x, y = s.params.subject_region.y, resize_source = False, mask = s.inputs.tile.mask)[0]
         subject_tile = ImageOpacity().image_opacity(image=subject_tile, opacity=100, invert_mask=False)[0]
-
         s.tile.inpainted = ImageScale().upscale(subject_tile, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "center")[0]
 
     def refine_tile(s):
         
-        s.tile.inpainted = ImageScaleBy().upscale(s.tile.inpainted, s.params.upscale_method, 1.5)[0]
-        latent = VAEEncodeTiled().encode(s.ksampler.vae, s.tile.inpainted, tile_size=512)[0]
+        inpainted = ImageScaleBy().upscale(s.tile.inpainted, s.params.upscale_method, 1.5)[0]
+        mask_cropped = extra_mask.MaskToImage().mask_to_image(s.params.subject_region.mask_cropped)[0]
+        mask_cropped = ImageScaleBy().upscale(mask_cropped, s.params.upscale_method, 1.5)[0]
+        mask_cropped = extra_mask.ImageToMask().image_to_mask(mask_cropped, 'red')[0]
+        
+        latent = VAEEncodeTiled().encode(s.ksampler.vae, inpainted, tile_size=512)[0]
+        if s.params.is_model_diffdiff:
+            latent = SetLatentNoiseMask().set_mask(latent, mask_cropped)[0]            
+            
         latent = KSampler().sample(
             model=s.ksampler.model_inpaint, 
             seed=s.ksampler.seed, 
@@ -487,8 +491,10 @@ class KSampler_pasteInpaintingTileByMask_v1:
             denoise=s.ksampler.denoise
         )[0]
 
-        s.tile.inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=512)[0]
-        s.tile.inpainted = ImageScale().upscale(s.tile.inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "disabled")[0]
+        if s.params.is_model_diffdiff:
+            latent = RemoveNoiseMask().doit(latent)[0]
+        inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=512)[0]
+        s.tile.inpainted = ImageScale().upscale(inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "disabled")[0]
 
     def paste_tile2source(s):
         s.outputs.image = ImagePaste().paste(background_image=s.inputs.source, foreground_image=s.tile.inpainted, x_position=s.params.mask_region.x, y_position=s.params.mask_region.y)[0]
