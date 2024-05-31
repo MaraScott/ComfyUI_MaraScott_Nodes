@@ -9,7 +9,7 @@
 #
 ###
 
-class DisplayInfoNode:
+class DisplayInfoNode_v1:
     
     @classmethod
     def INPUT_TYPES(s):
