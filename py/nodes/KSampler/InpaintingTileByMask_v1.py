@@ -391,20 +391,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
         else:
 
             s.refine_tile()
-            s.paste_tile2source()
-            s.refine_output()
-            s.outputs.image = extra_mask.ImageCompositeMasked().composite(s.inputs.source, s.outputs.image, x = 0, y = 0, resize_source = False, mask = s.inputs.painted_mask)[0]
-
-            # log((
-            #     (s.inputs.tile.image.shape[2], s.inputs.tile.image.shape[1]),
-            #     (s.inputs.tile.inpainted.shape[2], s.inputs.tile.inpainted.shape[1]),
-            #     (s.tile.output.shape[2], s.tile.output.shape[1]),
-            #     (s.inputs.tile.mask.shape[2], s.inputs.tile.mask.shape[1]),
-            #     (s.inputs.source.shape[2], s.inputs.source.shape[1]),
-            #     (s.params.mask_region.x, s.params.mask_region.y, s.params.mask_region.width, s.params.mask_region.height),
-            #     (s.outputs.image.shape[2], s.outputs.image.shape[1]),
-            # )) 
-            
+            s.paste_tile2source()            
 
             output_image = s.outputs.image
             image_inpainted = s.inputs.painted
@@ -492,31 +479,6 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
         inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=int(s.params.inpaint_size/2))[0]
         s.outputs.tile.inpainted = ImageScaleBy().upscale(inpainted, s.params.upscale_method, (1/1.5))[0]        
-
-    def refine_output(s):
-        
-        output = ImageScaleBy().upscale(s.outputs.image, s.params.upscale_method, 1.5)[0]
-        input_mask = extra_mask.MaskToImage().mask_to_image(s.inputs.painted_mask)[0]
-        input_mask = ImageScaleBy().upscale(input_mask, s.params.upscale_method, 1.5)[0]
-        input_mask = extra_mask.ImageToMask().image_to_mask(input_mask, 'red')[0]
-        
-        latent = VAEEncodeTiled().encode(s.ksampler.vae, output, tile_size=int(s.params.inpaint_size/2))[0]
-            
-        latent = KSampler().sample(
-            model=s.ksampler.model_inpaint, 
-            seed=s.ksampler.seed, 
-            steps=s.ksampler.steps, 
-            cfg=s.ksampler.cfg, 
-            sampler_name=s.ksampler.sampler_name, 
-            scheduler=s.ksampler.scheduler, 
-            positive=s.ksampler.positive_inpaint, 
-            negative=s.ksampler.negative_inpaint, 
-            latent_image=latent, 
-            denoise=s.ksampler.denoise_refine
-        )[0]
-
-        output = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=int(s.params.inpaint_size/2))[0]
-        s.outputs.image = ImageScaleBy().upscale(output, s.params.upscale_method, (1/1.5))[0]
 
     def paste_tile2source(s):
         s.outputs.tile.output = ImageScale().upscale(s.outputs.tile.inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "disabled")[0]
