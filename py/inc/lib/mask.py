@@ -26,3 +26,31 @@ class MS_Mask:
         outputs = outputs.squeeze(1)
 
         return(outputs, outputs.shape[2], outputs.shape[1],)
+    
+    def calculate_crop_area(self, image_width, image_height, crop_x, crop_y, crop_width, crop_height):
+        # Add padding to the crop area
+        padding = 15
+        crop_x -= padding
+        crop_y -= padding
+        crop_width += 2 * padding
+        crop_height += 2 * padding
+        
+        # Ensure the crop area is square by using the larger dimension
+        final_size = max(crop_width, crop_height)
+        
+        # Adjust x and y to keep the crop within the full image boundaries
+        crop_x = max(0, min(crop_x, image_width - final_size))
+        crop_y = max(0, min(crop_y, image_height - final_size))
+        
+        # Make sure the crop size fits within the image boundaries
+        if crop_x + final_size > image_width:
+            crop_x = image_width - final_size
+        if crop_y + final_size > image_height:
+            crop_y = image_height - final_size
+
+        # Ensure x, y, width, and height are integers
+        crop_x = int(crop_x)
+        crop_y = int(crop_y)
+        final_size = int(final_size)
+        
+        return crop_x, crop_y, final_size, final_size

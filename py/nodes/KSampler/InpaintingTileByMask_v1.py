@@ -27,6 +27,7 @@ from ...vendor.mikey_nodes.mikey_nodes import ImagePaste
 from ...vendor.ComfyUI_tinyterraNodes.ttNpy.tinyterraNodes import ttN_imageREMBG
 
 from ...utils.log import *
+import copy
 
 class KSampler_setInpaintingTileByMask_v1:
 
@@ -232,6 +233,12 @@ class KSampler_setInpaintingTileByMask_v1:
             width = region[6],
             height = region[7],
         )
+        _mask_region = copy.deepcopy(s.params.mask_region)
+        del _mask_region.mask_cropped
+        log(_mask_region)
+        __mask_region = MS_Mask().calculate_crop_area(s.inputs.painted.shape[2], s.inputs.painted.shape[1], s.params.mask_region.x, s.params.mask_region.y, s.params.mask_region.width, s.params.mask_region.width)
+        log(__mask_region)
+        
 
     def crop_tiles(s):
 
@@ -240,12 +247,9 @@ class KSampler_setInpaintingTileByMask_v1:
         s.tile.painted = extra_images.ImageCrop().crop(s.inputs.painted, s.params.mask_region.width, s.params.mask_region.height, s.params.mask_region.x, s.params.mask_region.y)[0]
         s.tile.painted_mask = s.params.mask_region.mask_cropped
         s.tile.noise = extra_images.ImageCrop().crop(s.inputs.noise, s.params.mask_region.width, s.params.mask_region.height, s.params.mask_region.x, s.params.mask_region.y)[0]
-        log(s.tile.noise.shape)
-        log('------')
 
     def set_painted_image_cropped_noised(s):
         # Blend painted image with noise image
-        log(s.tile.noise.shape)
         s.tile.noised = ImageBlendV2().image_blend_v2(
             background_image=s.tile.painted, 
             layer_image=s.tile.noise, 
