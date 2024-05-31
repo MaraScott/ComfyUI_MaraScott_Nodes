@@ -132,6 +132,7 @@ class KSampler_setInpaintingTileByMask_v1:
                 s.params.mask_region.x,
                 s.params.mask_region.y,
                 s.params.inpaint_size,
+                s.params.painted_mask_padding,
             )
         
         return (
@@ -216,7 +217,8 @@ class KSampler_setInpaintingTileByMask_v1:
             s.image_height,
             0, 
             0,
-            s.params.inpaint_size
+            s.params.inpaint_size,
+            s.params.painted_mask_padding
         )
 
 
@@ -285,8 +287,8 @@ class KSampler_setInpaintingTileByMask_v1:
     def ksample_tile(s):
         
         latent = VAEEncodeTiled().encode(s.ksampler.vae, s.tile.noised_by_mask, tile_size=int(s.params.inpaint_size/2))[0]
-        # if s.params.is_model_diffdiff:
-        #     latent = SetLatentNoiseMask().set_mask(latent, s.params.mask_region.mask_cropped)[0]
+        if s.params.is_model_diffdiff:
+            latent = SetLatentNoiseMask().set_mask(latent, s.params.mask_region.mask_cropped)[0]
         latent = KSampler().sample(
             model=s.ksampler.model,
             seed=s.ksampler.seed, 
@@ -300,8 +302,8 @@ class KSampler_setInpaintingTileByMask_v1:
             denoise=s.ksampler.denoise
         )[0]
         
-        # if s.params.is_model_diffdiff:
-        #     latent = RemoveNoiseMask().doit(latent)[0]
+        if s.params.is_model_diffdiff:
+            latent = RemoveNoiseMask().doit(latent)[0]
         s.tile.inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=int(s.params.inpaint_size/2))[0]
 
 class KSampler_pasteInpaintingTileByMask_v1:
@@ -446,12 +448,12 @@ class KSampler_pasteInpaintingTileByMask_v1:
             cfg = kwargs.get('cfg', None),
             sampler_name = kwargs.get('sampler_name', None),
             scheduler = kwargs.get('basic_scheduler', None),
-            denoise = kwargs.get('denoise', None),                        
-            denoise_refine = kwargs.get('denoise_refine', None),                        
+            denoise = kwargs.get('denoise', None),
+            denoise_refine = kwargs.get('denoise_refine', None),
         )
 
         ms_pipe = kwargs.get('ms_pipe', None)
-        s.inputs.source, s.inputs.painted, s.inputs.painted_mask, s.inputs.noise, s.ksampler.model, s.params.is_model_diffdiff, s.ksampler.clip, s.ksampler.vae, s.inputs.text_pos_inpaint, s.inputs.text_neg_inpaint, s.params.mask_region.mask_cropped, s.tile.source, s.params.mask_region.width, s.params.mask_region.height, s.params.mask_region.x, s.params.mask_region.y, s.params.inpaint_size = ms_pipe
+        s.inputs.source, s.inputs.painted, s.inputs.painted_mask, s.inputs.noise, s.ksampler.model, s.params.is_model_diffdiff, s.ksampler.clip, s.ksampler.vae, s.inputs.text_pos_inpaint, s.inputs.text_neg_inpaint, s.params.mask_region.mask_cropped, s.tile.source, s.params.mask_region.width, s.params.mask_region.height, s.params.mask_region.x, s.params.mask_region.y, s.params.inpaint_size, s.params.painted_mask_padding = ms_pipe
 
         s.inputs.text_pos_inpaint = kwargs.get('text_pos_inpaint', s.inputs.text_pos_inpaint)
         s.inputs.text_neg_inpaint = kwargs.get('text_neg_inpaint', s.inputs.text_neg_inpaint)
@@ -482,6 +484,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
     def paste_tile2source(s):
         s.outputs.tile.output = ImageScale().upscale(s.outputs.tile.inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "disabled")[0]
+        s.inputs.tile.mask = extra_mask.FeatherMask().feather(s.inputs.tile.mask,s.params.painted_mask_padding,s.params.painted_mask_padding,s.params.painted_mask_padding,s.params.painted_mask_padding)[0]
         s.outputs.image = extra_mask.ImageCompositeMasked().composite(s.inputs.source, s.outputs.tile.output, x = s.params.mask_region.x, y = s.params.mask_region.y, resize_source = False, mask = s.inputs.tile.mask)[0]
 
         
