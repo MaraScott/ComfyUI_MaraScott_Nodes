@@ -17,11 +17,11 @@ import folder_paths
 
 from ...utils.version import VERSION
 
-from ...inc.lib.image import Image
+from .image import Image
 
 from ...utils.log import *
 
-class UpscalerRefiner_McBoaty:
+class McBoaty:
     
     SIGMAS_TYPES = [
         "BasicScheduler"

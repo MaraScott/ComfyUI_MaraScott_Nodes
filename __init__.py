@@ -63,5 +63,5 @@ MANIFEST = {
     "version": VERSION,
     "author": "davask",
     "project": "https://github.com/davask/ComfyUI_MaraScott_Nodes",
-    "description": "AnyBus, UpScaler Refiner Nodes - a MaraScott.ai nodes suite",
+    "description": "AnyBus, UpScaler Refiner, Inpainting Nodes - a MaraScott.ai nodes suite",
 }
