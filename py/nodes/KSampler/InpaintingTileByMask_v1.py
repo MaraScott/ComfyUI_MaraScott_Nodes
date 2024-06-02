@@ -14,7 +14,10 @@ from types import SimpleNamespace
 import comfy
 from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images as extra_images, nodes_mask as extra_mask, nodes_compositing as extra_compo, nodes_upscale_model as extra_upscale_model
 from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEDecodeTiled, ImageScale, SetLatentNoiseMask, ImageScaleBy
-import folder_paths
+
+from ...inc.lib.image import MS_Image
+from ...inc.lib.mask import MS_Mask
+from ...inc.lib.sampler import MS_Sampler
 
 from ...inc.lib.image import MS_Image
 from ...inc.lib.mask import MS_Mask
@@ -51,11 +54,11 @@ class KSampler_setInpaintingTileByMask_v1:
                 "text_neg_inpaint": ("STRING", { "label": "Negative (text img)", "forceInput": True }),
 
                 "seed": ("INT", { "label": "Seed", "default": 4, "min": 0, "max": 0xffffffffffffffff}),
-                "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
+                "steps": ("INT", { "label": "Steps", "default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", { "label": "CFG", "default": 8, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
-                "denoise": ("FLOAT", { "label": "Denoise", "default": 0.51, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "denoise": ("FLOAT", { "label": "Denoise", "default": 0.59, "min": 0.0, "max": 1.0, "step": 0.01}),
 
             },
             "hidden": {
@@ -132,6 +135,7 @@ class KSampler_setInpaintingTileByMask_v1:
                 s.params.mask_region.x,
                 s.params.mask_region.y,
                 s.params.inpaint_size,
+                s.params.painted_mask_padding,
             )
         
         return (
@@ -216,7 +220,8 @@ class KSampler_setInpaintingTileByMask_v1:
             s.image_height,
             0, 
             0,
-            s.params.inpaint_size
+            s.params.inpaint_size,
+            s.params.painted_mask_padding
         )
 
 
@@ -285,8 +290,8 @@ class KSampler_setInpaintingTileByMask_v1:
     def ksample_tile(s):
         
         latent = VAEEncodeTiled().encode(s.ksampler.vae, s.tile.noised_by_mask, tile_size=int(s.params.inpaint_size/2))[0]
-        # if s.params.is_model_diffdiff:
-        #     latent = SetLatentNoiseMask().set_mask(latent, s.params.mask_region.mask_cropped)[0]
+        if s.params.is_model_diffdiff:
+            latent = SetLatentNoiseMask().set_mask(latent, s.params.mask_region.mask_cropped)[0]
         latent = KSampler().sample(
             model=s.ksampler.model,
             seed=s.ksampler.seed, 
@@ -300,8 +305,8 @@ class KSampler_setInpaintingTileByMask_v1:
             denoise=s.ksampler.denoise
         )[0]
         
-        # if s.params.is_model_diffdiff:
-        #     latent = RemoveNoiseMask().doit(latent)[0]
+        if s.params.is_model_diffdiff:
+            latent = RemoveNoiseMask().doit(latent)[0]
         s.tile.inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=int(s.params.inpaint_size/2))[0]
 
 class KSampler_pasteInpaintingTileByMask_v1:
@@ -319,12 +324,19 @@ class KSampler_pasteInpaintingTileByMask_v1:
                 "subject_opacity": ("INT", { "label": "Opacity (Mask)", "default": 95, "min": 0, "max": 100, "step": 1 }),
 
                 "seed": ("INT", { "label": "Seed", "default": 4, "min": 0, "max": 0xffffffffffffffff}),
-                "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
-                "cfg": ("FLOAT", { "label": "CFG", "default": 8, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
+
+                "sampler_refiner_tile": ("BOOLEAN", {"label": "Refiner (Tile)", "default": True}),
+                "steps": ("INT", { "label": "Steps", "default": 20, "min": 1, "max": 10000}),
+                "cfg": ("FLOAT", { "label": "CFG", "default": 8, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.51, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "denoise_refine": ("FLOAT", { "label": "Denoise (Refine)", "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01}),
+
+                "sampler_refiner_image": ("BOOLEAN", {"label": "Refiner (Image Final)", "default": True}),
+                "steps_refiner": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
+                "cfg_refiner": ("FLOAT", { "label": "CFG", "default": 8, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
+                "denoise_refiner": ("FLOAT", { "label": "Denoise", "default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),
 
             },
             "hidden": {
@@ -338,12 +350,14 @@ class KSampler_pasteInpaintingTileByMask_v1:
         'IMAGE',
         'IMAGE',
         'IMAGE',
+        'IMAGE',
         'MASK',
         'IMAGE',
         'STRING',
         'STRING',
     )
     RETURN_NAMES = (
+        'output_image_refined',
         'output_image',
         'image_inpainted',
         'image',
@@ -355,6 +369,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
         'text_neg_image_inpainted',
     )
     RETURN_LABELS = (
+        'Image (Refined)',
         'Image',
         'Image Inpainting (input)',
         'Image (Original)',
@@ -378,6 +393,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
         if torch.all(s.inputs.tile.mask == 0):
             
+            output_image_refined = s.inputs.source
             output_image = s.inputs.source
             image_inpainted = s.inputs.painted
             image = s.inputs.source
@@ -392,7 +408,9 @@ class KSampler_pasteInpaintingTileByMask_v1:
 
             s.refine_tile()
             s.paste_tile2source()            
+            s.refine_final()
 
+            output_image_refined = s.outputs.refined
             output_image = s.outputs.image
             image_inpainted = s.inputs.painted
             image = s.inputs.source
@@ -404,6 +422,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
             text_neg_image_inpainted = s.inputs.text_neg_inpaint
             
         return (
+            output_image_refined,
             output_image,
             image_inpainted,
             image,
@@ -442,16 +461,18 @@ class KSampler_pasteInpaintingTileByMask_v1:
                 
         s.ksampler = SimpleNamespace(
             seed = kwargs.get('seed', None),
-            steps = kwargs.get('steps', None),
-            cfg = kwargs.get('cfg', None),
             sampler_name = kwargs.get('sampler_name', None),
             scheduler = kwargs.get('basic_scheduler', None),
-            denoise = kwargs.get('denoise', None),                        
-            denoise_refine = kwargs.get('denoise_refine', None),                        
+            steps = kwargs.get('steps', None),
+            cfg = kwargs.get('cfg', None),
+            denoise = kwargs.get('denoise', None),
+            steps_refiner = kwargs.get('steps_refiner', None),
+            cfg_refiner = kwargs.get('cfg_refiner', None),
+            denoise_refiner = kwargs.get('denoise_refiner', None),
         )
 
         ms_pipe = kwargs.get('ms_pipe', None)
-        s.inputs.source, s.inputs.painted, s.inputs.painted_mask, s.inputs.noise, s.ksampler.model, s.params.is_model_diffdiff, s.ksampler.clip, s.ksampler.vae, s.inputs.text_pos_inpaint, s.inputs.text_neg_inpaint, s.params.mask_region.mask_cropped, s.tile.source, s.params.mask_region.width, s.params.mask_region.height, s.params.mask_region.x, s.params.mask_region.y, s.params.inpaint_size = ms_pipe
+        s.inputs.source, s.inputs.painted, s.inputs.painted_mask, s.inputs.noise, s.ksampler.model, s.params.is_model_diffdiff, s.ksampler.clip, s.ksampler.vae, s.inputs.text_pos_inpaint, s.inputs.text_neg_inpaint, s.params.mask_region.mask_cropped, s.tile.source, s.params.mask_region.width, s.params.mask_region.height, s.params.mask_region.x, s.params.mask_region.y, s.params.inpaint_size, s.params.painted_mask_padding = ms_pipe
 
         s.inputs.text_pos_inpaint = kwargs.get('text_pos_inpaint', s.inputs.text_pos_inpaint)
         s.inputs.text_neg_inpaint = kwargs.get('text_neg_inpaint', s.inputs.text_neg_inpaint)
@@ -460,28 +481,43 @@ class KSampler_pasteInpaintingTileByMask_v1:
         s.ksampler.negative_inpaint = CLIPTextEncode().encode(s.ksampler.clip, s.inputs.text_neg_inpaint)[0]
 
     def refine_tile(s):
-
-        inpainted = ImageScaleBy().upscale(s.inputs.tile.image, s.params.upscale_method, 1.5)[0]
-        latent = VAEEncodeTiled().encode(s.ksampler.vae, inpainted, tile_size=int(s.params.inpaint_size/2))[0]
-            
-        latent = KSampler().sample(
-            model=s.ksampler.model_inpaint, 
-            seed=s.ksampler.seed, 
-            steps=s.ksampler.steps, 
-            cfg=s.ksampler.cfg, 
-            sampler_name=s.ksampler.sampler_name, 
-            scheduler=s.ksampler.scheduler, 
-            positive=s.ksampler.positive_inpaint, 
-            negative=s.ksampler.negative_inpaint, 
-            latent_image=latent, 
-            denoise=s.ksampler.denoise
+        s.outputs.tile.inpainted = MS_Sampler().refine(
+            s.inputs.tile.image, 
+            s.params.upscale_method, 
+            s.ksampler.vae, 
+            int(s.params.inpaint_size/2), 
+            s.ksampler.model, 
+            s.ksampler.seed, 
+            s.ksampler.steps, 
+            s.ksampler.cfg, 
+            s.ksampler.sampler_name, 
+            s.ksampler.scheduler, 
+            s.ksampler.positive_inpaint, 
+            s.ksampler.negative_inpaint, 
+            s.ksampler.denoise
         )[0]
-
-        inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=int(s.params.inpaint_size/2))[0]
-        s.outputs.tile.inpainted = ImageScaleBy().upscale(inpainted, s.params.upscale_method, (1/1.5))[0]        
+      
 
     def paste_tile2source(s):
         s.outputs.tile.output = ImageScale().upscale(s.outputs.tile.inpainted, s.params.upscale_method, s.params.mask_region.width, s.params.mask_region.height, "disabled")[0]
+        s.inputs.tile.mask = extra_mask.FeatherMask().feather(s.inputs.tile.mask,s.params.painted_mask_padding,s.params.painted_mask_padding,s.params.painted_mask_padding,s.params.painted_mask_padding)[0]
         s.outputs.image = extra_mask.ImageCompositeMasked().composite(s.inputs.source, s.outputs.tile.output, x = s.params.mask_region.x, y = s.params.mask_region.y, resize_source = False, mask = s.inputs.tile.mask)[0]
+
+    def refine_final(s):
+        s.outputs.refined = MS_Sampler().refine(
+            s.outputs.image, 
+            s.params.upscale_method, 
+            s.ksampler.vae, 
+            int(s.params.inpaint_size/2), 
+            s.ksampler.model, 
+            s.ksampler.seed, 
+            s.ksampler.steps_refiner, 
+            s.ksampler.cfg_refiner, 
+            s.ksampler.sampler_name, 
+            s.ksampler.scheduler, 
+            s.ksampler.positive_inpaint, 
+            s.ksampler.negative_inpaint, 
+            s.ksampler.denoise_refiner
+        )[0]
 
         
