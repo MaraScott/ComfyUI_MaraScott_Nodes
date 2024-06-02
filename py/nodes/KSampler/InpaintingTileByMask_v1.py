@@ -19,6 +19,9 @@ from ...inc.lib.image import MS_Image
 from ...inc.lib.mask import MS_Mask
 from ...inc.lib.sampler import MS_Sampler
 
+from ...inc.lib.image import MS_Image
+from ...inc.lib.mask import MS_Mask
+
 from ...vendor.ComfyUI_LayerStyle.py.image_blend_v2 import ImageBlendV2, chop_mode_v2
 from ...vendor.ComfyUI_Impact_Pack.modules.impact.util_nodes import RemoveNoiseMask
 
@@ -328,6 +331,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
                 "steps": ("INT", { "label": "Steps", "default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", { "label": "CFG", "default": 8, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.51, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "denoise_refine": ("FLOAT", { "label": "Denoise (Refine)", "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01}),
 
                 "sampler_refiner_image": ("BOOLEAN", {"label": "Refiner (Image Final)", "default": True}),
                 "steps_refiner": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
