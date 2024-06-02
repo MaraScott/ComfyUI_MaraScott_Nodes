@@ -37,8 +37,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottAnyBus_v2": "\ud83d\udc30 AnyBus - UniversalBus v2 /*",
     "MaraScottDisplayInfo_v1": "\ud83d\udc30 Display Info - Text v1 /i",
     "MaraScottUpscalerRefinerNode_v2": "\ud83d\udc30 Large Refiner - McBoaty v2 /u",
-    "MaraScottSetInpaintingByMask_v1": "\ud83d\udc30 Set Inpainting Tile by mask [1/2] v1 /m",
-    "MaraScottPasteInpaintingByMask_v1": "\ud83d\udc30 Paste Inpainting Tile by mask [2/2] v1 /m",
+    "MaraScottSetInpaintingByMask_v1": "\ud83d\udc30 Set Inpainting Tile by mask - McInpainty [1/2] v1 /m",
+    "MaraScottPasteInpaintingByMask_v1": "\ud83d\udc30 Paste Inpainting Tile by mask - McInpainty [2/2] v1 /m",
 
     "MaraScott_Kijai_TokenCounter_v1": "\ud83d\udc30 TokenCounter (from kijai/ComfyUI-KJNodes) /v",
 
