@@ -9,6 +9,7 @@
 
 import torch
 import math
+from types import SimpleNamespace
 import comfy
 import comfy_extras
 import comfy_extras.nodes_custom_sampler
@@ -59,22 +60,21 @@ class UpscalerRefiner_McBoaty_v2():
                 "model": ("MODEL", { "label": "Model" }),
                 "vae": ("VAE", { "label": "VAE" }),
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
+                "positive": ("CONDITIONING", { "label": "Positive" }),
+                "negative": ("CONDITIONING", { "label": "Negative" }),
+
                 "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
 
                 "seed": ("INT", { "label": "Seed", "default": 4, "min": 0, "max": 0xffffffffffffffff}),
-                "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
-                "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
 
                 "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigms Type" }),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type" }),
 
-                "positive": ("CONDITIONING", { "label": "Positive" }),
-                "negative": ("CONDITIONING", { "label": "Negative" }),
-
+                "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
+                "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),
-                                
 
             },
             "optional": {
@@ -117,7 +117,7 @@ class UpscalerRefiner_McBoaty_v2():
 
         current_image = self.OUTPUTS.image
         for index in range(self.PARAMS.max_iterations):
-            output_image, output_tiles = self.upscale_refine(self, current_image, f"{index + 1}/{self.PARAMS.max_iterations}")
+            output_image, output_tiles = self.upscale_refine(current_image, f"{index + 1}/{self.PARAMS.max_iterations}")
             if not self.PARAMS.upscale_size: 
                 output_image = nodes.ImageScale.upscale(nodes.ImageScale, output_image, "nearest-exact", image_width, image_height, "center")[0]
             current_image = output_image
@@ -129,6 +129,8 @@ class UpscalerRefiner_McBoaty_v2():
         
         log(f"McBoaty is done with its magic")
         
+        image = self.OUTPUTS.image
+        
         return (
             output_image,
             output_tiles,
@@ -137,41 +139,47 @@ class UpscalerRefiner_McBoaty_v2():
         )
         
     @classmethod
-    def init(self, kwargs):
+    def init(self, **kwargs):
         # Initialize the bus tuple with None values for each parameter
         self.INPUTS = {
             "image": kwargs.get('image', None),
         }
-        self.PARAMS = {
-            "upscale_size": kwargs.get('output_size', None),
-            "upscale_model_name": kwargs.get('upscale_model', None),
-            "upscale_model": comfy_extras.nodes_upscale_model.UpscaleModelLoader.load_model(comfy_extras.nodes_upscale_model.UpscaleModelLoader, self.PARAMS.upscale_model_name)[0],
-            "feather_mask": kwargs.get('feather_mask', None),
-            "max_iterations": kwargs.get('running_count', 1),
-        }
-        self.KSAMPLER = {
-            "tiled":kwargs.get('vae_encode', None),
-            "tile_size":kwargs.get('tile_size', None),
-            "model":kwargs.get('model', None),
-            "vae":kwargs.get('vae', None),
-            "cfg":kwargs.get('cfg', None),
-            "noise_seed:seed":kwargs.get('seed', None),
-            "steps":kwargs.get('steps', None),
-            "sampler_name":kwargs.get('sampler_name', None),
-            "sampler":comfy_extras.nodes_custom_sampler.KSamplerSelect.get_sampler(comfy_extras.nodes_custom_sampler.KSamplerSelect,self.KSAMPLER.sampler_name)[0],
-            "scheduler":kwargs.get('basic_scheduler', None),
-            "positive":kwargs.get('positive', None),
-            "negative":kwargs.get('negative', None),
-            "add_noise":True,
-            "denoise":kwargs.get('denoise', None),
-            "sigmas_type":kwargs.get('sigmas_type', None),
-            "model_type":kwargs.get('ays_model_type', None),
-            "tile_size_sampler":self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type],
-            "sigmas":self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type),
-        }
-        self.OUTPUTS = {
-            "output_info": [f"No info"],        
-        }
+        self.INPUTS = SimpleNamespace(
+            image = kwargs.get('image', None),
+        )
+        self.PARAMS = SimpleNamespace(
+            upscale_size = kwargs.get('output_size', None),
+            upscale_model_name = kwargs.get('upscale_model', None),
+            upscale_method = "lanczos",
+            feather_mask = kwargs.get('feather_mask', None),
+            max_iterations = kwargs.get('running_count', 1),
+        )
+        self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
+
+        self.KSAMPLER = SimpleNamespace(
+            tiled = kwargs.get('vae_encode', None),
+            tile_size = kwargs.get('tile_size', None),
+            model = kwargs.get('model', None),
+            vae = kwargs.get('vae', None),
+            noise_seed = kwargs.get('seed', None),
+            sampler_name = kwargs.get('sampler_name', None),
+            scheduler = kwargs.get('basic_scheduler', None),
+            positive = kwargs.get('positive', None),
+            negative = kwargs.get('negative', None),
+            add_noise = True,
+            sigmas_type = kwargs.get('sigmas_type', None),
+            model_type = kwargs.get('ays_model_type', None),
+            steps = kwargs.get('steps', None),
+            cfg = kwargs.get('cfg', None),
+            denoise = kwargs.get('denoise', None),
+        )
+        self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
+        self.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type]
+        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+
+        self.OUTPUTS = SimpleNamespace(
+            output_info = [f"No info"],        
+        )
     
         
     @classmethod
@@ -205,7 +213,7 @@ class UpscalerRefiner_McBoaty_v2():
         else: # BasicScheduler
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
-
+        
         return sigmas    
     
     @classmethod
@@ -217,8 +225,8 @@ class UpscalerRefiner_McBoaty_v2():
         tile_rows = math.floor(upscaled_width // self.KSAMPLER.tile_size)
         tile_cols = math.floor(upscaled_height // self.KSAMPLER.tile_size)
         
-        grid_images = MS_Image().get_grid_images(image, tile_rows, tile_cols)
-
+        grid_images = MS_Image().get_grid_images(image, rows = tile_rows, cols = tile_cols, tile_size = self.KSAMPLER.tile_size)
+        
         grid_upscales = []
         grid_latents = []
         grid_latent_outputs = []
@@ -228,11 +236,13 @@ class UpscalerRefiner_McBoaty_v2():
         for index, grid_image in enumerate(grid_images):            
             log(f"tile {index + 1}/{total}", None, None, f"Upscaling {iteration}")
             _image_grid = grid_image[:,:,:,:3]
+            # _image_grid = nodes.ImageScaleBy().upscale(_image_grid, self.PARAMS.upscale_method, (_image_grid.shape[2] // self.KSAMPLER.tile_size_sampler))[0]
             upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, _image_grid)[0]
             grid_upscales.append(upscaled_image_grid)
-            
+
         for index, upscaled_image_grid in enumerate(grid_upscales):
-            if self.PARAMS.tiled == True:
+            
+            if self.KSAMPLER.tiled == True:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
                 latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size)[0]
             else:
@@ -256,36 +266,20 @@ class UpscalerRefiner_McBoaty_v2():
             grid_latent_outputs.append(latent_output)
 
         for index, latent_output in enumerate(grid_latent_outputs):            
-            if self.PARAMS.tiled == True:
+            if self.KSAMPLER.tiled == True:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
-                output = nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size)[0].unsqueeze(0)
+                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size)[0].unsqueeze(0))[0]
             else:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
-                output = nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0)
+                output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
             
-            output_images.append(output[0])
+            # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] // self.KSAMPLER.tile_size_sampler)))[0]
+            output_images.append(output)
             
-        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled_image, self.KSAMPLER.feather_mask, rows = tile_rows, cols = tile_cols)
+        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled_image, self.PARAMS.feather_mask, rows = tile_rows, cols = tile_cols)
 
         tiles_order.sort(key=lambda x: x[0])
         output_tiles = tuple(output for _, output in tiles_order)
         output_tiles = torch.cat(output_tiles)
             
         return output_image, output_tiles
-
-    def refine_final(s):
-        s.outputs.refined = MS_Sampler().refine(
-            s.outputs.image, 
-            s.params.upscale_method, 
-            s.ksampler.vae, 
-            int(s.params.inpaint_size/2), 
-            s.ksampler.model, 
-            s.ksampler.seed, 
-            s.ksampler.steps_refiner, 
-            s.ksampler.cfg_refiner, 
-            s.ksampler.sampler_name, 
-            s.ksampler.scheduler, 
-            s.ksampler.positive_inpaint, 
-            s.ksampler.negative_inpaint, 
-            s.ksampler.denoise_refiner
-        )[0]

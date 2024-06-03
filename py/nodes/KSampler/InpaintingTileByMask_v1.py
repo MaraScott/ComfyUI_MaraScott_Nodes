@@ -158,7 +158,7 @@ class KSampler_setInpaintingTileByMask_v1:
         )
         s.params = SimpleNamespace(
             is_model_diffdiff = kwargs.get('model_diffdiff', True),
-            upscale_method = "lanczos",    
+            upscale_method = "lanczos",
             inpaint_size = kwargs.get('inpaint_size', None),
             painted_mask_padding = kwargs.get('painted_mask_padding', None),
             noise_blend = kwargs.get('noise_blend', None),
