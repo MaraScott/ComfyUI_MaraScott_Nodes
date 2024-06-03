@@ -3,7 +3,7 @@
 #
 ###
 
-from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEDecodeTiled, ImageScale, SetLatentNoiseMask, ImageScaleBy
+from nodes import KSampler, VAEEncodeTiled, VAEDecodeTiled, ImageScaleBy
 
 from ...utils.log import *
 
@@ -29,4 +29,4 @@ class MS_Sampler:
         )[0]
 
         inpainted = VAEDecodeTiled().decode(vae, latent, tile_size)[0]
-        return ImageScaleBy().upscale(inpainted, upscale_method, (1/1.5))                
+        return ImageScaleBy().upscale(inpainted, upscale_method, (1/1.5))
