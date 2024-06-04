@@ -155,7 +155,7 @@ class MS_Image:
             tile_qty = int((total ** 0.5))
             tiles_qty = tile_qty - 1
             if row == 0:
-                outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, (tiles_qty * tile_width) - (tiles_qty * feather_qty * width_feather_seam), 0, 0)[0]
+                outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, (tiles_qty * tile_width) - (tile_qty * feather_qty * width_feather_seam), 0, 0)[0]
             elif row == 1:
                 y_start = 0 if not index == 2 else y_start
                 x_start = x_start - (feather_qty * width_feather_seam)
@@ -177,7 +177,7 @@ class MS_Image:
                     outputMiddleRow.append(outputRow)
                     
         nb_middle_tiles = len(outputMiddleRow)        
-        full_image = nodes.ImagePadForOutpaint().expand_image(outputTopRow, 0, 0, 0, (tiles_qty * tile_height) - (tiles_qty * feather_qty * height_feather_seam), 0)[0]
+        full_image = nodes.ImagePadForOutpaint().expand_image(outputTopRow, 0, 0, 0, (tiles_qty * tile_height) - (tile_qty * feather_qty * height_feather_seam), 0)[0]
         if outputBottomRow is not None:
             full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, outputBottomRow, x = 0, y = ((nb_middle_tiles * tile_height) + tile_height) - (feather_qty * (nb_middle_tiles + 1)  * height_feather_seam), resize_source = False, mask = grid_feathermask_horizontal_bottom)[0]
         if nb_middle_tiles > 0:
