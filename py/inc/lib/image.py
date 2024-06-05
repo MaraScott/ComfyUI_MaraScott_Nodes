@@ -52,33 +52,34 @@ class MS_Image:
 
 
     @classmethod
-    def get_dynamic_grid_specs(self, width, height, tile_rows = 3, tile_cols = 3, tile_size = 512, size_unit = 64):
+    def get_dynamic_grid_specs(self, width, height, rows_qty = 3, cols_qty = 3, tile_size = 512, size_unit = 64):
         
-        width_unit = height_unit = math.floor(tile_size // size_unit)
-        tile_rows = width // (width_unit * size_unit)
-        tile_cols = height // (height_unit * size_unit)
-        tile_order_rows = MS_Array.reorder_edges_to_center(list(range(tile_rows)))
-        tile_order_cols = MS_Array.reorder_edges_to_center(list(range(tile_cols)))
-        width_unit_qty = width_unit + (tile_rows - 1)
-        height_unit_qty = height_unit + (tile_cols - 1)
-        tile_width = width_unit_qty * size_unit
-        tile_height = height_unit_qty * size_unit
-                
+        unit_per_tile_qty = math.floor(tile_size // size_unit)
+        width_unit = unit_per_tile_qty
+        height_unit = unit_per_tile_qty
+        rows_qty = width // tile_size
+        cols_qty = height // tile_size
+        tile_order_rows = MS_Array.reorder_edges_to_center(list(range(rows_qty)))
+        tile_order_cols = MS_Array.reorder_edges_to_center(list(range(cols_qty)))
+        tile_width = (unit_per_tile_qty + 1) * size_unit
+        tile_height = (unit_per_tile_qty + 1) * size_unit
+                        
         tiles = []
         feather_mask = 64
         for col_index, col in enumerate(tile_order_cols):
             for row_index, row in enumerate(tile_order_rows):
+                index = (col * len(tile_order_rows)) + row
                 tiles.append([
                     row_index, 
                     col_index, 
-                    (col * len(tile_order_rows)) + row,
-                    (row * (width_unit * size_unit)) - (row * feather_mask), # x 
-                    (col * (height_unit * size_unit)) - (col * feather_mask), # y
+                    index,
+                    col_index * unit_per_tile_qty * size_unit, # x 
+                    row_index * unit_per_tile_qty * size_unit, # y
                     tile_width, # width 
                     tile_height, # height 
                 ])
-                        
-        return tiles, width_unit, height_unit, tile_width, tile_height, tile_rows, tile_cols
+        log(tiles)    
+        return tiles, width_unit, height_unit, tile_width, tile_height, rows_qty, cols_qty
     
     @classmethod
     def get_grid_images(self, image, rows = 3, cols = 3, tile_size = 512):
@@ -160,7 +161,7 @@ class MS_Image:
             elif row == 1:
                 x_start = x_start - (feather_width_qty * width_feather_seam)
                 y_start = 0 if not index == 2 else y_start
-                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = grid_feathermask_vertical_right)[0]
+                # outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = grid_feathermask_vertical_right)[0]
             else:
                 x_start = x_start - width_feather_seam
                 y_start = 0 if not index == 1 else y_start
@@ -181,7 +182,7 @@ class MS_Image:
         full_image = nodes.ImagePadForOutpaint().expand_image(outputTopRow, 0, 0, 0, (tiles_qty * tile_height) - (tile_qty * feather_height_qty * height_feather_seam), 0)[0]
         if outputBottomRow is not None:
             y_start = ((nb_middle_tiles + 1) * tile_height) - (feather_height_qty * (nb_middle_tiles * 2)  * height_feather_seam)
-            full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, outputBottomRow, x = 0, y = y_start, resize_source = False, mask = grid_feathermask_horizontal_bottom)[0]
+            # full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, outputBottomRow, x = 0, y = y_start, resize_source = False, mask = grid_feathermask_horizontal_bottom)[0]
         if nb_middle_tiles > 0:
             for index, output in enumerate(outputMiddleRow):
                 i = index + 1
