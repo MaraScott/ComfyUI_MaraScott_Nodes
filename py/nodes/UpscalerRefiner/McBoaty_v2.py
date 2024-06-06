@@ -219,13 +219,16 @@ class UpscalerRefiner_McBoaty_v2():
     @classmethod
     def upscale_refine(self, image, iteration):
         
-        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
-        upscaled_width = upscaled_image.shape[2]
-        upscaled_height = upscaled_image.shape[1]
-        tile_rows = math.floor(upscaled_width // self.KSAMPLER.tile_size)
-        tile_cols = math.floor(upscaled_height // self.KSAMPLER.tile_size)
+        upscaled = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
+        upscale_coef = upscaled.shape[2] // image.shape[2]
+        feather_mask = self.PARAMS.feather_mask
+        rows_qty = math.floor(image.shape[2] // self.KSAMPLER.tile_size)
+        cols_qty = math.floor(image.shape[1] // self.KSAMPLER.tile_size)
         
-        grid_images = MS_Image().get_grid_images(image, rows = tile_rows, cols = tile_cols, tile_size = self.KSAMPLER.tile_size)
+        grid_specs = MS_Image().get_dynamic_grid_specs(image.shape[2], image.shape[1], rows_qty, cols_qty, feather_mask)[0]
+        
+        grid_images = MS_Image().get_grid_images(image, grid_specs)
+        log((image.shape, upscaled.shape, rows_qty, cols_qty, self.KSAMPLER.tile_size, (img.shape for img in grid_images)), None, None, "upscale_refine")
         
         grid_upscales = []
         grid_latents = []
@@ -275,8 +278,11 @@ class UpscalerRefiner_McBoaty_v2():
             
             # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] // self.KSAMPLER.tile_size_sampler)))[0]
             output_images.append(output)
-            
-        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled_image, self.PARAMS.feather_mask, rows = tile_rows, cols = tile_cols)
+
+        feather_mask = self.PARAMS.feather_mask * upscale_coef
+        upscaled_grid_specs = MS_Image().get_dynamic_grid_specs(upscaled.shape[2], upscaled.shape[1], rows_qty, cols_qty, feather_mask)[0]
+        log((image.shape, upscaled.shape, rows_qty, cols_qty, self.KSAMPLER.tile_size, (img.shape for img in output_images)), None, None, "upscale_refine")
+        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled, upscaled_grid_specs, feather_mask)
 
         tiles_order.sort(key=lambda x: x[0])
         output_tiles = tuple(output for _, output in tiles_order)
