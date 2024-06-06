@@ -140,8 +140,8 @@ class MS_Image:
         total = len(output_images)
         
         tiles_order = []        
-        outputTopRow = None
-        outputBottomRow = None
+        outputTopRow = [None, None]
+        outputBottomRow = [None, None]
         outputMiddleRow = []
         tile_qty = int((total ** 0.5))
         for index, grid_spec in enumerate(grid_specs):
