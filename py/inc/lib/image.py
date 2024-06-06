@@ -109,7 +109,7 @@ class MS_Image:
         grid_mask = comfy_extras.nodes_mask.SolidMask().solid(1, tile_width, tile_height)[0]
         grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask().feather( 
             grid_mask, 
-            width_feather_seam, 
+            0, 
             0, 
             width_feather_seam, 
             0
@@ -124,7 +124,7 @@ class MS_Image:
         grid_feathermask_horizontal = comfy_extras.nodes_mask.FeatherMask().feather(
             grid_mask, 
             0, 
-            height_feather_seam, 
+            0, 
             0, 
             height_feather_seam
         )[0]

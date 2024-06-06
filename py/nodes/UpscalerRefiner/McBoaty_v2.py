@@ -228,7 +228,6 @@ class UpscalerRefiner_McBoaty_v2():
         grid_specs = MS_Image().get_dynamic_grid_specs(image.shape[2], image.shape[1], rows_qty, cols_qty, feather_mask)[0]
         
         grid_images = MS_Image().get_grid_images(image, grid_specs)
-        log((image.shape, upscaled.shape, rows_qty, cols_qty, self.KSAMPLER.tile_size, (img.shape for img in grid_images)), None, None, "upscale_refine")
         
         grid_upscales = []
         grid_latents = []
@@ -281,7 +280,6 @@ class UpscalerRefiner_McBoaty_v2():
 
         feather_mask = self.PARAMS.feather_mask * upscale_coef
         upscaled_grid_specs = MS_Image().get_dynamic_grid_specs(upscaled.shape[2], upscaled.shape[1], rows_qty, cols_qty, feather_mask)[0]
-        log((image.shape, upscaled.shape, rows_qty, cols_qty, self.KSAMPLER.tile_size, (img.shape for img in output_images)), None, None, "upscale_refine")
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled, upscaled_grid_specs, feather_mask)
 
         tiles_order.sort(key=lambda x: x[0])
