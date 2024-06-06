@@ -64,8 +64,8 @@ class MS_Image:
         _tile_height = (tile_height_units_qty + 1) * size_unit
                         
         tiles = []
-        for col_index, col in enumerate(tile_order_cols):
-            for row_index, row in enumerate(tile_order_rows):
+        for row_index, row in enumerate(tile_order_rows):
+            for col_index, col in enumerate(tile_order_cols):
                 index = (col * len(tile_order_rows)) + row
                 x = col_index * tile_width_units_qty * size_unit
                 if col_index == (cols_qty - 1):
@@ -82,7 +82,6 @@ class MS_Image:
                     _tile_width, # width 
                     _tile_height, # height 
                 ])
-        log((tiles, tile_width_units_qty, tile_height_units_qty, tile_width, tile_height), None, None, "get_dynamic_grid_specs")
         return tiles, tile_width_units_qty, tile_height_units_qty, tile_width, tile_height
     
     @classmethod
@@ -149,42 +148,35 @@ class MS_Image:
             log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
             row, col, order, x_start, y_start, width_inc, height_inc = grid_spec
             tiles_order.append((order, output_images[index]))
-            log((order, (row, col), (x_start, y_start), (width_inc, height_inc)))
             if col == 0:
                 outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, upscaled.shape[2] - tile_width, 0, 0)[0]
-            elif col == 1:
-                y_start = 0 if not index == 2 else y_start
-                log((x_start, y_start), None, None, "outputBottomRow")
-                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = grid_feathermask_vertical_right)[0]
-            else:
-                y_start = 0 if not index == 1 else y_start
-                log((x_start, y_start), None, None, "outputMiddleRow")
-                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = grid_feathermask_vertical)[0]
-
-            if row == 0:
-                outputTopRow = outputRow
-            elif row == (tile_qty - 1):
-                outputBottomRow = outputRow
+            elif col == (tile_qty - 1):
+                _y_start = 0
+                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = _y_start, resize_source = False, mask = grid_feathermask_vertical_right)[0]
             else:
                 i = int(row - 1)
-                log(i, None, None, "outputMiddleRow[i]")
-                if len(outputMiddleRow) <= i and outputMiddleRow[i] is not None:
-                    outputMiddleRow[i][1] = outputRow
+                _y_start = 0
+                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = _y_start, resize_source = False, mask = grid_feathermask_vertical)[0]
+
+            if col == (tile_qty - 1):
+                if row == 0:
+                    outputTopRow = [y_start, outputRow]
+                elif row == (tile_qty - 1):
+                    outputBottomRow = [y_start, outputRow]
                 else:
+                    i = int(row - 1)
                     outputMiddleRow.append([y_start, outputRow])
                     
         nb_middle_tiles = len(outputMiddleRow)
         image_height = upscaled.shape[1] - tile_height
-        full_image = nodes.ImagePadForOutpaint().expand_image(outputTopRow, 0, 0, 0, upscaled.shape[1] - tile_height, 0)[0]
-        if outputBottomRow is not None:
-            y_start = image_height
-            log((0, y_start), None, None, "outputBottomRow")
-            full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, outputBottomRow, x = 0, y = y_start, resize_source = False, mask = grid_feathermask_horizontal_bottom)[0]
+        full_image = nodes.ImagePadForOutpaint().expand_image(outputTopRow[1], 0, 0, 0, image_height, 0)[0]
+        if outputBottomRow[0] is not None:
+            _y_start = outputBottomRow[0]
+            full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, outputBottomRow[1], x = 0, y = _y_start, resize_source = False, mask = grid_feathermask_horizontal_bottom)[0]
         if nb_middle_tiles > 0:
             for index, output in enumerate(outputMiddleRow):
-                y_start = output[0]
-                log((0, y_start), None, None, "outputMiddleRow")
-                full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, output[1], x = 0, y = y_start, resize_source = False, mask = grid_feathermask_horizontal)[0]
+                _y_start = output[0]
+                full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, output[1], x = 0, y = _y_start, resize_source = False, mask = grid_feathermask_horizontal)[0]
         
         return full_image, tiles_order
 
