@@ -18,7 +18,7 @@ import nodes
 import folder_paths
 
 from ...utils.version import VERSION
-from ...inc.lib.image import MS_Image
+from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...inc.lib.sampler import MS_Sampler
 
 from ...utils.log import *

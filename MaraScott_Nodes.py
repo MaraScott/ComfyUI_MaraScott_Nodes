@@ -46,7 +46,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 
     "MaraScottAnyBusNode": "\u274C AnyBus - UniversalBus v2 /*",
     "MaraScottDisplayInfoNode": "\u274C Display Info - Text v1 /i",
-    "MaraScottUpscalerRefinerNode_v2": "\ud83d\udc30 Large Refiner - McBoaty v2 /u",
+    "MaraScottUpscalerRefinerNode_v2": "\u274C Large Refiner - McBoaty v2 /u",
 }
 
 print('\033[34m[Maras IT] \033[92mLoaded\033[0m')

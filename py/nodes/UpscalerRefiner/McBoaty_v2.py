@@ -16,7 +16,7 @@ from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
 import nodes
 import folder_paths
 
-from ...inc.lib.image import MS_Image
+from ...inc.lib.image import MS_Image_v1 as MS_Image
 
 from ...utils.version import VERSION
 

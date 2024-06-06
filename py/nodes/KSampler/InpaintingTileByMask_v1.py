@@ -15,12 +15,9 @@ import comfy
 from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images as extra_images, nodes_mask as extra_mask, nodes_compositing as extra_compo, nodes_upscale_model as extra_upscale_model
 from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEEncodeForInpaint, VAEDecode, VAEDecodeTiled, ImageScale, SetLatentNoiseMask, ImageScaleBy
 
-from ...inc.lib.image import MS_Image
+from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...inc.lib.mask import MS_Mask
 from ...inc.lib.sampler import MS_Sampler
-
-from ...inc.lib.image import MS_Image
-from ...inc.lib.mask import MS_Mask
 
 from ...vendor.ComfyUI_LayerStyle.py.image_blend_v2 import ImageBlendV2, chop_mode_v2
 from ...vendor.ComfyUI_Impact_Pack.modules.impact.util_nodes import RemoveNoiseMask
