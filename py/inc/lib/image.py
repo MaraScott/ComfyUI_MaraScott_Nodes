@@ -67,10 +67,10 @@ class MS_Image_v2(MS_Image):
     @classmethod
     def get_dynamic_grid_specs(self, width, height, rows_qty = 3, cols_qty = 3, size_unit = 64):
         # size_unit AKA feather_mask
-        tile_width = width // cols_qty        
-        tile_height = height // rows_qty        
-        tile_width_units_qty = math.floor(tile_width // size_unit)
-        tile_height_units_qty = math.floor(tile_height // size_unit)
+        tile_width = width / cols_qty        
+        tile_height = height / rows_qty        
+        tile_width_units_qty = math.ceil(tile_width / size_unit)
+        tile_height_units_qty = math.ceil(tile_height / size_unit)
         tile_order_rows = MS_Array.reorder_edges_to_center(list(range(rows_qty)))
         tile_order_cols = MS_Array.reorder_edges_to_center(list(range(cols_qty)))
                         

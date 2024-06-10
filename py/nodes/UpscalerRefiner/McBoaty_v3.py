@@ -220,10 +220,12 @@ class UpscalerRefiner_McBoaty_v3():
     def upscale_refine(self, image, iteration):
         
         upscaled = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
-        upscale_coef = upscaled.shape[2] // image.shape[2]
+        upscale_coef = upscaled.shape[2] / image.shape[2]
         feather_mask = self.PARAMS.feather_mask
-        rows_qty = math.floor(image.shape[2] // self.KSAMPLER.tile_size)
-        cols_qty = math.floor(image.shape[1] // self.KSAMPLER.tile_size)
+        rows_qty_float = image.shape[2] / self.KSAMPLER.tile_size
+        cols_qty_float = image.shape[1] / self.KSAMPLER.tile_size
+        rows_qty = math.ceil(rows_qty_float)
+        cols_qty = math.ceil(cols_qty_float)
         
         grid_specs = MS_Image().get_dynamic_grid_specs(image.shape[2], image.shape[1], rows_qty, cols_qty, feather_mask)[0]
         
@@ -238,7 +240,7 @@ class UpscalerRefiner_McBoaty_v3():
         for index, grid_image in enumerate(grid_images):            
             log(f"tile {index + 1}/{total}", None, None, f"Upscaling {iteration}")
             _image_grid = grid_image[:,:,:,:3]
-            # _image_grid = nodes.ImageScaleBy().upscale(_image_grid, self.PARAMS.upscale_method, (_image_grid.shape[2] // self.KSAMPLER.tile_size_sampler))[0]
+            # _image_grid = nodes.ImageScaleBy().upscale(_image_grid, self.PARAMS.upscale_method, (_image_grid.shape[2] / self.KSAMPLER.tile_size_sampler))[0]
             upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, _image_grid)[0]
             grid_upscales.append(upscaled_image_grid)
 
@@ -275,10 +277,10 @@ class UpscalerRefiner_McBoaty_v3():
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
                 output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
             
-            # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] // self.KSAMPLER.tile_size_sampler)))[0]
+            # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
             output_images.append(output)
 
-        feather_mask = self.PARAMS.feather_mask * upscale_coef
+        feather_mask = int(self.PARAMS.feather_mask * upscale_coef)
         upscaled_grid_specs = MS_Image().get_dynamic_grid_specs(upscaled.shape[2], upscaled.shape[1], rows_qty, cols_qty, feather_mask)[0]
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled, upscaled_grid_specs, feather_mask)
 
