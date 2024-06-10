@@ -79,28 +79,27 @@ class MS_Image_v2(MS_Image):
             for col_index, col in enumerate(tile_order_cols):
                 index = (col * len(tile_order_rows)) + row
                 
+                _tile_width = (tile_width_units_qty + 2) * size_unit
+                _tile_height = (tile_height_units_qty + 2) * size_unit
+                x_tile_coordinate = (col_index * tile_width_units_qty * size_unit)
+                y_tile_coordinate = (row_index * tile_height_units_qty * size_unit)
+                
                 # if first or last width tile
                 if col_index == 0:
-                    _tile_width = (tile_width_units_qty + 1) * size_unit
-                    x = col_index * tile_width_units_qty * size_unit
-                if col_index == (cols_qty - 1):
-                    _tile_width = (tile_width_units_qty + 1) * size_unit
-                    x = (col_index * tile_width_units_qty * size_unit) - size_unit
+                    x = x_tile_coordinate
+                elif col_index == (cols_qty - 1):
+                    x = x_tile_coordinate - (2 * size_unit)
                 else:
-                    _tile_width = (tile_width_units_qty + 2) * size_unit
-                    x = (col_index * tile_width_units_qty * size_unit) - size_unit
+                    x = x_tile_coordinate - (1 * size_unit)
 
                 # if first or last height tile
                 if row_index == 0:
-                    _tile_height = (tile_height_units_qty + 1) * size_unit
-                    y = row_index * tile_height_units_qty * size_unit
+                    y = y_tile_coordinate - (0 * size_unit)
                 elif row_index == (rows_qty - 1):
-                    _tile_height = (tile_height_units_qty + 1) * size_unit
-                    y = (row_index * tile_height_units_qty * size_unit) - size_unit
+                    y = y_tile_coordinate - (2 * size_unit)
                 else:
-                    _tile_height = (tile_height_units_qty + 2) * size_unit
-                    y = (row_index * (tile_height_units_qty) * size_unit) - size_unit
-                                
+                    y = y_tile_coordinate - (1 * size_unit)
+                                                
                 tiles.append([
                     row_index, 
                     col_index, 
