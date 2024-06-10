@@ -284,7 +284,8 @@ class UpscalerRefiner_McBoaty_v3():
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled, upscaled_grid_specs, feather_mask)
 
         tiles_order.sort(key=lambda x: x[0])
-        output_tiles = tuple(output for _, output in tiles_order)            
+        output_tiles = tuple(output for _, output in tiles_order)
+        output_tiles = MS_Image().get_same_size_tiles(output_tiles)
         output_tiles = torch.cat(output_tiles)
 
         return output_image, output_tiles

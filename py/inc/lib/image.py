@@ -77,7 +77,7 @@ class MS_Image_v2(MS_Image):
         tiles = []
         for row_index, row in enumerate(tile_order_rows):
             for col_index, col in enumerate(tile_order_cols):
-                index = (col * len(tile_order_rows)) + row
+                index = (row * len(tile_order_rows)) + col
                 
                 _tile_width = (tile_width_units_qty + 2) * size_unit
                 _tile_height = (tile_height_units_qty + 2) * size_unit
@@ -112,23 +112,36 @@ class MS_Image_v2(MS_Image):
         return tiles, tile_width_units_qty, tile_height_units_qty, tile_width, tile_height
     
     @classmethod
-    def get_grid_images(self, image, grid_specs, fill_color=(127, 127, 127, 0)):
+    def get_grid_images(self, image, grid_specs):
+
+        grids = [
+            image[
+                :,
+                y_start:y_start + height_inc, 
+                x_start:x_start + width_inc,
+                :
+            ] for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs
+        ]
+
+        return grids
+
+    @classmethod
+    def get_same_size_tiles(self, tiles, fill_color=(127, 127, 127, 1)):
         
-        max_width = max([width_inc for _, _, _, _, _, width_inc, _ in grid_specs])
-        max_height = max([height_inc for _, _, _, _, _, _, height_inc in grid_specs])
+        max_width = max([_tile.shape[2] for _tile in tiles])
+        max_height = max([_tile.shape[1] for _tile in tiles])
 
         grids = []
         
-        for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs:
-            _tile = image[:, y_start:y_start + height_inc, x_start:x_start + width_inc, :]
-            tile = torch.zeros((image.shape[0], max_height, max_width, image.shape[3]), dtype=image.dtype)
-            for c in range(image.shape[3]):
+        for _tile in tiles:
+            tile = torch.zeros((_tile.shape[0], max_height, max_width, _tile.shape[3]), dtype=_tile.dtype)
+            for c in range(_tile.shape[3]):
                 tile[:, :, :, c] = fill_color[c]
             tile[:, :_tile.shape[1], :_tile.shape[2], :] = _tile
             grids.append(tile)
 
         return grids
-
+    
     @classmethod
     def rebuild_image_from_parts(self, iteration, output_images, upscaled, grid_specs, feather_mask):
         
@@ -167,22 +180,23 @@ class MS_Image_v2(MS_Image):
             0, 
             0
         )[0]
-
+        
         index = 0
         total = len(output_images)
+        last_tile_row_index = max(grid_spec[0] for grid_spec in grid_specs)
+        last_tile_col_index = max(grid_spec[1] for grid_spec in grid_specs)
         
         tiles_order = []        
         outputTopRow = [None, None]
         outputBottomRow = [None, None]
         outputMiddleRow = []
-        tile_qty = int((total ** 0.5))
         for index, grid_spec in enumerate(grid_specs):
             log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
             row, col, order, x_start, y_start, width_inc, height_inc = grid_spec
             tiles_order.append((order, output_images[index]))
             if col == 0:
                 outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, upscaled.shape[2] - tile_width, 0, 0)[0]
-            elif col == (tile_qty - 1):
+            elif col == last_tile_col_index:
                 _y_start = 0
                 outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = _y_start, resize_source = False, mask = grid_feathermask_vertical_right)[0]
             else:
@@ -190,10 +204,10 @@ class MS_Image_v2(MS_Image):
                 _y_start = 0
                 outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = _y_start, resize_source = False, mask = grid_feathermask_vertical)[0]
 
-            if col == (tile_qty - 1):
+            if col == last_tile_col_index:
                 if row == 0:
                     outputTopRow = [y_start, outputRow]
-                elif row == (tile_qty - 1):
+                elif row == last_tile_row_index:
                     outputBottomRow = [y_start, outputRow]
                 else:
                     i = int(row - 1)
