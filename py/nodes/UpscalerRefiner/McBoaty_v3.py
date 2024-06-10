@@ -239,9 +239,8 @@ class UpscalerRefiner_McBoaty_v3():
         
         for index, grid_image in enumerate(grid_images):            
             log(f"tile {index + 1}/{total}", None, None, f"Upscaling {iteration}")
-            _image_grid = grid_image[:,:,:,:3]
             # _image_grid = nodes.ImageScaleBy().upscale(_image_grid, self.PARAMS.upscale_method, (_image_grid.shape[2] / self.KSAMPLER.tile_size_sampler))[0]
-            upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, _image_grid)[0]
+            upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, grid_image)[0]
             grid_upscales.append(upscaled_image_grid)
 
         for index, upscaled_image_grid in enumerate(grid_upscales):
@@ -285,7 +284,7 @@ class UpscalerRefiner_McBoaty_v3():
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled, upscaled_grid_specs, feather_mask)
 
         tiles_order.sort(key=lambda x: x[0])
-        output_tiles = tuple(output for _, output in tiles_order)
+        output_tiles = tuple(output for _, output in tiles_order)            
         output_tiles = torch.cat(output_tiles)
-            
+
         return output_image, output_tiles

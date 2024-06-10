@@ -112,15 +112,20 @@ class MS_Image_v2(MS_Image):
         return tiles, tile_width_units_qty, tile_height_units_qty, tile_width, tile_height
     
     @classmethod
-    def get_grid_images(self, image, grid_specs):
+    def get_grid_images(self, image, grid_specs, fill_color=(127, 127, 127, 0)):
+        
+        max_width = max([width_inc for _, _, _, _, _, width_inc, _ in grid_specs])
+        max_height = max([height_inc for _, _, _, _, _, _, height_inc in grid_specs])
 
-        grids = [
-            image[
-                :,
-                y_start:y_start + height_inc, 
-                x_start:x_start + width_inc
-            ] for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs
-        ]
+        grids = []
+        
+        for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs:
+            _tile = image[:, y_start:y_start + height_inc, x_start:x_start + width_inc, :]
+            tile = torch.zeros((image.shape[0], max_height, max_width, image.shape[3]), dtype=image.dtype)
+            for c in range(image.shape[3]):
+                tile[:, :, :, c] = fill_color[c]
+            tile[:, :_tile.shape[1], :_tile.shape[2], :] = _tile
+            grids.append(tile)
 
         return grids
 
@@ -204,7 +209,7 @@ class MS_Image_v2(MS_Image):
             for index, output in enumerate(outputMiddleRow):
                 _y_start = output[0]
                 full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, output[1], x = 0, y = _y_start, resize_source = False, mask = grid_feathermask_horizontal)[0]
-        
+                
         return full_image, tiles_order
 
 class MS_Image_v1(MS_Image):
