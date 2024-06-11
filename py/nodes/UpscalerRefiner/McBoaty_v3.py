@@ -227,8 +227,8 @@ class UpscalerRefiner_McBoaty_v3():
         cols_qty = math.ceil(cols_qty_float)
         
         grid_specs = MS_Image().get_dynamic_grid_specs(image.shape[2], image.shape[1], rows_qty, cols_qty, feather_mask)[0]
-        grid_images = MS_Image().get_grid_images(image, grid_specs, feather_mask, self.KSAMPLER)
-        
+        grid_images = MS_Image().get_grid_images(image, grid_specs)
+
         grid_upscales = []
         grid_latents = []
         grid_latent_outputs = []

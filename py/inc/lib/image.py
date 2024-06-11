@@ -5,6 +5,7 @@
 
 import comfy_extras.nodes_images
 import torch
+import torch.nn.functional as F
 import math
 import numpy as np
 from PIL import Image
@@ -72,6 +73,10 @@ class MS_Image_v2(MS_Image):
         tile_height = height / rows_qty        
         tile_width_units_qty = math.ceil(tile_width / size_unit)
         tile_height_units_qty = math.ceil(tile_height / size_unit)
+        new_width = tile_width_units_qty * size_unit * cols_qty
+        new_height = tile_height_units_qty * size_unit * rows_qty
+        last_tile_width_diff = new_width - width
+        last_tile_height_diff = new_height - height
         tile_order_rows = MS_Array.reorder_edges_to_center(list(range(rows_qty)))
         tile_order_cols = MS_Array.reorder_edges_to_center(list(range(cols_qty)))
                         
@@ -89,7 +94,7 @@ class MS_Image_v2(MS_Image):
                 if col_index == 0:
                     x = x_tile_coordinate
                 elif col_index == (cols_qty - 1):
-                    x = x_tile_coordinate - (2 * size_unit)
+                    x = x_tile_coordinate - (2 * size_unit) - last_tile_width_diff
                 else:
                     x = x_tile_coordinate - (1 * size_unit)
 
@@ -97,7 +102,7 @@ class MS_Image_v2(MS_Image):
                 if row_index == 0:
                     y = y_tile_coordinate - (0 * size_unit)
                 elif row_index == (rows_qty - 1):
-                    y = y_tile_coordinate - (2 * size_unit)
+                    y = y_tile_coordinate - (2 * size_unit) - last_tile_height_diff
                 else:
                     y = y_tile_coordinate - (1 * size_unit)
                                                 
@@ -112,58 +117,18 @@ class MS_Image_v2(MS_Image):
                 ])
         return tiles, tile_width_units_qty, tile_height_units_qty, tile_width, tile_height
     
+    
     @classmethod
-    def get_grid_images(self, image, grid_specs, feather_mask, KSAMPLER, fill_color=(127, 127, 127, 1)):
-
-        max_width = max([grid_spec[5] for grid_spec in grid_specs])
-        max_height = max([grid_spec[6] for grid_spec in grid_specs])
+    def get_grid_images(self, image, grid_specs):
         
-        _tiles = []
-        grids = []
-                
-        for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs:
-            tile = torch.zeros((image.shape[0], max_height, max_width, image.shape[3]), dtype=image.dtype)
-            for c in range(image.shape[3]):
-                tile[:, :, :, c] = fill_color[c]
-                
-            actual_height = min(height_inc, max_height)
-            actual_width = min(width_inc, max_width)
-                        
-            _tile = image[:, y_start:y_start + actual_height, x_start:x_start + actual_width, :]
-            isTileOk = True
-            if tile.shape[1] != _tile.shape[1] or tile.shape[2] != _tile.shape[2]:
-                isTileOk = False
-                
-            _tiles.append([isTileOk, tile, _tile, None])   
-            
-        for i in range(len(_tiles)):
-            isTileOk, tile, _tile, _ = _tiles[i]
-            if not isTileOk:
-                _image, _mask = nodes.ImagePadForOutpaint().expand_image(_tile, 0, 0, (tile.shape[2] - _tile.shape[2]), (tile.shape[1] - _tile.shape[1]), 0)
-                _tiles[i][3] = nodes.VAEEncodeForInpaint().encode(KSAMPLER.vae, _image, _mask)[0]
-
-        for i in range(len(_tiles)):
-            isTileOk, tile, _tile, _latent = _tiles[i]
-            if not isTileOk:
-                _tiles[i][3] = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
-                    KSAMPLER.model, 
-                    KSAMPLER.add_noise, 
-                    KSAMPLER.noise_seed,
-                    KSAMPLER.cfg, 
-                    KSAMPLER.positive, 
-                    KSAMPLER.negative, 
-                    KSAMPLER.sampler, 
-                    KSAMPLER.outpaint_sigmas, 
-                    _latent
-                )[0]
-
-        for i in range(len(_tiles)):
-            isTileOk, tile, _tile, _latent_output = _tiles[i]
-            if not isTileOk:
-                _tiles[i][2] = (nodes.VAEDecodeTiled().decode(KSAMPLER.vae, _latent_output, KSAMPLER.tile_size)[0].unsqueeze(0))[0]
-                _tiles[i][0] = True
-            # tile[:, :_tile.shape[1], :_tile.shape[2], :] = _tile
-            grids.append(_tiles[i][2])
+        grids = [
+            image[
+                :,
+                y_start:y_start + height_inc, 
+                x_start:x_start + width_inc,
+                :
+            ] for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs
+        ]
 
         return grids
     
