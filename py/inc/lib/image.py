@@ -118,6 +118,7 @@ class MS_Image_v2(MS_Image):
         max_width = max([grid_spec[5] for grid_spec in grid_specs])
         max_height = max([grid_spec[6] for grid_spec in grid_specs])
         
+        _tiles = []
         grids = []
                 
         for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs:
@@ -129,11 +130,22 @@ class MS_Image_v2(MS_Image):
             actual_width = min(width_inc, max_width)
                         
             _tile = image[:, y_start:y_start + actual_height, x_start:x_start + actual_width, :]
+            isTileOk = True
             if tile.shape[1] != _tile.shape[1] or tile.shape[2] != _tile.shape[2]:
-                # _tile = comfy_extras.nodes_mask.ImageCompositeMasked().composite(tile, _tile, 0, 0, False)[0]
+                isTileOk = False
+                
+            _tiles.append([isTileOk, tile, _tile, None])   
+            
+        for i in range(len(_tiles)):
+            isTileOk, tile, _tile, _ = _tiles[i]
+            if not isTileOk:
                 _image, _mask = nodes.ImagePadForOutpaint().expand_image(_tile, 0, 0, (tile.shape[2] - _tile.shape[2]), (tile.shape[1] - _tile.shape[1]), 0)
-                _latent = nodes.VAEEncodeForInpaint().encode(KSAMPLER.vae, _image, _mask)[0]
-                _latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
+                _tiles[i][3] = nodes.VAEEncodeForInpaint().encode(KSAMPLER.vae, _image, _mask)[0]
+
+        for i in range(len(_tiles)):
+            isTileOk, tile, _tile, _latent = _tiles[i]
+            if not isTileOk:
+                _tiles[i][3] = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                     KSAMPLER.model, 
                     KSAMPLER.add_noise, 
                     KSAMPLER.noise_seed,
@@ -141,15 +153,17 @@ class MS_Image_v2(MS_Image):
                     KSAMPLER.positive, 
                     KSAMPLER.negative, 
                     KSAMPLER.sampler, 
-                    KSAMPLER.sigmas, 
+                    KSAMPLER.outpaint_sigmas, 
                     _latent
                 )[0]
-                _tile = (nodes.VAEDecodeTiled().decode(KSAMPLER.vae, _latent_output, KSAMPLER.tile_size)[0].unsqueeze(0))[0]
-                
-            tile[:, :_tile.shape[1], :_tile.shape[2], :] = _tile
 
-            grids.append(tile)
-
+        for i in range(len(_tiles)):
+            isTileOk, tile, _tile, _latent_output = _tiles[i]
+            if not isTileOk:
+                _tiles[i][2] = (nodes.VAEDecodeTiled().decode(KSAMPLER.vae, _latent_output, KSAMPLER.tile_size)[0].unsqueeze(0))[0]
+                _tiles[i][0] = True
+            # tile[:, :_tile.shape[1], :_tile.shape[2], :] = _tile
+            grids.append(_tiles[i][2])
 
         return grids
     
