@@ -3,6 +3,7 @@
 #
 ###
 
+import comfy_extras.nodes_images
 import torch
 import math
 import numpy as np
@@ -112,38 +113,48 @@ class MS_Image_v2(MS_Image):
         return tiles, tile_width_units_qty, tile_height_units_qty, tile_width, tile_height
     
     @classmethod
-    def get_grid_images(self, image, grid_specs):
+    def get_grid_images(self, image, grid_specs, feather_mask, KSAMPLER, fill_color=(127, 127, 127, 1)):
 
-        grids = [
-            image[
-                :,
-                y_start:y_start + height_inc, 
-                x_start:x_start + width_inc,
-                :
-            ] for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs
-        ]
-
-        return grids
-
-    @classmethod
-    def get_same_size_tiles(self, tiles, fill_color=(127, 127, 127, 1)):
+        max_width = max([grid_spec[5] for grid_spec in grid_specs])
+        max_height = max([grid_spec[6] for grid_spec in grid_specs])
         
-        max_width = max([_tile.shape[2] for _tile in tiles])
-        max_height = max([_tile.shape[1] for _tile in tiles])
-
         grids = []
-        
-        for _tile in tiles:
-            tile = torch.zeros((_tile.shape[0], max_height, max_width, _tile.shape[3]), dtype=_tile.dtype)
-            for c in range(_tile.shape[3]):
+                
+        for _, _, _, x_start, y_start, width_inc, height_inc in grid_specs:
+            tile = torch.zeros((image.shape[0], max_height, max_width, image.shape[3]), dtype=image.dtype)
+            for c in range(image.shape[3]):
                 tile[:, :, :, c] = fill_color[c]
+                
+            actual_height = min(height_inc, max_height)
+            actual_width = min(width_inc, max_width)
+                        
+            _tile = image[:, y_start:y_start + actual_height, x_start:x_start + actual_width, :]
+            if tile.shape[1] != _tile.shape[1] or tile.shape[2] != _tile.shape[2]:
+                # _tile = comfy_extras.nodes_mask.ImageCompositeMasked().composite(tile, _tile, 0, 0, False)[0]
+                _image, _mask = nodes.ImagePadForOutpaint().expand_image(_tile, 0, 0, (tile.shape[2] - _tile.shape[2]), (tile.shape[1] - _tile.shape[1]), 0)
+                _latent = nodes.VAEEncodeForInpaint().encode(KSAMPLER.vae, _image, _mask)[0]
+                _latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
+                    KSAMPLER.model, 
+                    KSAMPLER.add_noise, 
+                    KSAMPLER.noise_seed,
+                    KSAMPLER.cfg, 
+                    KSAMPLER.positive, 
+                    KSAMPLER.negative, 
+                    KSAMPLER.sampler, 
+                    KSAMPLER.sigmas, 
+                    _latent
+                )[0]
+                _tile = (nodes.VAEDecodeTiled().decode(KSAMPLER.vae, _latent_output, KSAMPLER.tile_size)[0].unsqueeze(0))[0]
+                
             tile[:, :_tile.shape[1], :_tile.shape[2], :] = _tile
+
             grids.append(tile)
+
 
         return grids
     
     @classmethod
-    def rebuild_image_from_parts(self, iteration, output_images, upscaled, grid_specs, feather_mask):
+    def rebuild_image_from_parts(self, iteration, output_images, image, grid_specs, feather_mask, upscale_scale):
         
         width_feather_seam = feather_mask
         height_feather_seam = feather_mask
@@ -195,7 +206,7 @@ class MS_Image_v2(MS_Image):
             row, col, order, x_start, y_start, width_inc, height_inc = grid_spec
             tiles_order.append((order, output_images[index]))
             if col == 0:
-                outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, upscaled.shape[2] - tile_width, 0, 0)[0]
+                outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, (image.shape[2]*upscale_scale) - tile_width, 0, 0)[0]
             elif col == last_tile_col_index:
                 _y_start = 0
                 outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = _y_start, resize_source = False, mask = grid_feathermask_vertical_right)[0]
@@ -214,7 +225,7 @@ class MS_Image_v2(MS_Image):
                     outputMiddleRow.append([y_start, outputRow])
                     
         nb_middle_tiles = len(outputMiddleRow)
-        image_height = upscaled.shape[1] - tile_height
+        image_height = (image.shape[1]*upscale_scale) - tile_height
         full_image = nodes.ImagePadForOutpaint().expand_image(outputTopRow[1], 0, 0, 0, image_height, 0)[0]
         if outputBottomRow[0] is not None:
             _y_start = outputBottomRow[0]
@@ -223,7 +234,9 @@ class MS_Image_v2(MS_Image):
             for index, output in enumerate(outputMiddleRow):
                 _y_start = output[0]
                 full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, output[1], x = 0, y = _y_start, resize_source = False, mask = grid_feathermask_horizontal)[0]
-                
+        
+        full_image = comfy_extras.nodes_images.ImageCrop().crop(full_image, (image.shape[2] * upscale_scale), (image.shape[1] * upscale_scale), 0, 0)[0]
+        
         return full_image, tiles_order
 
 class MS_Image_v1(MS_Image):

@@ -119,7 +119,7 @@ class UpscalerRefiner_McBoaty_v3():
         for index in range(self.PARAMS.max_iterations):
             output_image, output_tiles = self.upscale_refine(current_image, f"{index + 1}/{self.PARAMS.max_iterations}")
             if not self.PARAMS.upscale_size: 
-                output_image = nodes.ImageScale.upscale(nodes.ImageScale, output_image, "nearest-exact", image_width, image_height, "center")[0]
+                output_image = nodes.ImageScale().upscale(output_image, "nearest-exact", image_width, image_height, False)[0]
             current_image = output_image
             
         output_image_width = output_image.shape[2]
@@ -219,8 +219,6 @@ class UpscalerRefiner_McBoaty_v3():
     @classmethod
     def upscale_refine(self, image, iteration):
         
-        upscaled = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
-        upscale_coef = upscaled.shape[2] / image.shape[2]
         feather_mask = self.PARAMS.feather_mask
         rows_qty_float = image.shape[2] / self.KSAMPLER.tile_size
         cols_qty_float = image.shape[1] / self.KSAMPLER.tile_size
@@ -228,8 +226,7 @@ class UpscalerRefiner_McBoaty_v3():
         cols_qty = math.ceil(cols_qty_float)
         
         grid_specs = MS_Image().get_dynamic_grid_specs(image.shape[2], image.shape[1], rows_qty, cols_qty, feather_mask)[0]
-        
-        grid_images = MS_Image().get_grid_images(image, grid_specs)
+        grid_images = MS_Image().get_grid_images(image, grid_specs, feather_mask, self.KSAMPLER)
         
         grid_upscales = []
         grid_latents = []
@@ -279,13 +276,12 @@ class UpscalerRefiner_McBoaty_v3():
             # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
             output_images.append(output)
 
-        feather_mask = int(self.PARAMS.feather_mask * upscale_coef)
-        upscaled_grid_specs = MS_Image().get_dynamic_grid_specs(upscaled.shape[2], upscaled.shape[1], rows_qty, cols_qty, feather_mask)[0]
-        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, upscaled, upscaled_grid_specs, feather_mask)
+        feather_mask = int(self.PARAMS.feather_mask * self.PARAMS.upscale_model.scale)
+        upscaled_grid_specs = MS_Image().get_dynamic_grid_specs((image.shape[2]*self.PARAMS.upscale_model.scale), (image.shape[1]*self.PARAMS.upscale_model.scale), rows_qty, cols_qty, feather_mask)[0]
+        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, upscaled_grid_specs, feather_mask, self.PARAMS.upscale_model.scale)
 
         tiles_order.sort(key=lambda x: x[0])
         output_tiles = tuple(output for _, output in tiles_order)
-        output_tiles = MS_Image().get_same_size_tiles(output_tiles)
         output_tiles = torch.cat(output_tiles)
 
         return output_image, output_tiles
