@@ -13,14 +13,11 @@ import torch
 from types import SimpleNamespace
 import comfy
 from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images as extra_images, nodes_mask as extra_mask, nodes_compositing as extra_compo, nodes_upscale_model as extra_upscale_model
-from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEDecodeTiled, ImageScale, SetLatentNoiseMask, ImageScaleBy
+from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEEncodeForInpaint, VAEDecode, VAEDecodeTiled, ImageScale, SetLatentNoiseMask, ImageScaleBy
 
-from ...inc.lib.image import MS_Image
-from ...inc.lib.mask import MS_Mask
+from ...inc.lib.image import MS_Image_v2 as MS_Image
+from ...inc.lib.mask import MS_Mask as MS_Mask
 from ...inc.lib.sampler import MS_Sampler
-
-from ...inc.lib.image import MS_Image
-from ...inc.lib.mask import MS_Mask
 
 from ...vendor.ComfyUI_LayerStyle.py.image_blend_v2 import ImageBlendV2, chop_mode_v2
 from ...vendor.ComfyUI_Impact_Pack.modules.impact.util_nodes import RemoveNoiseMask
@@ -158,7 +155,7 @@ class KSampler_setInpaintingTileByMask_v1:
         )
         s.params = SimpleNamespace(
             is_model_diffdiff = kwargs.get('model_diffdiff', True),
-            upscale_method = "lanczos",    
+            upscale_method = "lanczos",
             inpaint_size = kwargs.get('inpaint_size', None),
             painted_mask_padding = kwargs.get('painted_mask_padding', None),
             noise_blend = kwargs.get('noise_blend', None),
@@ -289,9 +286,11 @@ class KSampler_setInpaintingTileByMask_v1:
 
     def ksample_tile(s):
         
-        latent = VAEEncodeTiled().encode(s.ksampler.vae, s.tile.noised_by_mask, tile_size=int(s.params.inpaint_size/2))[0]
         if s.params.is_model_diffdiff:
+            latent = VAEEncodeTiled().encode(s.ksampler.vae, s.tile.noised_by_mask, tile_size=int(s.params.inpaint_size/2))[0]
             latent = SetLatentNoiseMask().set_mask(latent, s.params.mask_region.mask_cropped)[0]
+        else:
+            latent = VAEEncodeForInpaint().encode(s.ksampler.vae, s.tile.noised_by_mask, s.params.mask_region.mask_cropped)[0]
         latent = KSampler().sample(
             model=s.ksampler.model,
             seed=s.ksampler.seed, 

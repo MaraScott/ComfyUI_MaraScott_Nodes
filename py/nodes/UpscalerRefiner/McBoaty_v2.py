@@ -16,13 +16,19 @@ from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
 import nodes
 import folder_paths
 
-from ...inc.lib.upscaler_refiner import McBoaty
+from ...inc.lib.image import MS_Image_v1 as MS_Image
 
-from ...inc.lib.image import MS_Image
+from ...utils.version import VERSION
 
 from ...utils.log import *
 
-class UpscalerRefiner_McBoaty_v2(McBoaty):
+class UpscalerRefiner_McBoaty_v2():
+    
+    SIGMAS_TYPES = [
+        "BasicScheduler"
+        , "SDTurboScheduler"
+        , "AlignYourStepsScheduler"
+    ]
     
     @classmethod
     def INPUT_TYPES(self):
@@ -74,6 +80,45 @@ class UpscalerRefiner_McBoaty_v2(McBoaty):
         "original_resized", 
         "info", 
     )
+    
+    OUTPUT_NODE = False
+    CATEGORY = "MaraScott/upscaling"
+    DESCRIPTION = "An \"UPSCALER\" Node"
+    FUNCTION = "fn"
+    
+    @classmethod
+    def _get_info(self, image_width, image_height, image_divisible_by_8, output_image_width, output_image_height):
+        return [f"""
+
+    IMAGE (INPUT)
+        width   :   {image_width}
+        height  :   {image_height}
+        image divisible by 8 : {image_divisible_by_8}
+
+    ------------------------------
+
+    IMAGE (OUTPUT)
+        width   :   {output_image_width}
+        height  :   {output_image_height}
+        
+    NODE INFO
+        version : {VERSION}
+
+"""]        
+    
+    @classmethod    
+    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
+        if sigmas_type == "SDTurboScheduler":
+            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
+            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model, steps, denoise)[0]
+        elif sigmas_type == "AlignYourStepsScheduler":
+            SigmaScheduler = AlignYourStepsScheduler
+            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model_type, steps, denoise)[0]
+        else: # BasicScheduler
+            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
+            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model, scheduler, steps, denoise)[0]
+
+        return sigmas
     
     @classmethod
     def upscale_refine(
