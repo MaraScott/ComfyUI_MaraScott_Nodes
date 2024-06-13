@@ -23,6 +23,7 @@ from ...inc.lib.sampler import MS_Sampler
 
 from ...utils.log import *
 
+import time
 class UpscalerRefiner_McBoaty_v3():
 
     SIGMAS_TYPES = [
@@ -31,8 +32,9 @@ class UpscalerRefiner_McBoaty_v3():
         , "AlignYourStepsScheduler"
     ]    
     MODEL_TYPE_SIZES = {
-        "SD1": 512,
+        "SD1.5": 512,
         "SDXL": 1024,
+        "SD3": 1024,
         "SVD": 1024,
     }
     
@@ -51,30 +53,25 @@ class UpscalerRefiner_McBoaty_v3():
             },
             "required":{
                 "image": ("IMAGE", {"label": "Image" }),
-                "output_size": ("BOOLEAN", { "label": "Output Size", "default": True, "label_on": "Upscale size", "label_off": "Input size"}),
 
-                "upscale_model": (folder_paths.get_filename_list("upscale_models"), { "label": "Upscale Model" }),
-
-                "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 0, "max": nodes.MAX_RESOLUTION, "step": 1}),                
-                
                 "model": ("MODEL", { "label": "Model" }),
                 "vae": ("VAE", { "label": "VAE" }),
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "positive": ("CONDITIONING", { "label": "Positive" }),
                 "negative": ("CONDITIONING", { "label": "Negative" }),
-
-                "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
-
                 "seed": ("INT", { "label": "Seed", "default": 4, "min": 0, "max": 0xffffffffffffffff}),
 
-                "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigms Type" }),
-                "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
-                "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
-                "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type" }),
-
+                "output_size": ("BOOLEAN", { "label": "Output Size", "default": True, "label_on": "Upscale size", "label_off": "Input size"}),
+                "upscale_model": (folder_paths.get_filename_list("upscale_models"), { "label": "Upscale Model" }),
                 "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
+                "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
+                "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
+                "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type" }),
+                "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
+                "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
 
             },
             "optional": {
@@ -177,6 +174,9 @@ class UpscalerRefiner_McBoaty_v3():
         self.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type]
         self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
         self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+
+        # TODO : make the feather_mask proportional to tile size ?
+        # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
 
         self.OUTPUTS = SimpleNamespace(
             output_info = [f"No info"],        
