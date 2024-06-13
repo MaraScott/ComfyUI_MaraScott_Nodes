@@ -256,7 +256,7 @@ class UpscalerRefiner_McBoaty_v3():
             
             if self.KSAMPLER.tiled == True:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
-                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size)[0]
+                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_sampler)[0]
             else:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncoding {iteration}")
                 latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
@@ -280,7 +280,7 @@ class UpscalerRefiner_McBoaty_v3():
         for index, latent_output in enumerate(grid_latent_outputs):            
             if self.KSAMPLER.tiled == True:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
-                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size)[0].unsqueeze(0))[0]
+                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_sampler)[0].unsqueeze(0))[0]
             else:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
                 output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
