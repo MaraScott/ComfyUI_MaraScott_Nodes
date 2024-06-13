@@ -11,4 +11,4 @@ Repository = "https://github.com/MaraScott/ComfyUI_MaraScott_Nodes"
 [tool.comfy]
 PublisherId = "marascott"
 DisplayName = "MaraScott Nodes"
-Icon = "\ud83d\udc30"
+Icon = "https://www.marascott.ai/wp-content/uploads/logo.png"
