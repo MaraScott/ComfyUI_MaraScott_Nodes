@@ -20,6 +20,7 @@ import folder_paths
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...inc.lib.sampler import MS_Sampler
+from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
 
 from ...utils.log import *
 
@@ -37,6 +38,14 @@ class UpscalerRefiner_McBoaty_v3():
         "SD3": 1024,
         "SVD": 1024,
     }
+    COLOR_MATCH_METHODS = [   
+        'mkl',
+        'hm', 
+        'reinhard', 
+        'mvgd', 
+        'hm-mvgd-hm', 
+        'hm-mkl-hm',
+    ]
     
     AYS_MODEL_TYPES = list(MODEL_TYPE_SIZES.keys())
     
@@ -72,6 +81,7 @@ class UpscalerRefiner_McBoaty_v3():
                 "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type" }),
                 "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
+                "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'mkl'}),
 
             },
             "optional": {
@@ -149,6 +159,7 @@ class UpscalerRefiner_McBoaty_v3():
             upscale_model_name = kwargs.get('upscale_model', None),
             upscale_method = "lanczos",
             feather_mask = kwargs.get('feather_mask', None),
+            color_match_method = kwargs.get('color_match_method', 'mkl'),
             max_iterations = kwargs.get('running_count', 1),
         )
         self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
@@ -280,6 +291,8 @@ class UpscalerRefiner_McBoaty_v3():
         feather_mask = int(self.PARAMS.feather_mask * self.PARAMS.upscale_model.scale)
         upscaled_grid_specs = MS_Image().get_dynamic_grid_specs((image.shape[2]*self.PARAMS.upscale_model.scale), (image.shape[1]*self.PARAMS.upscale_model.scale), rows_qty, cols_qty, feather_mask)[0]
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, upscaled_grid_specs, feather_mask, self.PARAMS.upscale_model.scale)
+
+        output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
 
         tiles_order.sort(key=lambda x: x[0])
         output_tiles = tuple(output for _, output in tiles_order)
