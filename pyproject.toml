@@ -1,7 +1,7 @@
 [project]
 name = "comfyui_marascott_nodes"
 description = "A set of nodes including a universal bus, an Inpainting By Mask and a large Upscaler/Refiner"
-version = "4.2.4"
+version = "4.2.5"
 license = "LICENSE"
 dependencies = ["blend_modes", "numba"]
 
@@ -12,4 +12,4 @@ Repository = "https://github.com/MaraScott/ComfyUI_MaraScott_Nodes"
 [tool.comfy]
 PublisherId = "marascott"
 DisplayName = "MaraScott Nodes"
-Icon = "https://www.marascott.ai/wp-content/uploads/logo.png"
+Icon = "https://raw.githubusercontent.com/MaraScott/ComfyUI_MaraScott_Nodes/main/web/assets/img/logo.svg"
