@@ -39,6 +39,7 @@ class UpscalerRefiner_McBoaty_v3():
         "SVD": 1024,
     }
     COLOR_MATCH_METHODS = [   
+        'none',
         'mkl',
         'hm', 
         'reinhard', 
@@ -65,7 +66,6 @@ class UpscalerRefiner_McBoaty_v3():
 
                 "model": ("MODEL", { "label": "Model" }),
                 "vae": ("VAE", { "label": "VAE" }),
-                "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "positive": ("CONDITIONING", { "label": "Positive" }),
                 "negative": ("CONDITIONING", { "label": "Negative" }),
                 "seed": ("INT", { "label": "Seed", "default": 4, "min": 0, "max": 0xffffffffffffffff}),
@@ -80,8 +80,9 @@ class UpscalerRefiner_McBoaty_v3():
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type" }),
                 "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
+                "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
-                "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'mkl'}),
+                "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
 
             },
             "optional": {
@@ -159,7 +160,7 @@ class UpscalerRefiner_McBoaty_v3():
             upscale_model_name = kwargs.get('upscale_model', None),
             upscale_method = "lanczos",
             feather_mask = kwargs.get('feather_mask', None),
-            color_match_method = kwargs.get('color_match_method', 'mkl'),
+            color_match_method = kwargs.get('color_match_method', 'none'),
             max_iterations = kwargs.get('running_count', 1),
         )
         self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
@@ -292,7 +293,8 @@ class UpscalerRefiner_McBoaty_v3():
         upscaled_grid_specs = MS_Image().get_dynamic_grid_specs((image.shape[2]*self.PARAMS.upscale_model.scale), (image.shape[1]*self.PARAMS.upscale_model.scale), rows_qty, cols_qty, feather_mask)[0]
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, upscaled_grid_specs, feather_mask, self.PARAMS.upscale_model.scale)
 
-        output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
+        if self.PARAMS.color_match_method != 'none':
+            output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
 
         tiles_order.sort(key=lambda x: x[0])
         output_tiles = tuple(output for _, output in tiles_order)
