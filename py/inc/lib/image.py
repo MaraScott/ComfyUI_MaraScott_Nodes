@@ -68,7 +68,10 @@ class MS_Image_v2(MS_Image):
 
     @classmethod
     def get_dynamic_grid_specs(self, width, height, rows_qty = 3, cols_qty = 3, size_unit = 64):
-        # size_unit AKA feather_mask
+        feather_size = size_unit
+        if size_unit == 0:
+            size_unit = 1 
+        # size_unit AKA feather_size
         tile_width = width / cols_qty        
         tile_height = height / rows_qty        
         tile_width_units_qty = math.ceil(tile_width / size_unit)
@@ -92,19 +95,19 @@ class MS_Image_v2(MS_Image):
                 
                 # if first or last width tile
                 if col_index == 0:
-                    x = x_tile_coordinate
+                    x = x_tile_coordinate - (0 * feather_size)
                 elif col_index == (cols_qty - 1):
-                    x = x_tile_coordinate - (2 * size_unit) - last_tile_width_diff
+                    x = x_tile_coordinate - (2 * feather_size) - last_tile_width_diff
                 else:
-                    x = x_tile_coordinate - (1 * size_unit)
+                    x = x_tile_coordinate - (1 * feather_size)
 
                 # if first or last height tile
                 if row_index == 0:
-                    y = y_tile_coordinate - (0 * size_unit)
+                    y = y_tile_coordinate - (0 * feather_size)
                 elif row_index == (rows_qty - 1):
-                    y = y_tile_coordinate - (2 * size_unit) - last_tile_height_diff
+                    y = y_tile_coordinate - (2 * feather_size) - last_tile_height_diff
                 else:
-                    y = y_tile_coordinate - (1 * size_unit)
+                    y = y_tile_coordinate - (1 * feather_size)
                                                 
                 tiles.append([
                     row_index, 
