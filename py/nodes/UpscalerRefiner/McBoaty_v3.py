@@ -28,15 +28,15 @@ import time
 class UpscalerRefiner_McBoaty_v3():
 
     SIGMAS_TYPES = [
-        "BasicScheduler"
-        , "SDTurboScheduler"
-        , "AlignYourStepsScheduler"
+        'BasicScheduler'
+        , 'SDTurboScheduler'
+        , 'AlignYourStepsScheduler'
     ]    
-    MODEL_TYPE_SIZES = {
-        "SD1.5": 512,
-        "SDXL": 1024,
-        "SD3": 1024,
-        "SVD": 1024,
+    AYS_MODEL_TYPE_SIZES = {
+        'SD1': 512,
+        'SDXL': 1024,
+        'SD3': 1024,
+        'SVD': 1024,
     }
     COLOR_MATCH_METHODS = [   
         'none',
@@ -48,7 +48,7 @@ class UpscalerRefiner_McBoaty_v3():
         'hm-mkl-hm',
     ]
     
-    AYS_MODEL_TYPES = list(MODEL_TYPE_SIZES.keys())
+    AYS_MODEL_TYPES = list(AYS_MODEL_TYPE_SIZES.keys())
     
     INPUTS = {}
     OUTPUTS = {}
@@ -177,15 +177,16 @@ class UpscalerRefiner_McBoaty_v3():
             negative = kwargs.get('negative', None),
             add_noise = True,
             sigmas_type = kwargs.get('sigmas_type', None),
-            model_type = kwargs.get('ays_model_type', None),
+            ays_model_type = kwargs.get('ays_model_type', None),
             steps = kwargs.get('steps', None),
             cfg = kwargs.get('cfg', None),
             denoise = kwargs.get('denoise', None),
         )
+        
         self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
-        self.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type]
-        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
-        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+        self.KSAMPLER.tile_size_sampler = self.AYS_MODEL_TYPE_SIZES[self.KSAMPLER.ays_model_type]
+        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
+        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
 
         # TODO : make the feather_mask proportional to tile size ?
         # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
@@ -216,13 +217,13 @@ class UpscalerRefiner_McBoaty_v3():
 """]        
     
     @classmethod    
-    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
+    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, ays_model_type):
         if sigmas_type == "SDTurboScheduler":
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
         elif sigmas_type == "AlignYourStepsScheduler":
             SigmaScheduler = AlignYourStepsScheduler
-            sigmas = SigmaScheduler().get_sigmas(model_type, steps, denoise)[0]
+            sigmas = SigmaScheduler().get_sigmas(ays_model_type, steps, denoise)[0]
         else: # BasicScheduler
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
