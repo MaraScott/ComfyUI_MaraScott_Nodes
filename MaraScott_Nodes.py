@@ -13,6 +13,7 @@ from .py.nodes.Info.DisplayInfoNode_v1 import DisplayInfoNode_v1
 from .py.nodes.UpscalerRefiner.McBoaty_v2 import UpscalerRefiner_McBoaty_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
 from .py.nodes.KSampler.InpaintingTileByMask_v1 import KSampler_setInpaintingTileByMask_v1, KSampler_pasteInpaintingTileByMask_v1
+from .py.nodes.Prompt.PromptFromImage_v1 import PromptFromImage_v1
 from .py.vendor.ComfyUI_JNodes.blob.main.py.prompting_nodes import TokenCounter as TokenCounter_v1
 
 WEB_DIRECTORY = "./web/assets/js"
@@ -24,6 +25,7 @@ NODE_CLASS_MAPPINGS = {
     "MaraScottUpscalerRefinerNode_v3": UpscalerRefiner_McBoaty_v3,
     "MaraScottSetInpaintingByMask_v1": KSampler_setInpaintingTileByMask_v1,
     "MaraScottPasteInpaintingByMask_v1": KSampler_pasteInpaintingTileByMask_v1,
+    "MaraScottPromptFromImage_v1": PromptFromImage_v1,
 
     "MaraScott_Kijai_TokenCounter_v1": TokenCounter_v1,
 
@@ -41,6 +43,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottUpscalerRefinerNode_v3": "\ud83d\udc30 Large Refiner - McBoaty v3 /u",
     "MaraScottSetInpaintingByMask_v1": "\ud83d\udc30 Set Inpainting Tile by mask - McInpainty [1/2] v1 /m",
     "MaraScottPasteInpaintingByMask_v1": "\ud83d\udc30 Paste Inpainting Tile by mask - McInpainty [2/2] v1 /m",
+    "MaraScottPromptFromImage_v1": "\ud83d\udc30 Prompt From Image - McVoicy v1 /p",
 
     "MaraScott_Kijai_TokenCounter_v1": "\ud83d\udc30 TokenCounter (from kijai/ComfyUI-KJNodes) /v",
 
@@ -49,4 +52,4 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottUpscalerRefinerNode_v2": "\u274C Large Refiner - McBoaty v2 /u",
 }
 
-print('\033[34m[Maras IT] \033[92mLoaded\033[0m')
+print('\033[34m[MaraScott] \033[92mLoaded\033[0m')

@@ -5,7 +5,7 @@ import { ComfyWidgets } from "../../scripts/widgets.js";
 app.registerExtension({
 	name: "ComfyUI.MaraScott.DisplayInfo_v1",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
-		if (nodeData.name === "DisplayInfoNode_v1") {
+        if (nodeData.name === "MaraScottDisplayInfo_v1") {
 			function populate(text) {
 				if (this.widgets) {
 					for (let i = 1; i < this.widgets.length; i++) {
@@ -19,6 +19,7 @@ app.registerExtension({
 					v.shift();
 				}
 				for (const list of v) {
+                    
 					const w = ComfyWidgets["STRING"](this, "text", ["STRING", { multiline: true }], app).widget;
 					w.inputEl.readOnly = true;
 					w.inputEl.style.opacity = 0.6;
