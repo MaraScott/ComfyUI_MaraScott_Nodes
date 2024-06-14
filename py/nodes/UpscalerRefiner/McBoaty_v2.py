@@ -107,13 +107,13 @@ class UpscalerRefiner_McBoaty_v2():
 """]        
     
     @classmethod    
-    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
+    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, ays_model_type):
         if sigmas_type == "SDTurboScheduler":
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model, steps, denoise)[0]
         elif sigmas_type == "AlignYourStepsScheduler":
             SigmaScheduler = AlignYourStepsScheduler
-            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model_type, steps, denoise)[0]
+            sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, ays_model_type, steps, denoise)[0]
         else: # BasicScheduler
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler.get_sigmas(SigmaScheduler, model, scheduler, steps, denoise)[0]
@@ -226,8 +226,8 @@ class UpscalerRefiner_McBoaty_v2():
         add_noise = True        
         denoise = kwargs.get('denoise', None)        
         sigmas_type = kwargs.get('sigmas_type', None)
-        model_type = kwargs.get('ays_model_type', None)
-        sigmas = self._get_sigmas(sigmas_type, model, steps, denoise, scheduler, model_type)
+        ays_model_type = kwargs.get('ays_model_type', None)
+        sigmas = self._get_sigmas(sigmas_type, model, steps, denoise, scheduler, ays_model_type)
         max_iterations = kwargs.get('running_count', 1)
 
         output_info = [f"No info"]
