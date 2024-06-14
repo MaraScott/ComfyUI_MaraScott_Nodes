@@ -186,7 +186,7 @@ class MS_Image_v2(MS_Image):
         for index, grid_spec in enumerate(grid_specs):
             log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
             row, col, order, x_start, y_start, width_inc, height_inc = grid_spec
-            tiles_order.append((order, output_images[index], grid_prompts[index]))
+            tiles_order.append((order, output_images[order], grid_prompts[order]))
             if col == 0:
                 outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, (image.shape[2]*upscale_scale) - tile_width, 0, 0)[0]
             elif col == last_tile_col_index:

@@ -160,7 +160,7 @@ class UpscalerRefiner_McBoaty_v3():
             output_image_width, 
             output_image_height,
             output_prompts,
-            f"{end_time - start_time:.6f}"
+            int(end_time - start_time)
         )
         
         log(f"McBoaty is done with its magic")
@@ -258,7 +258,7 @@ class UpscalerRefiner_McBoaty_v3():
     ------------------------------
 
     EXECUTION
-        DURATION : {execution_duration}
+        DURATION : {execution_duration} seconds
 
     NODE INFO
         version : {VERSION}
