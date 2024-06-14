@@ -145,7 +145,7 @@ class UpscalerRefiner_McBoaty_v3():
         for index in range(self.PARAMS.max_iterations):
             output_image, output_tiles, output_prompts = self.upscale_refine(current_image, f"{index + 1}/{self.PARAMS.max_iterations}")
             if not self.PARAMS.upscale_size_type: 
-                output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, (image_width * self.PARAMS.upscale_size), (image_height * image_width * self.PARAMS.upscale_size), False)[0]
+                output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, int(image_width * self.PARAMS.upscale_size), int(image_height * self.PARAMS.upscale_size), False)[0]
             current_image = output_image
             
         output_image_width = output_image.shape[2]
