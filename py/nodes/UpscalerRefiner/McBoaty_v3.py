@@ -306,7 +306,7 @@ class UpscalerRefiner_McBoaty_v3():
             for index, grid_image in enumerate(grid_images):
                 log(f"tile {index + 1}/{total}", None, None, f"Prompting {iteration}")
                 prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
-                log(prompt_tile, None, None, f"Model {llm.name}")        
+                log(prompt_tile, None, None, f"Model {llm.vision_llm.name}")        
                 grid_prompts.append(prompt_tile)
 
         for index, grid_image in enumerate(grid_images):
