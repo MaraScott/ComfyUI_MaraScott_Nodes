@@ -1,7 +1,7 @@
 [project]
 name = "comfyui_marascott_nodes"
 description = "A set of nodes including a universal bus, an Inpainting By Mask and a large Upscaler/Refiner"
-version = "4.2.8"
+version = "4.2.9"
 license = "LICENSE"
 dependencies = ["blend_modes", "numba", "color-matcher"]
 
