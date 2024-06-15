@@ -96,17 +96,17 @@ class MS_Llm_Nlpconnect():
 class MS_Llm():
     
     LLM_MODELS = [
-        'gemma-7b-it',
+        # 'gemma-7b-it',
         'llama3-70b-8192',
-        'llama3-8b-8192',
-        'mixtral-8x7b-32768',
+        # 'llama3-8b-8192',
+        # 'mixtral-8x7b-32768',
     ]
 
     # list of model https://huggingface.co/models?pipeline_tag=image-to-text&sort=downloads
     VISION_LLM_MODELS = [
-        'nlpconnect/vit-gpt2-image-captioning',
+        # 'nlpconnect/vit-gpt2-image-captioning',
         'microsoft/kosmos-2-patch14-224',
-        'Salesforce/blip-image-captioning-large',
+        # 'Salesforce/blip-image-captioning-large',
     ]    
     
     @staticmethod

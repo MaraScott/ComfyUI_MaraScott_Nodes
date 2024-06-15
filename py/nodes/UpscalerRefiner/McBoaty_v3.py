@@ -235,7 +235,7 @@ class UpscalerRefiner_McBoaty_v3():
         
     @classmethod
     def _get_info(self, image_width, image_height, image_divisible_by_8, output_image_width, output_image_height, output_prompts, execution_duration):
-        formatted_prompts = "\n".join(f"        [{index}] {prompt}" for index, prompt in enumerate(output_prompts))
+        formatted_prompts = "\n".join(f"        [{index+1}] {prompt}" for index, prompt in enumerate(output_prompts))
         
         return [f"""
 
