@@ -60,8 +60,15 @@ This AnyBus is dyslexia friendly :D
 The Upscaler Refiner Node (AKA McBoaty Node) is an upscaler coupled with a refiner to achieve higher rendering results.
 The output image is a slightly modified image.
 
+to use `Tile Prompting` we recommend to [setup your groq API key on your computer](https://console.groq.com/docs/quickstart) to improve tile prompting accurancy
+
 **Not Supported**:
 - ControlNet : your conditioning needs to be ControlNet Free  
+
+# Prompt From Image Node AKA McPrompty Node
+
+The Prompt From Image Node (AKA McPrompty Node) is a prompt generator node using an image as input coupled with llm engine (Grok) to generate the text.
+The output text can be used as prompt afterwards.
 
 # Thanks
 
