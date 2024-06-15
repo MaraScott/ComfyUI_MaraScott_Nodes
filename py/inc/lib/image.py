@@ -86,7 +86,7 @@ class MS_Image_v2(MS_Image):
         tiles = []
         for row_index, row in enumerate(tile_order_rows):
             for col_index, col in enumerate(tile_order_cols):
-                index = (row * len(tile_order_rows)) + col
+                order = (row_index * len(tile_order_rows)) + col_index
                 
                 _tile_width = (tile_width_units_qty + 2) * size_unit
                 _tile_height = (tile_height_units_qty + 2) * size_unit
@@ -112,7 +112,7 @@ class MS_Image_v2(MS_Image):
                 tiles.append([
                     row_index, 
                     col_index, 
-                    index,
+                    order,
                     x, # x 
                     y, # y
                     _tile_width, # width 
@@ -186,7 +186,8 @@ class MS_Image_v2(MS_Image):
         for index, grid_spec in enumerate(grid_specs):
             log(f"Rebuilding tile {index + 1}/{total}", None, None, f"Refining {iteration}")
             row, col, order, x_start, y_start, width_inc, height_inc = grid_spec
-            tiles_order.append((order, output_images[order], grid_prompts[order]))
+            prompt = grid_prompts[index] if 0 <= index < len(grid_prompts) else ""
+            tiles_order.append((order, output_images[index], prompt))
             if col == 0:
                 outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, (image.shape[2]*upscale_scale) - tile_width, 0, 0)[0]
             elif col == last_tile_col_index:
@@ -238,7 +239,7 @@ class MS_Image_v1(MS_Image):
                 tiles.append([
                     (col * len(tile_order)) + row,
                     (row * tile_width) - (row * width_unit), # x 
-                    (col * tile_height) - (col * height_unit), # x 
+                    (col * tile_height) - (col * height_unit), # y 
                     tile_width, # width 
                     tile_height, # height 
                 ])

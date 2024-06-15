@@ -23,7 +23,7 @@ class PromptFromImage_v1:
             "required": {
                 "image": ("IMAGE", {"label": "image"}),
                 "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
-                "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "gemma-7b-it" }),
+                "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",

@@ -98,7 +98,7 @@ class UpscalerRefiner_McBoaty_v3():
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
                 "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
-                "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "gemma-7b-it" }),
+                "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
 
             },
             "optional": {
@@ -144,7 +144,7 @@ class UpscalerRefiner_McBoaty_v3():
         current_image = self.OUTPUTS.image
         for index in range(self.PARAMS.max_iterations):
             output_image, output_tiles, output_prompts = self.upscale_refine(current_image, f"{index + 1}/{self.PARAMS.max_iterations}")
-            if not self.PARAMS.upscale_size_type: 
+            if not self.PARAMS.upscale_size_type:
                 output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, int(image_width * self.PARAMS.upscale_size), int(image_height * self.PARAMS.upscale_size), False)[0]
             current_image = output_image
             
