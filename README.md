@@ -63,9 +63,9 @@ The output image is a slightly modified image.
 **Not Supported**:
 - ControlNet : your conditioning needs to be ControlNet Free  
 
-# Prompt From Image Node AKA McVoicy Node
+# Prompt From Image Node AKA McPrompty Node
 
-The Prompt From Image Node (AKA McVoicy Node) is a prompt generator node using an image as input coupled with llm engine (Grok) to generate the text.
+The Prompt From Image Node (AKA McPrompty Node) is a prompt generator node using an image as input coupled with llm engine (Grok) to generate the text.
 The output text can be used as prompt afterwards.
 
 # Thanks
