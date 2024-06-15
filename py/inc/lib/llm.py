@@ -133,7 +133,10 @@ class MS_Llm():
             _prompt = self.get_grok_prompt(prompt_context, prompt_tile)
         else:
             _prompt = self.get_grok_prompt(prompt_context, prompt_tile)
-        prompt = self.call_grok_api(_prompt, seed)
+        if self._groq_key != "":
+            prompt = self.call_grok_api(_prompt, seed)
+        else:
+            prompt = _prompt
         log(prompt, None, None, self.vision_llm.name)
         return prompt
 
