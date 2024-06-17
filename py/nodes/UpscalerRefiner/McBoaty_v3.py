@@ -178,9 +178,6 @@ class UpscalerRefiner_McBoaty_v3():
     @classmethod
     def init(self, **kwargs):
         # Initialize the bus tuple with None values for each parameter
-        self.INPUTS = {
-            "image": kwargs.get('image', None),
-        }
         self.INPUTS = SimpleNamespace(
             image = kwargs.get('image', None),
         )
@@ -300,9 +297,11 @@ class UpscalerRefiner_McBoaty_v3():
             log(grid_image.shape, None, None, "grid_image")
 
         grid_prompts = ["No tile prompting"]
+        _grid_images=[]
         grid_upscales = []
         grid_latents = []
         grid_latent_outputs = []
+        _output_images = []
         output_images = []
         total = len(grid_images)
         
@@ -322,8 +321,18 @@ class UpscalerRefiner_McBoaty_v3():
         #     # _image_grid = nodes.ImageScaleBy().upscale(_image_grid, self.PARAMS.upscale_method, (_image_grid.shape[2] / self.KSAMPLER.tile_size_sampler))[0]
         #     upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, grid_image)[0]
         #     grid_upscales.append(upscaled_image_grid)
+
+        for index, grid_image in enumerate(grid_images):
+            _rows_qty_float = grid_image.shape[2] / self.KSAMPLER.tile_size
+            _cols_qty_float = grid_image.shape[1] / self.KSAMPLER.tile_size
+            _rows_qty = math.ceil(_rows_qty_float)
+            _cols_qty = math.ceil(_cols_qty_float)
+            _grid_image = nodes.ImageScale().upscale(grid_image, "nearest-exact", _rows_qty * self.KSAMPLER.tile_size, _cols_qty * self.KSAMPLER.tile_size, "center")[0]
+            _grid_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(_grid_image, grid_image, x = 0, y = 0, resize_source = False, mask = None)[0]
+            _grid_images.append(_grid_image)
+
         
-        grid_upscales = grid_images
+        grid_upscales = _grid_images
         log((
             grid_upscales[0].shape, 
             self.KSAMPLER.tile_size_vae,
@@ -367,7 +376,11 @@ class UpscalerRefiner_McBoaty_v3():
                 output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
             
             # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
-            output_images.append(output)
+            _output_images.append(output)
+
+        for index, grid_image in enumerate(grid_images):
+            output_image = comfy_extras.nodes_images.ImageCrop().crop(_output_images[index], (grid_image.shape[2] * self.PARAMS.upscale_model.scale), (grid_image.shape[1] * self.PARAMS.upscale_model.scale), 0, 0)[0]
+            output_images.append(output_image)
 
         # feather_mask = int(self.PARAMS.feather_mask * self.PARAMS.upscale_model.scale)
         feather_mask = self.PARAMS.feather_mask
