@@ -132,10 +132,10 @@ class MS_Image_v2(MS_Image):
         tile_height = height
         tile_width_units_qty = math.ceil(tile_width / size_unit)
         tile_height_units_qty = math.ceil(tile_height / size_unit)
-        new_width = tile_width_units_qty * size_unit * cols_qty
-        new_height = tile_height_units_qty * size_unit * rows_qty
-        last_tile_width_diff = new_width - width
-        last_tile_height_diff = new_height - height
+        new_width = tile_size * cols_qty
+        new_height = tile_size * rows_qty
+        last_tile_width_diff = new_width - image.shape[2]
+        last_tile_height_diff = new_height - image.shape[1]
         tile_order_rows = MS_Array.reorder_edges_to_center(list(range(rows_qty)))
         tile_order_cols = MS_Array.reorder_edges_to_center(list(range(cols_qty)))
                         
@@ -146,14 +146,14 @@ class MS_Image_v2(MS_Image):
                 
                 _tile_width = (tile_width_units_qty + 2) * size_unit
                 _tile_height = (tile_height_units_qty + 2) * size_unit
-                x_tile_coordinate = (col_index * tile_width_units_qty * size_unit)
-                y_tile_coordinate = (row_index * tile_height_units_qty * size_unit)
+                x_tile_coordinate = (col_index * tile_size)
+                y_tile_coordinate = (row_index * tile_size)
                 
                 # if first or last width tile
                 if col_index == 0:
                     x = x_tile_coordinate - (0 * feather_size)
                 elif col_index == (cols_qty - 1):
-                    x = x_tile_coordinate - (2 * feather_size)
+                    x = x_tile_coordinate - last_tile_width_diff
                 else:
                     x = x_tile_coordinate - (1 * feather_size)
 
@@ -161,10 +161,10 @@ class MS_Image_v2(MS_Image):
                 if row_index == 0:
                     y = y_tile_coordinate - (0 * feather_size)
                 elif row_index == (rows_qty - 1):
-                    y = y_tile_coordinate - (2 * feather_size)
+                    y = y_tile_coordinate - last_tile_height_diff
                 else:
                     y = y_tile_coordinate - (1 * feather_size)
-                                                
+
                 tiles.append([
                     row_index, 
                     col_index, 

@@ -292,6 +292,7 @@ class UpscalerRefiner_McBoaty_v3():
         
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
         grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, rows_qty, cols_qty, feather_mask)[0]
+        # log(grid_specs)
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
         grid_prompts = ["No tile prompting"]
@@ -313,13 +314,13 @@ class UpscalerRefiner_McBoaty_v3():
                 prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
                 grid_prompts.append(prompt_tile)
 
-        for index, grid_image in enumerate(grid_images):
-            if grid_image.shape[1] != self.KSAMPLER.tile_size or grid_image.shape[2] != self.KSAMPLER.tile_size:
-                _grid_image = nodes.ImageScale().upscale(grid_image, "nearest-exact", self.KSAMPLER.tile_size, self.KSAMPLER.tile_size, "center")[0]
-                _grid_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(_grid_image, grid_image, x = 0, y = 0, resize_source = False, mask = None)[0]
-                _grid_images.append(_grid_image)
+        # for index, grid_image in enumerate(grid_images):
+        #     if grid_image.shape[1] != self.KSAMPLER.tile_size or grid_image.shape[2] != self.KSAMPLER.tile_size:
+        #         _grid_image = nodes.ImageScale().upscale(grid_image, "nearest-exact", self.KSAMPLER.tile_size, self.KSAMPLER.tile_size, "center")[0]
+        #         _grid_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(_grid_image, grid_image, x = 0, y = 0, resize_source = False, mask = None)[0]
+        #         _grid_images.append(_grid_image)
                 
-        for index, upscaled_image_grid in enumerate(_grid_images):            
+        for index, upscaled_image_grid in enumerate(grid_images):            
             if self.KSAMPLER.tiled:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
                 latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
@@ -358,27 +359,21 @@ class UpscalerRefiner_McBoaty_v3():
             # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
             _output_images.append(output)
 
-        for index, grid_image in enumerate(grid_images):
-            output_image = comfy_extras.nodes_images.ImageCrop().crop(_output_images[index], (grid_image.shape[2]), (grid_image.shape[1]), 0, 0)[0]
-            output_images.append(output_image)
+        # for index, grid_image in enumerate(grid_images):
+        #     output_image = comfy_extras.nodes_images.ImageCrop().crop(_output_images[index], (grid_image.shape[2]), (grid_image.shape[1]), 0, 0)[0]
+        #     output_images.append(output_image)
 
         # feather_mask = int(self.PARAMS.feather_mask * self.PARAMS.upscale_model.scale)
         feather_mask = self.PARAMS.feather_mask
         # upscaled_grid_specs = MS_Image().get_dynamic_grid_specs((image.shape[2]*self.PARAMS.upscale_model.scale), (image.shape[1]*self.PARAMS.upscale_model.scale), rows_qty, cols_qty, feather_mask)[0]
-        upscaled_grid_specs = MS_Image().get_tiled_grid_specs(image, self.KSAMPLER.tile_size*self.PARAMS.upscale_model.scale, rows_qty, cols_qty, feather_mask)[0]
-        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, upscaled_grid_specs, feather_mask, self.PARAMS.upscale_model.scale, rows_qty, cols_qty, grid_prompts)
+        # upscaled_grid_specs = MS_Image().get_tiled_grid_specs(image, self.KSAMPLER.tile_size*self.PARAMS.upscale_model.scale, rows_qty, cols_qty, feather_mask)[0]
+        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, grid_specs, feather_mask, self.PARAMS.upscale_model.scale, rows_qty, cols_qty, grid_prompts)
 
         if self.PARAMS.color_match_method != 'none':
             output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
 
-
-        _tiles_order = []
-        for index, grid_spec in enumerate(upscaled_grid_specs):
-            _, _, order, _, _, _, _ = grid_spec
-            _tiles_order.append((order, _output_images[index]))
-
-        _tiles_order.sort(key=lambda x: x[0])
-        output_tiles = tuple(output for _, output in _tiles_order)
+        tiles_order.sort(key=lambda x: x[0])
+        output_tiles = tuple(output for _, output in tiles_order)
         for output_tile in output_tiles:
             log(output_tile.shape, None, None, "output_tile")
         output_tiles = torch.cat(output_tiles)
