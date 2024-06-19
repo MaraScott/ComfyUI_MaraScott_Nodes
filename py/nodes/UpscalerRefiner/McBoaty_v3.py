@@ -357,7 +357,7 @@ class UpscalerRefiner_McBoaty_v3():
                 output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
             
             # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
-            _output_images.append(output)
+            output_images.append(output)
 
         # for index, grid_image in enumerate(grid_images):
         #     output_image = comfy_extras.nodes_images.ImageCrop().crop(_output_images[index], (grid_image.shape[2]), (grid_image.shape[1]), 0, 0)[0]
