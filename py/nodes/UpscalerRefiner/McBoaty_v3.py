@@ -373,9 +373,7 @@ class UpscalerRefiner_McBoaty_v3():
             output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
 
         tiles_order.sort(key=lambda x: x[0])
-        output_tiles = tuple(output for _, output in tiles_order)
-        for output_tile in output_tiles:
-            log(output_tile.shape, None, None, "output_tile")
+        output_tiles = tuple(output for _, output, _ in tiles_order)
         output_tiles = torch.cat(output_tiles)
         output_prompts = tuple(prompt for _, _, prompt in tiles_order)
 
