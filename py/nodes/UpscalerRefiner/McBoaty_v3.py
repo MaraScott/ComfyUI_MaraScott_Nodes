@@ -292,15 +292,11 @@ class UpscalerRefiner_McBoaty_v3():
         
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
         grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, rows_qty, cols_qty, feather_mask)[0]
-        # log(grid_specs)
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
         grid_prompts = ["No tile prompting"]
-        _grid_images=[]
-        grid_upscales = []
         grid_latents = []
         grid_latent_outputs = []
-        _output_images = []
         output_images = []
         total = len(grid_images)
         
@@ -313,12 +309,6 @@ class UpscalerRefiner_McBoaty_v3():
                 log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
                 prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
                 grid_prompts.append(prompt_tile)
-
-        # for index, grid_image in enumerate(grid_images):
-        #     if grid_image.shape[1] != self.KSAMPLER.tile_size or grid_image.shape[2] != self.KSAMPLER.tile_size:
-        #         _grid_image = nodes.ImageScale().upscale(grid_image, "nearest-exact", self.KSAMPLER.tile_size, self.KSAMPLER.tile_size, "center")[0]
-        #         _grid_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(_grid_image, grid_image, x = 0, y = 0, resize_source = False, mask = None)[0]
-        #         _grid_images.append(_grid_image)
                 
         for index, upscaled_image_grid in enumerate(grid_images):            
             if self.KSAMPLER.tiled:

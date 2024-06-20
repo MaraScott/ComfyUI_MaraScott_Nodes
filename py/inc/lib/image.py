@@ -148,12 +148,12 @@ class MS_Image_v2(MS_Image):
                 _tile_height = (tile_height_units_qty + 2) * size_unit
                 x_tile_coordinate = (col_index * tile_size)
                 y_tile_coordinate = (row_index * tile_size)
-                
+                                
                 # if first or last width tile
                 if col_index == 0:
                     x = x_tile_coordinate - (0 * feather_size)
                 elif col_index == (cols_qty - 1):
-                    x = x_tile_coordinate - last_tile_width_diff
+                    x = image.shape[2] - _tile_width
                 else:
                     x = x_tile_coordinate - (1 * feather_size)
 
@@ -161,7 +161,7 @@ class MS_Image_v2(MS_Image):
                 if row_index == 0:
                     y = y_tile_coordinate - (0 * feather_size)
                 elif row_index == (rows_qty - 1):
-                    y = y_tile_coordinate - last_tile_height_diff
+                    y = image.shape[1] - _tile_height
                 else:
                     y = y_tile_coordinate - (1 * feather_size)
 
