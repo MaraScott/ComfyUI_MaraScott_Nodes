@@ -292,10 +292,7 @@ class UpscalerRefiner_McBoaty_v3():
         
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
         grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, rows_qty, cols_qty, feather_mask)[0]
-        log(grid_specs)
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
-        for grid_image in grid_images:
-            log(grid_image.shape)
         
         grid_prompts = ["No tile prompting"]
         grid_latents = []
@@ -352,14 +349,7 @@ class UpscalerRefiner_McBoaty_v3():
             # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
             output_images.append(output)
 
-        # for index, grid_image in enumerate(grid_images):
-        #     output_image = comfy_extras.nodes_images.ImageCrop().crop(_output_images[index], (grid_image.shape[2]), (grid_image.shape[1]), 0, 0)[0]
-        #     output_images.append(output_image)
-
-        # feather_mask = int(self.PARAMS.feather_mask * self.PARAMS.upscale_model.scale)
         feather_mask = self.PARAMS.feather_mask
-        # upscaled_grid_specs = MS_Image().get_dynamic_grid_specs((image.shape[2]*self.PARAMS.upscale_model.scale), (image.shape[1]*self.PARAMS.upscale_model.scale), rows_qty, cols_qty, feather_mask)[0]
-        # upscaled_grid_specs = MS_Image().get_tiled_grid_specs(image, self.KSAMPLER.tile_size*self.PARAMS.upscale_model.scale, rows_qty, cols_qty, feather_mask)[0]
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, grid_specs, feather_mask, self.PARAMS.upscale_model.scale, rows_qty, cols_qty, grid_prompts)
 
         if self.PARAMS.color_match_method != 'none':
