@@ -132,10 +132,6 @@ class MS_Image_v2(MS_Image):
         tile_height = height
         tile_width_units_qty = math.ceil(tile_width / size_unit)
         tile_height_units_qty = math.ceil(tile_height / size_unit)
-        new_width = tile_size * cols_qty
-        new_height = tile_size * rows_qty
-        last_tile_width_diff = new_width - image.shape[2]
-        last_tile_height_diff = new_height - image.shape[1]
         tile_order_rows = MS_Array.reorder_edges_to_center(list(range(rows_qty)))
         tile_order_cols = MS_Array.reorder_edges_to_center(list(range(cols_qty)))
                         
@@ -156,6 +152,8 @@ class MS_Image_v2(MS_Image):
                     x = image.shape[2] - _tile_width
                 else:
                     x = x_tile_coordinate - (1 * feather_size)
+                    if x + _tile_width > image.shape[2]:
+                        x = x - ((x + _tile_width) - image.shape[2])
 
                 # if first or last height tile
                 if row_index == 0:
@@ -164,6 +162,8 @@ class MS_Image_v2(MS_Image):
                     y = image.shape[1] - _tile_height
                 else:
                     y = y_tile_coordinate - (1 * feather_size)
+                    if y + _tile_height > image.shape[1]:
+                        y = y - ((y + _tile_height) - image.shape[1])
 
                 tiles.append([
                     row_index, 

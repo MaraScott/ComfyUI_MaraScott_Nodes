@@ -292,7 +292,10 @@ class UpscalerRefiner_McBoaty_v3():
         
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
         grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, rows_qty, cols_qty, feather_mask)[0]
+        log(grid_specs)
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
+        for grid_image in grid_images:
+            log(grid_image.shape)
         
         grid_prompts = ["No tile prompting"]
         grid_latents = []
