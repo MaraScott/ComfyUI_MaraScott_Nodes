@@ -21,7 +21,7 @@ from ...utils.log import *
 class MS_Image:
     @classmethod
     def is_divisible_by_8(self, image):
-        width, height = image.shape[1], image.shape[0]
+        width, height = image.shape[2], image.shape[1]
         return (width % 8 == 0) and (height % 8 == 0)
 
     @classmethod
