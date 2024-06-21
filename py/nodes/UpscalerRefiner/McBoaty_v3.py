@@ -93,8 +93,9 @@ class UpscalerRefiner_McBoaty_v3():
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
                 "tile_size": ("INT", { "label": "Tile Size", "default": 1024, "min": 320, "max": 4096, "step": 64}),
-                "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "feather_mask": ("INT", { "label": "Feather Mask", "default": 128, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
+                "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
+                "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
                 "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
@@ -177,9 +178,6 @@ class UpscalerRefiner_McBoaty_v3():
     @classmethod
     def init(self, **kwargs):
         # Initialize the bus tuple with None values for each parameter
-        self.INPUTS = {
-            "image": kwargs.get('image', None),
-        }
         self.INPUTS = SimpleNamespace(
             image = kwargs.get('image', None),
         )
@@ -198,6 +196,7 @@ class UpscalerRefiner_McBoaty_v3():
         self.KSAMPLER = SimpleNamespace(
             tiled = kwargs.get('vae_encode', None),
             tile_size = kwargs.get('tile_size', None),
+            tile_size_vae = kwargs.get('tile_size_vae', None),
             model = kwargs.get('model', None),
             clip = kwargs.get('clip', None),
             vae = kwargs.get('vae', None),
@@ -283,16 +282,19 @@ class UpscalerRefiner_McBoaty_v3():
     def upscale_refine(self, image, iteration):
         
         feather_mask = self.PARAMS.feather_mask
-        rows_qty_float = image.shape[2] / self.KSAMPLER.tile_size
-        cols_qty_float = image.shape[1] / self.KSAMPLER.tile_size
+
+        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
+
+        rows_qty_float = upscaled_image.shape[1] / self.KSAMPLER.tile_size
+        cols_qty_float = upscaled_image.shape[2] / self.KSAMPLER.tile_size
         rows_qty = math.ceil(rows_qty_float)
         cols_qty = math.ceil(cols_qty_float)
         
-        grid_specs = MS_Image().get_dynamic_grid_specs(image.shape[2], image.shape[1], rows_qty, cols_qty, feather_mask)[0]
-        grid_images = MS_Image().get_grid_images(image, grid_specs)
-
+        # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
+        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, rows_qty, cols_qty, feather_mask)[0]
+        grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
+        
         grid_prompts = ["No tile prompting"]
-        grid_upscales = []
         grid_latents = []
         grid_latent_outputs = []
         output_images = []
@@ -304,22 +306,14 @@ class UpscalerRefiner_McBoaty_v3():
             prompt_context = llm.vision_llm.generate_prompt(image)
 
             for index, grid_image in enumerate(grid_images):
-                log(f"tile {index + 1}/{total}", None, None, f"Prompting {iteration}")
+                log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
                 prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
-                log(prompt_tile, None, None, f"Model {llm.vision_llm.name}")        
                 grid_prompts.append(prompt_tile)
-
-        for index, grid_image in enumerate(grid_images):
-            log(f"tile {index + 1}/{total}", None, None, f"Upscaling {iteration}")
-            # _image_grid = nodes.ImageScaleBy().upscale(_image_grid, self.PARAMS.upscale_method, (_image_grid.shape[2] / self.KSAMPLER.tile_size_sampler))[0]
-            upscaled_image_grid = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, grid_image)[0]
-            grid_upscales.append(upscaled_image_grid)
-
-        for index, upscaled_image_grid in enumerate(grid_upscales):
-            
-            if self.KSAMPLER.tiled == True:
+                
+        for index, upscaled_image_grid in enumerate(grid_images):            
+            if self.KSAMPLER.tiled:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
-                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size)[0]
+                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
             else:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncoding {iteration}")
                 latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
@@ -345,9 +339,9 @@ class UpscalerRefiner_McBoaty_v3():
             grid_latent_outputs.append(latent_output)
 
         for index, latent_output in enumerate(grid_latent_outputs):            
-            if self.KSAMPLER.tiled == True:
+            if self.KSAMPLER.tiled:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
-                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size)[0].unsqueeze(0))[0]
+                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae)[0].unsqueeze(0))[0]
             else:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
                 output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
@@ -355,9 +349,8 @@ class UpscalerRefiner_McBoaty_v3():
             # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
             output_images.append(output)
 
-        feather_mask = int(self.PARAMS.feather_mask * self.PARAMS.upscale_model.scale)
-        upscaled_grid_specs = MS_Image().get_dynamic_grid_specs((image.shape[2]*self.PARAMS.upscale_model.scale), (image.shape[1]*self.PARAMS.upscale_model.scale), rows_qty, cols_qty, feather_mask)[0]
-        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, upscaled_grid_specs, feather_mask, self.PARAMS.upscale_model.scale, grid_prompts)
+        feather_mask = self.PARAMS.feather_mask
+        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, grid_specs, feather_mask, self.PARAMS.upscale_model.scale, rows_qty, cols_qty, grid_prompts)
 
         if self.PARAMS.color_match_method != 'none':
             output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]

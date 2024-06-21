@@ -72,8 +72,8 @@ class MS_Image_v2(MS_Image):
         if size_unit == 0:
             size_unit = 1 
         # size_unit AKA feather_size
-        tile_width = width / cols_qty        
-        tile_height = height / rows_qty        
+        tile_width = width / cols_qty
+        tile_height = height / rows_qty
         tile_width_units_qty = math.ceil(tile_width / size_unit)
         tile_height_units_qty = math.ceil(tile_height / size_unit)
         new_width = tile_width_units_qty * size_unit * cols_qty
@@ -120,6 +120,61 @@ class MS_Image_v2(MS_Image):
                 ])
         return tiles, tile_width_units_qty, tile_height_units_qty, tile_width, tile_height
     
+    @classmethod
+    def get_tiled_grid_specs(self, image, tile_size, rows_qty = 3, cols_qty = 3, size_unit = 64):
+        width = tile_size
+        height = tile_size
+        feather_size = size_unit
+        if size_unit == 0:
+            size_unit = 1 
+        # size_unit AKA feather_size
+        tile_width = width
+        tile_height = height
+        tile_width_units_qty = math.ceil(tile_width / size_unit)
+        tile_height_units_qty = math.ceil(tile_height / size_unit)
+        tile_order_rows = MS_Array.reorder_edges_to_center(list(range(rows_qty)))
+        tile_order_cols = MS_Array.reorder_edges_to_center(list(range(cols_qty)))
+                        
+        tiles = []
+        for row_index, row in enumerate(tile_order_rows):
+            for col_index, col in enumerate(tile_order_cols):
+                order = (row_index * len(tile_order_rows)) + col_index
+                
+                _tile_width = (tile_width_units_qty + 2) * size_unit
+                _tile_height = (tile_height_units_qty + 2) * size_unit
+                x_tile_coordinate = (col_index * tile_size)
+                y_tile_coordinate = (row_index * tile_size)
+                                
+                # if first or last width tile
+                if col_index == 0:
+                    x = x_tile_coordinate - (0 * feather_size)
+                elif col_index == (cols_qty - 1):
+                    x = image.shape[2] - _tile_width
+                else:
+                    x = x_tile_coordinate - (1 * feather_size)
+                    if x + _tile_width > image.shape[2]:
+                        x = x - ((x + _tile_width) - image.shape[2])
+
+                # if first or last height tile
+                if row_index == 0:
+                    y = y_tile_coordinate - (0 * feather_size)
+                elif row_index == (rows_qty - 1):
+                    y = image.shape[1] - _tile_height
+                else:
+                    y = y_tile_coordinate - (1 * feather_size)
+                    if y + _tile_height > image.shape[1]:
+                        y = y - ((y + _tile_height) - image.shape[1])
+
+                tiles.append([
+                    row_index, 
+                    col_index, 
+                    order,
+                    x, # x 
+                    y, # y
+                    _tile_width, # width 
+                    _tile_height, # height 
+                ])
+        return tiles, tile_width_units_qty, tile_height_units_qty, tile_width, tile_height
     
     @classmethod
     def get_grid_images(self, image, grid_specs):
@@ -136,7 +191,7 @@ class MS_Image_v2(MS_Image):
         return grids
     
     @classmethod
-    def rebuild_image_from_parts(self, iteration, output_images, image, grid_specs, feather_mask, upscale_scale, grid_prompts):
+    def rebuild_image_from_parts(self, iteration, output_images, image, grid_specs, feather_mask, upscale_scale, rows_qty, cols_qty, grid_prompts):
         
         width_feather_seam = feather_mask
         height_feather_seam = feather_mask
@@ -189,7 +244,7 @@ class MS_Image_v2(MS_Image):
             prompt = grid_prompts[index] if 0 <= index < len(grid_prompts) else ""
             tiles_order.append((order, output_images[index], prompt))
             if col == 0:
-                outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, (image.shape[2]*upscale_scale) - tile_width, 0, 0)[0]
+                outputRow = nodes.ImagePadForOutpaint().expand_image(output_images[index], 0, 0, ((cols_qty - 1) * tile_width), 0, 0)[0]
             elif col == last_tile_col_index:
                 _y_start = 0
                 outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = _y_start, resize_source = False, mask = grid_feathermask_vertical_right)[0]
@@ -208,7 +263,7 @@ class MS_Image_v2(MS_Image):
                     outputMiddleRow.append([y_start, outputRow])
                     
         nb_middle_tiles = len(outputMiddleRow)
-        image_height = (image.shape[1]*upscale_scale) - tile_height
+        image_height = ((rows_qty - 1) * tile_height)
         full_image = nodes.ImagePadForOutpaint().expand_image(outputTopRow[1], 0, 0, 0, image_height, 0)[0]
         if outputBottomRow[0] is not None:
             _y_start = outputBottomRow[0]
@@ -327,11 +382,11 @@ class MS_Image_v1(MS_Image):
             if index in [1,4,7]:
                 if not index == 1:
                     y_start = 0
-                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = None)[0]
+                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = None)[0]
             if index in [2,5,8]:
                 if not index == 2:
                     y_start = 0
-                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, outputRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = grid_feathermask_vertical)[0]
+                outputRow = comfy_extras.nodes_mask.ImageCompositeMasked().composite(outputRow, output_images[index], x = x_start, y = y_start, resize_source = False, mask = grid_feathermask_vertical)[0]
             if index in [0,1,2]:
                 outputTopRow = outputRow
             if index in [3,4,5]:
@@ -339,8 +394,8 @@ class MS_Image_v1(MS_Image):
             if index in [6,7,8]:
                 outputMiddleRow = outputRow
                 
-        full_image = nodes.ImagePadForOutpaint.expand_image(nodes.ImagePadForOutpaint, outputTopRow, 0, 0, 0, (2 * tile_height) - (2 * height_unit), 0)[0]
-        full_image = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, full_image, outputBottomRow, x = 0, y = (2 * tile_height) - (2 * height_unit), resize_source = False, mask = None)[0]
-        full_image = comfy_extras.nodes_mask.ImageCompositeMasked.composite(comfy_extras.nodes_mask.ImageCompositeMasked, full_image, outputMiddleRow, x = 0, y = (1 * tile_height) - (1 * height_unit), resize_source = False, mask = grid_feathermask_horizontal)[0]
+        full_image = nodes.ImagePadForOutpaint().expand_image(outputTopRow, 0, 0, 0, (2 * tile_height) - (2 * height_unit), 0)[0]
+        full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, outputBottomRow, x = 0, y = (2 * tile_height) - (2 * height_unit), resize_source = False, mask = None)[0]
+        full_image = comfy_extras.nodes_mask.ImageCompositeMasked().composite(full_image, outputMiddleRow, x = 0, y = (1 * tile_height) - (1 * height_unit), resize_source = False, mask = grid_feathermask_horizontal)[0]
         
         return full_image, tiles_order
