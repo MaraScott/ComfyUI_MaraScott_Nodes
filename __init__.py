@@ -25,6 +25,9 @@
 
 import os 
 import sys 
+from .py.inc.lib.llm import MS_Llm
+
+MS_Llm.prestartup_script()
 
 python = sys.executable
 p310_plus = (sys.version_info >= (3, 10))
