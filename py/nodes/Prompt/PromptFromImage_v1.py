@@ -11,7 +11,9 @@
 
 from types import SimpleNamespace
 
-from ...inc.lib.llm import MS_Llm
+from ...inc.lib.image import MS_Image_v2 as MS_Image
+# from ...inc.lib.llm~ import MS_Llm
+from ...vendor.ComfyUI_WD14_Tagger.wd14tagger import wait_for_async, tag
 
 from ...utils.log import *
 
@@ -22,8 +24,6 @@ class PromptFromImage_v1:
         return {
             "required": {
                 "image": ("IMAGE", {"label": "image"}),
-                "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
-                "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
@@ -50,15 +50,15 @@ class PromptFromImage_v1:
         self.INPUTS = SimpleNamespace(
             image = kwargs.get('image', None)
         )
-        self.LLM = SimpleNamespace(
-            vision_model_name = kwargs.get('vision_llm_model', None),
-            model_name = kwargs.get('llm_model', None),
-            model = None,
-        )
-        self.LLM.model = MS_Llm(self.LLM.vision_model_name, self.LLM.model_name)
+        # self.LLM = SimpleNamespace(
+        #     vision_model_name = kwargs.get('vision_llm_model', None),
+        #     model_name = kwargs.get('llm_model', None),
+        #     model = None,
+        # )
+        # self.LLM.model = MS_Llm(self.LLM.vision_model_name, self.LLM.model_name)
 
         self.OUPUTS = SimpleNamespace(
-            prompt = self.LLM.model.vision_llm.generate_prompt(self.INPUTS.image)
+            prompt = wait_for_async(lambda: tag(MS_Image.tensor2pil(self.INPUTS.image), model_name="wd-v1-4-moat-tagger-v2", threshold=0.35, character_threshold=0.85, exclude_tags="", replace_underscore=False, trailing_comma=False))
         )
             
         return {"ui": {"text": self.OUPUTS.prompt}, "result": (self.OUPUTS.prompt,)}

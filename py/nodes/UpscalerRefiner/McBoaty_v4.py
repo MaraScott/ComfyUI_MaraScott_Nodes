@@ -26,7 +26,8 @@ from ...vendor.ComfyUI_WD14_Tagger.wd14tagger import wait_for_async, tag
 from ...utils.log import *
 
 import time
-class UpscalerRefiner_McBoaty_v3():
+
+class McBoaty_Upscaler_v4():
 
     UPSCALE_METHODS = [
         "area", 
@@ -99,8 +100,6 @@ class UpscalerRefiner_McBoaty_v3():
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
-                # "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
-                # "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
 
             },
             "optional": {
@@ -108,17 +107,15 @@ class UpscalerRefiner_McBoaty_v3():
         }
 
     RETURN_TYPES = (
-        "IMAGE", 
-        "IMAGE", 
+        "MC_BOATY_PIPE", 
         "IMAGE",
-        "STRING"
+        "PROMPTS",
     )
     
     RETURN_NAMES = (
-        "image", 
-        "tiles", 
-        "original_resized", 
-        "info", 
+        "pipe",
+        "tiles (Upscaled)",
+        "prompts", 
     )
     
     OUTPUT_NODE = False
@@ -139,40 +136,35 @@ class UpscalerRefiner_McBoaty_v3():
         if not isinstance(self.INPUTS.image, torch.Tensor):
             raise ValueError("MaraScottUpscalerRefinerNode id XX: Image provided is not a Tensor")
         
-        log(f"McBoaty is starting to do its magic")
+        log(f"McBoaty (Upscaler) is starting to do its magic")
         
         self.OUTPUTS.image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
 
-        current_image = self.OUTPUTS.image
-        for index in range(self.PARAMS.max_iterations):
-            output_image, output_tiles, output_prompts = self.upscale_refine(current_image, f"{index + 1}/{self.PARAMS.max_iterations}")
-            if not self.PARAMS.upscale_size_type:
-                output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, int(image_width * self.PARAMS.upscale_size), int(image_height * self.PARAMS.upscale_size), False)[0]
-            current_image = output_image
+        self.PARAMS.grid_specs, self.OUTPUTS.grid_images, self.OUTPUTS.grid_prompts = self.upscale(self.OUTPUTS.image, f"Upscaling")
             
-        output_image_width = output_image.shape[2]
-        output_image_height = output_image.shape[1]
-
         end_time = time.time()
 
         output_info = self._get_info(
             image_width, 
             image_height, 
             image_divisible_by_8, 
-            output_image_width, 
-            output_image_height,
-            output_prompts,
+            self.OUTPUTS.grid_prompts,
             int(end_time - start_time)
         )
         
-        log(f"McBoaty is done with its magic")
+        log(f"McBoaty (Upscaler) is done with its magic")
         
         image = self.OUTPUTS.image
         
         return (
-            output_image,
-            output_tiles,
-            image,
+            (
+                self.INPUTS,
+                self.PARAMS,
+                self.KSAMPLER,
+                self.OUTPUTS,
+            ),
+            self.OUTPUTS.grid_images,
+            self.OUTPUTS.grid_prompts,
             output_info
         )
         
@@ -191,6 +183,9 @@ class UpscalerRefiner_McBoaty_v3():
             color_match_method = kwargs.get('color_match_method', 'none'),
             max_iterations = kwargs.get('running_count', 1),
             tile_prompting_active = kwargs.get('tile_prompting_active', False),
+            grid_spec = None,
+            rows_qty = 1,
+            cols_qty = 1,
         )
         self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
 
@@ -215,26 +210,22 @@ class UpscalerRefiner_McBoaty_v3():
         )
         
         self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
-        # isinstance(self.KSAMPLER.model, comfy.model_base.SDXL)
         self.KSAMPLER.tile_size_sampler = self.AYS_MODEL_TYPE_SIZES[self.KSAMPLER.ays_model_type]
         self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
         self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
-
-        # self.LLM = SimpleNamespace(
-        #     vision_model = kwargs.get('vision_llm_model', None),
-        #     model = kwargs.get('llm_model', None),
-        # )
 
         # TODO : make the feather_mask proportional to tile size ?
         # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
 
         self.OUTPUTS = SimpleNamespace(
-            output_info = [f"No info"],        
+            grid_images = [],
+            grid_prompts = [],
+            output_info = [f"No info"],
         )
     
         
     @classmethod
-    def _get_info(self, image_width, image_height, image_divisible_by_8, output_image_width, output_image_height, output_prompts, execution_duration):
+    def _get_info(self, image_width, image_height, image_divisible_by_8, output_prompts, execution_duration):
         formatted_prompts = "\n".join(f"        [{index+1}] {prompt}" for index, prompt in enumerate(output_prompts))
         
         return [f"""
@@ -245,10 +236,6 @@ class UpscalerRefiner_McBoaty_v3():
         image divisible by 8 : {image_divisible_by_8}
 
     ------------------------------
-
-    IMAGE (OUTPUT)
-        width   :   {output_image_width}
-        height  :   {output_image_height}
 
     ------------------------------
     
@@ -280,7 +267,7 @@ class UpscalerRefiner_McBoaty_v3():
         return sigmas    
     
     @classmethod
-    def upscale_refine(self, image, iteration):
+    def upscale(self, image, iteration):
         
         feather_mask = self.PARAMS.feather_mask
 
@@ -288,34 +275,126 @@ class UpscalerRefiner_McBoaty_v3():
 
         rows_qty_float = upscaled_image.shape[1] / self.KSAMPLER.tile_size
         cols_qty_float = upscaled_image.shape[2] / self.KSAMPLER.tile_size
-        rows_qty = math.ceil(rows_qty_float)
-        cols_qty = math.ceil(cols_qty_float)
+        self.PARAMS.rows_qty = math.ceil(rows_qty_float)
+        self.PARAMS.cols_qty = math.ceil(cols_qty_float)
         
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
-        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, rows_qty, cols_qty, feather_mask)[0]
+        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, feather_mask)[0]
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
         grid_prompts = ["No tile prompting"]
-        grid_latents = []
-        grid_latent_outputs = []
-        output_images = []
         total = len(grid_images)
         
         if self.PARAMS.tile_prompting_active:
             grid_prompts = []
-            prompt_context = wait_for_async(lambda: tag(MS_Image.tensor2pil(upscaled_image), model_name="wd-v1-4-moat-tagger-v2", threshold=0.35, character_threshold=0.85, exclude_tags="", replace_underscore=False, trailing_comma=False))
 
             for index, grid_image in enumerate(grid_images):
                 log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Prompting {iteration}")
-                exclude_tags = "1girl, 1boy, 2girls, multiple girls, realistic".split(", ")
                 prompt_tile = wait_for_async(lambda: tag(MS_Image.tensor2pil(grid_image), model_name="wd-v1-4-moat-tagger-v2", threshold=0.35, character_threshold=0.85, exclude_tags="", replace_underscore=False, trailing_comma=False))
-                _prompt_tile = prompt_tile.split(", ")
-                _prompt_tile = list(set(_prompt_tile) - set(exclude_tags))
-                prompt_tile = f'{", ".join(_prompt_tile)}'.strip()
                 log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
                 grid_prompts.append(prompt_tile)
                 
-        for index, upscaled_image_grid in enumerate(grid_images):            
+        return grid_specs, grid_images, grid_prompts
+
+class McBoaty_Refiner_v4():
+
+    @classmethod
+    def INPUT_TYPES(self):
+        return {
+            "hidden": {
+                "id":"UNIQUE_ID",
+            },
+            "required":{
+                "pipe": ("MC_BOATY_PIPE", {"label": "Mc Boaty Pipe" }),
+            },
+            "optional": {
+                "tiles": ("IMAGE", {"label": "Tiles" }),
+                "prompts": ("STRING", {"label": "Prompts" }),
+            }
+        }
+
+    RETURN_TYPES = (
+        "IMAGE", 
+        "IMAGE", 
+        "IMAGE",
+        "STRING"
+    )
+    
+    RETURN_NAMES = (
+        "image", 
+        "tiles", 
+        "original_resized", 
+        "info", 
+    )
+    
+    OUTPUT_NODE = False
+    CATEGORY = "MaraScott/upscaling"
+    DESCRIPTION = "A \"Refiner\" Node"
+    FUNCTION = "fn"
+
+    @classmethod    
+    def fn(self, **kwargs):
+        
+        start_time = time.time()
+        
+        self.init(**kwargs)
+
+        log(f"McBoaty (Refiner) is starting to do its magic")
+        
+        self.PARAMS.grid_prompts, self.OUTPUTS.output_image, self.OUTPUTS.output_tiles = self.refine(self.OUTPUTS.image, f"Upscaling")
+            
+        end_time = time.time()
+
+        output_info = self._get_info(
+            int(end_time - start_time)
+        )
+        
+        log(f"McBoaty (Refiner) is done with its magic")
+        
+        image = self.OUTPUTS.image
+                
+        return (
+            self.OUTPUTS.output_image, 
+            self.OUTPUTS.output_tiles, 
+            self.OUTPUTS.image, 
+            output_info, 
+        )
+        
+        return None
+    
+    @classmethod
+    def init(self, **kwargs):
+        attribute_names = ('INPUTS', 'PARAMS', 'KSAMPLER', 'OUTPUTS') 
+        pipe = kwargs.get('pipe', (None,) * len(attribute_names))
+
+        for name, value in zip(attribute_names, pipe):
+            setattr(self, name, value)
+        
+        self.OUTPUTS.grid_images = kwargs.get('tiles', self.OUTPUTS.grid_images)
+        self.OUTPUTS.grid_prompts = kwargs.get('prompts', self.OUTPUTS.grid_prompts)
+    
+    @classmethod
+    def _get_info(self, execution_duration):
+        
+        return [f"""
+
+    EXECUTION
+        DURATION : {execution_duration} seconds
+
+    NODE INFO
+        version : {VERSION}
+
+"""]        
+        
+    @classmethod
+    def refine(self, image, iteration):
+        
+        grid_latents = []
+        grid_latent_outputs = []
+        output_images = []
+        total = len(self.OUTPUTS.grid_images)
+                        
+        for index, upscaled_image_grid in enumerate(self.OUTPUTS.grid_images):            
             if self.KSAMPLER.tiled:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
                 latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
@@ -327,8 +406,8 @@ class UpscalerRefiner_McBoaty_v3():
         for index, latent_image in enumerate(grid_latents):
             positive = self.KSAMPLER.positive
             if self.PARAMS.tile_prompting_active:
-                log(f"tile {index + 1}/{total} : {grid_prompts[index]}", None, None, f"ClipTextEncoding {iteration}")
-                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, grid_prompts[index])[0]
+                log(f"tile {index + 1}/{total} : {self.OUTPUTS.grid_prompts[index]}", None, None, f"ClipTextEncoding {iteration}")
+                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
             log(f"tile {index + 1}/{total}", None, None, f"Refining {iteration}")
             latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                 self.KSAMPLER.model, 
@@ -355,7 +434,7 @@ class UpscalerRefiner_McBoaty_v3():
             output_images.append(output)
 
         feather_mask = self.PARAMS.feather_mask
-        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, grid_specs, feather_mask, self.PARAMS.upscale_model.scale, rows_qty, cols_qty, grid_prompts)
+        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
 
         if self.PARAMS.color_match_method != 'none':
             output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
@@ -365,4 +444,5 @@ class UpscalerRefiner_McBoaty_v3():
         output_tiles = torch.cat(output_tiles)
         output_prompts = tuple(prompt for _, _, prompt in tiles_order)
 
-        return output_image, output_tiles, output_prompts
+        return output_prompts, output_image, output_tiles
+    
