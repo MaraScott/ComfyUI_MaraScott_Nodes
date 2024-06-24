@@ -19,9 +19,8 @@ import folder_paths
 
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
-# from ...inc.lib.llm~ import MS_Llm
+from ...inc.lib.llm import MS_Llm
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
-from ...vendor.ComfyUI_WD14_Tagger.wd14tagger import wait_for_async, tag
 
 from ...utils.log import *
 
@@ -99,8 +98,8 @@ class UpscalerRefiner_McBoaty_v3():
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
-                # "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
-                # "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
+                "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
+                "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
 
             },
             "optional": {
@@ -220,10 +219,10 @@ class UpscalerRefiner_McBoaty_v3():
         self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
         self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
 
-        # self.LLM = SimpleNamespace(
-        #     vision_model = kwargs.get('vision_llm_model', None),
-        #     model = kwargs.get('llm_model', None),
-        # )
+        self.LLM = SimpleNamespace(
+            vision_model = kwargs.get('vision_llm_model', None),
+            model = kwargs.get('llm_model', None),
+        )
 
         # TODO : make the feather_mask proportional to tile size ?
         # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
@@ -303,15 +302,12 @@ class UpscalerRefiner_McBoaty_v3():
         
         if self.PARAMS.tile_prompting_active:
             grid_prompts = []
-            prompt_context = wait_for_async(lambda: tag(MS_Image.tensor2pil(upscaled_image), model_name="wd-v1-4-moat-tagger-v2", threshold=0.35, character_threshold=0.85, exclude_tags="", replace_underscore=False, trailing_comma=False))
+            llm = MS_Llm(self.LLM.vision_model, self.LLM.model)
+            prompt_context = llm.vision_llm.generate_prompt(image)
 
             for index, grid_image in enumerate(grid_images):
                 log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Prompting {iteration}")
-                exclude_tags = "1girl, 1boy, 2girls, multiple girls, realistic".split(", ")
-                prompt_tile = wait_for_async(lambda: tag(MS_Image.tensor2pil(grid_image), model_name="wd-v1-4-moat-tagger-v2", threshold=0.35, character_threshold=0.85, exclude_tags="", replace_underscore=False, trailing_comma=False))
-                _prompt_tile = prompt_tile.split(", ")
-                _prompt_tile = list(set(_prompt_tile) - set(exclude_tags))
-                prompt_tile = f'{", ".join(_prompt_tile)}'.strip()
+                prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
                 log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
                 grid_prompts.append(prompt_tile)
                 
