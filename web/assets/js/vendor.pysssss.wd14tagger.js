@@ -80,12 +80,12 @@ app.registerExtension({
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		MS_pysssss.addStatusTagHandler(nodeType);
 
-		if (nodeData.name === "MaraScottUpscalerRefinerNode_v3") {
+		if (nodeData.name === "McBoaty_TilePrompter_v4") {
 			const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
 				const r = onExecuted?.apply?.(this, arguments);
 
-				const pos = this.widgets.findIndex((w) => w.name === "tags");
+				const pos = this.widgets.findIndex((w) => w.name === "prompts");
 				if (pos !== -1) {
 					for (let i = pos; i < this.widgets.length; i++) {
 						this.widgets[i].onRemove?.();
@@ -93,10 +93,11 @@ app.registerExtension({
 					this.widgets.length = pos;
 				}
 
-				for (const list of message.tags) {
-					const w = ComfyWidgets["STRING"](this, "tags", ["STRING", { multiline: true }], app).widget;
-					w.inputEl.readOnly = true;
+				for (const [index, list] of message.prompts.entries()) {
+					const w = ComfyWidgets["STRING"](this, "tile "+index, ["STRING", { multiline: true }], app).widget;
+					// w.inputEl.readOnly = false;
 					w.inputEl.style.opacity = 0.6;
+					w.inputEl.placeholder = "tile "+index;
 					w.value = list;
 				}
 

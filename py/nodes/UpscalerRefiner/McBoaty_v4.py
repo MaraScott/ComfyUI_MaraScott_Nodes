@@ -94,8 +94,8 @@ class McBoaty_Upscaler_v4():
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
-                "tile_size": ("INT", { "label": "Tile Size", "default": 1024, "min": 320, "max": 4096, "step": 64}),
-                "feather_mask": ("INT", { "label": "Feather Mask", "default": 128, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
+                "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
+                "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
@@ -108,17 +108,27 @@ class McBoaty_Upscaler_v4():
 
     RETURN_TYPES = (
         "MC_BOATY_PIPE", 
+        "STRING",
         "IMAGE",
-        "PROMPTS",
+        "STRING",
     )
     
     RETURN_NAMES = (
         "pipe",
-        "tiles (Upscaled)",
         "prompts", 
+        "tiles (Upscaled)",
+        "info", 
     )
     
-    OUTPUT_NODE = False
+    OUTPUT_IS_LIST = (
+        False,
+        False,
+        False,
+        False,
+    )
+    
+    
+    OUTPUT_NODE = True
     CATEGORY = "MaraScott/upscaling"
     DESCRIPTION = "An \"UPSCALER\" Node"
     FUNCTION = "fn"
@@ -141,7 +151,7 @@ class McBoaty_Upscaler_v4():
         self.OUTPUTS.image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
 
         self.PARAMS.grid_specs, self.OUTPUTS.grid_images, self.OUTPUTS.grid_prompts = self.upscale(self.OUTPUTS.image, f"Upscaling")
-            
+
         end_time = time.time()
 
         output_info = self._get_info(
@@ -153,9 +163,9 @@ class McBoaty_Upscaler_v4():
         )
         
         log(f"McBoaty (Upscaler) is done with its magic")
-        
-        image = self.OUTPUTS.image
-        
+
+        output_tiles = torch.cat(self.OUTPUTS.grid_images)
+
         return (
             (
                 self.INPUTS,
@@ -163,8 +173,8 @@ class McBoaty_Upscaler_v4():
                 self.KSAMPLER,
                 self.OUTPUTS,
             ),
-            self.OUTPUTS.grid_images,
             self.OUTPUTS.grid_prompts,
+            output_tiles,
             output_info
         )
         
@@ -181,7 +191,6 @@ class McBoaty_Upscaler_v4():
             upscale_method = kwargs.get('output_upscale_method', "lanczos"),
             feather_mask = kwargs.get('feather_mask', None),
             color_match_method = kwargs.get('color_match_method', 'none'),
-            max_iterations = kwargs.get('running_count', 1),
             tile_prompting_active = kwargs.get('tile_prompting_active', False),
             grid_spec = None,
             rows_qty = 1,
@@ -282,18 +291,17 @@ class McBoaty_Upscaler_v4():
         grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, feather_mask)[0]
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
-        grid_prompts = ["No tile prompting"]
+        grid_prompts = []
         total = len(grid_images)
-        
-        if self.PARAMS.tile_prompting_active:
-            grid_prompts = []
-
-            for index, grid_image in enumerate(grid_images):
+        for index, grid_image in enumerate(grid_images):
+            prompt_tile = "beautiful"
+            if self.PARAMS.tile_prompting_active:
                 log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Prompting {iteration}")
                 prompt_tile = wait_for_async(lambda: tag(MS_Image.tensor2pil(grid_image), model_name="wd-v1-4-moat-tagger-v2", threshold=0.35, character_threshold=0.85, exclude_tags="", replace_underscore=False, trailing_comma=False))
                 log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
-                grid_prompts.append(prompt_tile)
-                
+
+            grid_prompts.append(prompt_tile)
+                            
         return grid_specs, grid_images, grid_prompts
 
 class McBoaty_Refiner_v4():
@@ -308,8 +316,8 @@ class McBoaty_Refiner_v4():
                 "pipe": ("MC_BOATY_PIPE", {"label": "Mc Boaty Pipe" }),
             },
             "optional": {
+                "prompts": ("STRING", {"label": "Prompts", "forceInput": True }),
                 "tiles": ("IMAGE", {"label": "Tiles" }),
-                "prompts": ("STRING", {"label": "Prompts" }),
             }
         }
 
@@ -327,7 +335,15 @@ class McBoaty_Refiner_v4():
         "info", 
     )
     
-    OUTPUT_NODE = False
+    OUTPUT_IS_LIST = (
+        False,
+        True,
+        False,
+        False,
+    )
+    
+    
+    OUTPUT_NODE = True
     CATEGORY = "MaraScott/upscaling"
     DESCRIPTION = "A \"Refiner\" Node"
     FUNCTION = "fn"
@@ -351,8 +367,6 @@ class McBoaty_Refiner_v4():
         
         log(f"McBoaty (Refiner) is done with its magic")
         
-        image = self.OUTPUTS.image
-                
         return (
             self.OUTPUTS.output_image, 
             self.OUTPUTS.output_tiles, 
@@ -360,8 +374,6 @@ class McBoaty_Refiner_v4():
             output_info, 
         )
         
-        return None
-    
     @classmethod
     def init(self, **kwargs):
         attribute_names = ('INPUTS', 'PARAMS', 'KSAMPLER', 'OUTPUTS') 
@@ -369,10 +381,23 @@ class McBoaty_Refiner_v4():
 
         for name, value in zip(attribute_names, pipe):
             setattr(self, name, value)
+            
+        self.PARAMS.tile_prompting_active = True
         
-        self.OUTPUTS.grid_images = kwargs.get('tiles', self.OUTPUTS.grid_images)
-        self.OUTPUTS.grid_prompts = kwargs.get('prompts', self.OUTPUTS.grid_prompts)
-    
+        grid_images = kwargs.get('tiles', (None,) * len(self.OUTPUTS.grid_images))
+        grid_images = list(grid_images)
+        for i, image in enumerate(grid_images):
+            if image is None:
+                grid_images[i] = self.OUTPUTS.grid_images[i]
+        self.OUTPUTS.grid_images = grid_images
+
+        self.OUTPUTS.grid_prompts = list(self.OUTPUTS.grid_prompts)
+        # grid_prompts = kwargs.get('prompts', (None,) * len(self.OUTPUTS.grid_prompts))
+        # for i, prompt in enumerate(grid_prompts):
+        #     if prompt is None:
+        #         grid_prompts[i] = self.OUTPUTS.grid_prompts[i]
+        # self.OUTPUTS.grid_prompts = grid_prompts
+            
     @classmethod
     def _get_info(self, execution_duration):
         
@@ -446,3 +471,45 @@ class McBoaty_Refiner_v4():
 
         return output_prompts, output_image, output_tiles
     
+class McBoaty_TilePrompter_v4():
+
+    @classmethod
+    def INPUT_TYPES(self):
+        return {
+            "hidden": {
+                "id":"UNIQUE_ID",
+            },
+            "required":{
+                "prompts": ("STRING", {"label": "prompts" , "forceInput": True }),
+            },
+            "optional": {
+            }
+        }
+
+    RETURN_TYPES = (
+        "STRING",
+    )
+    
+    RETURN_NAMES = (
+        "prompts", 
+    )
+    
+    OUTPUT_IS_LIST = (
+        True,
+    )
+        
+    OUTPUT_NODE = True
+    CATEGORY = "MaraScott/upscaling"
+    DESCRIPTION = "A \"Tile Prompt Editor\" Node"
+    FUNCTION = "fn"
+
+    @classmethod    
+    def fn(self, **kwargs):
+        
+        prompts = kwargs.get('prompts', None)
+        
+        prompts = list(prompts)
+        
+        log(prompts, None, None, "Editor")
+                
+        return {"ui": {"prompts": prompts}, "result": (prompts,)}
