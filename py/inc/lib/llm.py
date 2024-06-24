@@ -3,7 +3,7 @@ import requests
 import torch
 import folder_paths
 from transformers import VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer
-from transformers import AutoProcessor, AutoModelForVision2Seq
+from transformers import AutoProcessor, AutoModelForVision2Seq, AutoModelForCausalLM
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from groq import Groq
 from .image import MS_Image_v2 as MS_Image
@@ -15,32 +15,46 @@ class MS_Llm_Microsoft():
     @classmethod
     def __init__(self, model_name = "microsoft/kosmos-2-patch14-224"):
         self.name = model_name
-        self.model = AutoModelForVision2Seq.from_pretrained(self.name)
+        if model_name == 'microsoft/kosmos-2-patch14-224':
+            self.model = AutoModelForVision2Seq.from_pretrained(self.name)
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(self.name)
         self.processor = AutoProcessor.from_pretrained(self.name)
         
     @classmethod
     def generate_prompt(self, image):
         
-        # prompt_prefix = "<grounding>An image of"
-        prompt_prefix = ""
-        
         _image = MS_Image.tensor2pil(image)
         
-        inputs = self.processor(text=prompt_prefix, images=_image, return_tensors="pt")
-        
         # Generate the caption
-        generated_ids = self.model.generate(
-            pixel_values=inputs["pixel_values"],
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            image_embeds=None,
-            image_embeds_position_mask=inputs["image_embeds_position_mask"],
-            use_cache=True,
-            max_new_tokens=128,
-        )
-        generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-        caption, _ = self.processor.post_process_generation(generated_text)
+        if self.name == 'microsoft/kosmos-2-patch14-224':
+            prompt_prefix = "<grounding>"
+            inputs = self.processor(text=prompt_prefix, images=_image, return_tensors="pt")
+            generated_ids = self.model.generate(
+                pixel_values=inputs["pixel_values"],
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+                image_embeds=None,
+                image_embeds_position_mask=inputs["image_embeds_position_mask"],
+                use_cache=True,
+                max_new_tokens=128,
+            )
+            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+            caption, _ = self.processor.post_process_generation(generated_text)
 
+        else:
+            prompt = "<MORE_DETAILED_CAPTION>"            
+            inputs = self.processor(text=prompt, images=_image, return_tensors="pt")
+            generated_ids = self.model.generate(
+                input_ids=inputs["input_ids"],
+                pixel_values=inputs["pixel_values"],
+                max_new_tokens=1024,
+                num_beams=3,
+                do_sample=False
+            )
+            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+            caption = self.processor.post_process_generation(generated_text, task=prompt, image_size=(_image.width, _image.height))
+            
         return caption
 
 
@@ -55,8 +69,7 @@ class MS_Llm_Salesforce():
     @classmethod
     def generate_prompt(self, image):
         
-        # prompt_prefix = "<grounding>An image of"
-        prompt_prefix = ""
+        prompt_prefix = "<grounding>"
         
         _image = MS_Image.tensor2pil(image)
         
@@ -105,7 +118,8 @@ class MS_Llm():
     # list of model https://huggingface.co/models?pipeline_tag=image-to-text&sort=downloads
     VISION_LLM_MODELS = [
         # 'nlpconnect/vit-gpt2-image-captioning',
-        'microsoft/kosmos-2-patch14-224',
+        'microsoft/Florence-2-large',
+        # 'microsoft/kosmos-2-patch14-224',
         # 'Salesforce/blip-image-captioning-large',
     ]    
     

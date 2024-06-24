@@ -93,6 +93,14 @@ app.registerExtension({
 					this.widgets.length = pos;
 				}
 
+                this.widgets = this.widgets.filter(widget => {
+                    if (widget.name.startsWith("tile ")) {
+                        widget.onRemove?.();
+                        return false;
+                    }
+                    return true;
+                });
+
 				for (const [index, list] of message.prompts.entries()) {
 					const w = ComfyWidgets["STRING"](this, "tile "+index, ["STRING", { multiline: true }], app).widget;
 					// w.inputEl.readOnly = false;

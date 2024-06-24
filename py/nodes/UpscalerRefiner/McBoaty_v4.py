@@ -19,9 +19,8 @@ import folder_paths
 
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
-# from ...inc.lib.llm~ import MS_Llm
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
-from ...vendor.ComfyUI_WD14_Tagger.wd14tagger import wait_for_async, tag
+from ...inc.lib.llm import MS_Llm
 
 from ...utils.log import *
 
@@ -100,6 +99,8 @@ class McBoaty_Upscaler_v4():
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
+                "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/Florence-2-large" }),
+                "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
 
             },
             "optional": {
@@ -184,6 +185,12 @@ class McBoaty_Upscaler_v4():
         self.INPUTS = SimpleNamespace(
             image = kwargs.get('image', None),
         )
+        
+        self.LLM = SimpleNamespace(
+            vision_model = kwargs.get('vision_llm_model', None),
+            model = kwargs.get('llm_model', None),
+        )
+        
         self.PARAMS = SimpleNamespace(
             upscale_size_type = kwargs.get('output_size_type', None),
             upscale_size = kwargs.get('output_size', None),
@@ -292,12 +299,14 @@ class McBoaty_Upscaler_v4():
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
         grid_prompts = []
+        llm = MS_Llm(self.LLM.vision_model, self.LLM.model)
+        prompt_context = llm.vision_llm.generate_prompt(image)
         total = len(grid_images)
         for index, grid_image in enumerate(grid_images):
             prompt_tile = "beautiful"
             if self.PARAMS.tile_prompting_active:
                 log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Prompting {iteration}")
-                prompt_tile = wait_for_async(lambda: tag(MS_Image.tensor2pil(grid_image), model_name="wd-v1-4-moat-tagger-v2", threshold=0.35, character_threshold=0.85, exclude_tags="", replace_underscore=False, trailing_comma=False))
+                prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
                 log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
 
             grid_prompts.append(prompt_tile)
@@ -506,10 +515,11 @@ class McBoaty_TilePrompter_v4():
     @classmethod    
     def fn(self, **kwargs):
         
-        prompts = kwargs.get('prompts', None)
+        input_prompts = kwargs.get('prompts', None)
         
-        prompts = list(prompts)
+        output_prompts = list(input_prompts)
         
-        log(prompts, None, None, "Editor")
-                
-        return {"ui": {"prompts": prompts}, "result": (prompts,)}
+        log(output_prompts, None, None, "Editor")
+        output_prompts[0] = "a group of monkey in a room"        
+        log(output_prompts, None, None, "Editor")
+        return {"ui": {"prompts": output_prompts}, "result": (output_prompts,)}
