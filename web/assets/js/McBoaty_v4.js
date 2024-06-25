@@ -112,6 +112,8 @@ app.registerExtension({
 				}
 
 				this.onResize?.(this.size);
+                this.graph.setDirtyCanvas(true, true);
+                // app.canvas.setDirty(true);
 
 				return r;
 			};

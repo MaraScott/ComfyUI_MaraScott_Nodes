@@ -477,7 +477,8 @@ class McBoaty_Refiner_v4():
         output_prompts = tuple(prompt for _, _, prompt in tiles_order)
 
         return output_prompts, output_image, output_tiles
-    
+
+cache = {}    
 class McBoaty_TilePrompter_v4():
 
     @classmethod
@@ -514,9 +515,17 @@ class McBoaty_TilePrompter_v4():
     @classmethod    
     def fn(self, **kwargs):
         
-        input_prompts = kwargs.get('prompts', None)
+        cache_name = 'input_prompts'
+        if cache_name in cache:
+            input_prompts = cache[cache_name]
+        else:
+            input_prompts = kwargs.get('prompts', None)
+            # for index, input_prompt in enumerate(input_prompts):
+            #     input_prompts[index] = f"{input_prompt} - test"
+            cache[cache_name] = input_prompts
         log(input_prompts, None, None, "input_prompts")
         output_prompts = []
+
         log(kwargs, None, None, "kwargs")
         for name, input_value in zip(NodePrompt.INPUT_NAMES, input_prompts):
             _input = kwargs.get(name, input_value)
