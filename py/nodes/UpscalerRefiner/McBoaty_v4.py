@@ -7,6 +7,7 @@
 #
 ###
 
+import os
 import torch
 import math
 from types import SimpleNamespace
@@ -15,14 +16,17 @@ import comfy_extras
 import comfy_extras.nodes_custom_sampler
 from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
 import nodes
+from PIL import Image
+from server import PromptServer
+from aiohttp import web
 import folder_paths
 
+from .... import root_dir
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
 from ...inc.lib.llm import MS_Llm
 
-from .inc.configuration import Configuration as _CONF
 from .inc.prompt import Node as NodePrompt
 
 from ...utils.log import log
@@ -516,7 +520,7 @@ class McBoaty_TilePrompter_v4():
     def fn(self, **kwargs):
         
         cache_name = 'input_prompts'
-        if cache_name in cache:
+        if False and cache_name in cache:
             input_prompts = cache[cache_name]
         else:
             input_prompts = kwargs.get('prompts', None)
@@ -533,3 +537,37 @@ class McBoaty_TilePrompter_v4():
         
         log(output_prompts, None, None, "Editor")
         return {"ui": {"prompts": output_prompts}, "result": (output_prompts,)}
+    
+@PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/set_prompt")
+async def set_prompt(request):
+    log(request.query.get("prompt", None))
+    log(request.query.get("index", None))
+    log(request.query.get("node", None))
+    log(request.query.get("clientId", None))
+    return web.json_response("Boom a prompt saved")
+
+@PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/tile_prompt")
+async def tile_prompt(request):
+    if "filename" not in request.rel_url.query:
+        return web.Response(status=404)
+
+    type = request.query.get("type", "output")
+    if type not in ["output", "input", "temp"]:
+        return web.Response(status=400)
+
+    target_dir = os.path.join(root_dir, type)
+    image_path = os.path.abspath(os.path.join(
+        target_dir, 
+        request.query.get("subfolder", ""), 
+        request.query["filename"]
+    ))
+    c = os.path.commonpath((image_path, target_dir))
+    if c != target_dir:
+        return web.Response(status=403)
+
+    if not os.path.isfile(image_path):
+        return web.Response(status=404)
+
+    # image = Image.open(image_path)
+
+    return web.json_response(f"here is the prompt \n{image_path}")

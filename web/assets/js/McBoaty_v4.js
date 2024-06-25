@@ -102,18 +102,25 @@ app.registerExtension({
                     }
                     return true;
                 });
+				this.onResize?.(this.size);
+                this.graph.setDirtyCanvas(true, true);
 
 				for (const [index, list] of message.prompts.entries()) {
 					const w = ComfyWidgets["STRING"](this, "tile "+index, ["STRING", { multiline: true }], app).widget;
 					// w.inputEl.readOnly = false;
 					w.inputEl.style.opacity = 0.6;
 					w.inputEl.placeholder = "tile "+index;
+					w.inputEl.dataId = "tile "+index;
 					w.value = list;
+                    w.inputEl.addEventListener('focusout', async function() {
+                        const res = await (await fetch(`/MaraScott/McBoaty/v4/set_prompt?index=${this.dataId}&prompt=${this.value}&node=${this.id}&clientId=${api.clientId}`)).json();
+                        console.log(res)
+                        // You can add more functionality here that should run when the input loses focus
+                    });
 				}
 
 				this.onResize?.(this.size);
                 this.graph.setDirtyCanvas(true, true);
-                // app.canvas.setDirty(true);
 
 				return r;
 			};
