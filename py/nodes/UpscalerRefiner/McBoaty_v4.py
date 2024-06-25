@@ -22,7 +22,10 @@ from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
 from ...inc.lib.llm import MS_Llm
 
-from ...utils.log import *
+from .inc.configuration import Configuration as _CONF
+from .inc.prompt import Node as NodePrompt
+
+from ...utils.log import log
 
 import time
 
@@ -147,11 +150,11 @@ class McBoaty_Upscaler_v4():
         if not isinstance(self.INPUTS.image, torch.Tensor):
             raise ValueError("MaraScottUpscalerRefinerNode id XX: Image provided is not a Tensor")
         
-        log(f"McBoaty (Upscaler) is starting to do its magic")
+        log("McBoaty (Upscaler) is starting to do its magic")
         
         self.OUTPUTS.image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
 
-        self.PARAMS.grid_specs, self.OUTPUTS.grid_images, self.OUTPUTS.grid_prompts = self.upscale(self.OUTPUTS.image, f"Upscaling")
+        self.PARAMS.grid_specs, self.OUTPUTS.grid_images, self.OUTPUTS.grid_prompts = self.upscale(self.OUTPUTS.image, "Upscaling")
 
         end_time = time.time()
 
@@ -163,7 +166,7 @@ class McBoaty_Upscaler_v4():
             int(end_time - start_time)
         )
         
-        log(f"McBoaty (Upscaler) is done with its magic")
+        log("McBoaty (Upscaler) is done with its magic")
 
         output_tiles = torch.cat(self.OUTPUTS.grid_images)
 
@@ -236,7 +239,7 @@ class McBoaty_Upscaler_v4():
         self.OUTPUTS = SimpleNamespace(
             grid_images = [],
             grid_prompts = [],
-            output_info = [f"No info"],
+            output_info = ["No info"],
         )
     
         
@@ -364,9 +367,9 @@ class McBoaty_Refiner_v4():
         
         self.init(**kwargs)
 
-        log(f"McBoaty (Refiner) is starting to do its magic")
+        log("McBoaty (Refiner) is starting to do its magic")
         
-        self.PARAMS.grid_prompts, self.OUTPUTS.output_image, self.OUTPUTS.output_tiles = self.refine(self.OUTPUTS.image, f"Upscaling")
+        self.PARAMS.grid_prompts, self.OUTPUTS.output_image, self.OUTPUTS.output_tiles = self.refine(self.OUTPUTS.image, "Upscaling")
             
         end_time = time.time()
 
@@ -374,7 +377,7 @@ class McBoaty_Refiner_v4():
             int(end_time - start_time)
         )
         
-        log(f"McBoaty (Refiner) is done with its magic")
+        log("McBoaty (Refiner) is done with its magic")
         
         return (
             self.OUTPUTS.output_image, 
@@ -401,11 +404,6 @@ class McBoaty_Refiner_v4():
         self.OUTPUTS.grid_images = grid_images
 
         self.OUTPUTS.grid_prompts = list(self.OUTPUTS.grid_prompts)
-        # grid_prompts = kwargs.get('prompts', (None,) * len(self.OUTPUTS.grid_prompts))
-        # for i, prompt in enumerate(grid_prompts):
-        #     if prompt is None:
-        #         grid_prompts[i] = self.OUTPUTS.grid_prompts[i]
-        # self.OUTPUTS.grid_prompts = grid_prompts
             
     @classmethod
     def _get_info(self, execution_duration):
@@ -490,6 +488,7 @@ class McBoaty_TilePrompter_v4():
             },
             "required":{
                 "prompts": ("STRING", {"label": "prompts" , "forceInput": True }),
+                **NodePrompt.ENTRIES,
             },
             "optional": {
             }
@@ -497,17 +496,19 @@ class McBoaty_TilePrompter_v4():
 
     RETURN_TYPES = (
         "STRING",
+        + NodePrompt.INPUT_TYPES
     )
     
     RETURN_NAMES = (
         "prompts", 
+        + NodePrompt.INPUT_NAMES
     )
     
     OUTPUT_IS_LIST = (
         True,
     )
         
-    OUTPUT_NODE = True
+    OUTPUT_NODE = False
     CATEGORY = "MaraScott/upscaling"
     DESCRIPTION = "A \"Tile Prompt Editor\" Node"
     FUNCTION = "fn"
