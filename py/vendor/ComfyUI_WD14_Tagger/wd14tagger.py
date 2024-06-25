@@ -141,7 +141,7 @@ async def download_model(model, client_id, node):
     return web.Response(status=200)
 
 
-@PromptServer.instance.routes.get("/MaraScott/vendor/ComfyUI_WD14_Tagger/pysssss/wd14tagger/tag")
+@PromptServer.instance.routes.get("/MaraScott/McBoaty/tile_prompt")
 async def get_tags(request):
     if "filename" not in request.rel_url.query:
         return web.Response(status=404)

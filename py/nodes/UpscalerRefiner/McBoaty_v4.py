@@ -488,27 +488,25 @@ class McBoaty_TilePrompter_v4():
             },
             "required":{
                 "prompts": ("STRING", {"label": "prompts" , "forceInput": True }),
-                **NodePrompt.ENTRIES,
             },
             "optional": {
+                **NodePrompt.ENTRIES,
             }
         }
 
     RETURN_TYPES = (
         "STRING",
-        + NodePrompt.INPUT_TYPES
     )
     
     RETURN_NAMES = (
-        "prompts", 
-        + NodePrompt.INPUT_NAMES
+        "prompts",
     )
     
     OUTPUT_IS_LIST = (
         True,
     )
         
-    OUTPUT_NODE = False
+    OUTPUT_NODE = True
     CATEGORY = "MaraScott/upscaling"
     DESCRIPTION = "A \"Tile Prompt Editor\" Node"
     FUNCTION = "fn"
@@ -517,10 +515,12 @@ class McBoaty_TilePrompter_v4():
     def fn(self, **kwargs):
         
         input_prompts = kwargs.get('prompts', None)
+        log(input_prompts, None, None, "input_prompts")
+        output_prompts = []
+        log(kwargs, None, None, "kwargs")
+        for name, input_value in zip(NodePrompt.INPUT_NAMES, input_prompts):
+            _input = kwargs.get(name, input_value)
+            output_prompts.append(_input)
         
-        output_prompts = list(input_prompts)
-        
-        log(output_prompts, None, None, "Editor")
-        output_prompts[0] = "a group of monkey in a room"        
         log(output_prompts, None, None, "Editor")
         return {"ui": {"prompts": output_prompts}, "result": (output_prompts,)}

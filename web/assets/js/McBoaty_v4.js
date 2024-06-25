@@ -2,12 +2,12 @@ import { app } from "../../scripts/app.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { api } from "../../scripts/api.js";
 
-class MS_Pysssss {
+class McBoaty_v4 {
 	constructor() {
-		if (!window.__MS_pysssss__) {
-			window.__MS_pysssss__ = Symbol("__MS_pysssss__");
+		if (!window.__McBoaty_v4__) {
+			window.__McBoaty_v4__ = Symbol("__McBoaty_v4__");
 		}
-		this.symbol = window.__MS_pysssss__;
+		this.symbol = window.__McBoaty_v4__;
 	}
 
 	getState(node) {
@@ -30,7 +30,7 @@ class MS_Pysssss {
 			statusTagHandler: true,
 		};
 
-		api.addEventListener("MaraScott/vendor/ComfyUI_WD14_Tagger/pysssss/update_status", ({ detail }) => {
+		api.addEventListener("MaraScott/McBoaty_v4/update_status", ({ detail }) => {
 			let { node, progress, text } = detail;
 			const n = app.graph.getNodeById(+(node || app.runningNodeId));
 			if (!n) return;
@@ -73,15 +73,17 @@ class MS_Pysssss {
 	}
 }
 
-const MS_pysssss = new MS_Pysssss();
+const mcBoaty_v4 = new McBoaty_v4();
 
 app.registerExtension({
-	name: "ComfyUI.MaraScott.vendor.pysssss.Wd14Tagger",
+	name: "ComfyUI.MaraScott.McBoaty_v4",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
-		MS_pysssss.addStatusTagHandler(nodeType);
+
+        mcBoaty_v4.addStatusTagHandler(nodeType);
 
 		if (nodeData.name === "McBoaty_TilePrompter_v4") {
-			const onExecuted = nodeType.prototype.onExecuted;
+
+            const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
 				const r = onExecuted?.apply?.(this, arguments);
 
@@ -113,6 +115,22 @@ app.registerExtension({
 
 				return r;
 			};
+            const onNodeCreated = nodeType.prototype.onNodeCreated;
+            nodeType.prototype.onNodeCreated = function () {
+                const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+    
+                this.widgets = this.widgets.filter(widget => {
+                    if (widget.name.startsWith("tile ")) {
+                        widget.onRemove?.();
+                        return false;
+                    }
+                    return true;
+                });
+                this.onResize?.(this.size);
+
+                return r;
+            }        
+    
 		} else {
 			const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
 			nodeType.prototype.getExtraMenuOptions = function (_, options) {
@@ -133,10 +151,10 @@ app.registerExtension({
 						pos++;
 					}
 					options.splice(pos, 0, {
-						content: "WD14 Tagger (via MaraScott)",
+						content: "TilePrompt (McBoaty)",
 						callback: async () => {
 							let src = img.src;
-							src = src.replace("/view?", `/MaraScott/vendor/ComfyUI_WD14_Tagger/pysssss/wd14tagger/tag?node=${this.id}&clientId=${api.clientId}&`);
+							src = src.replace("/view?", `/MaraScott/McBoaty_v4/tile_prompt?node=${this.id}&clientId=${api.clientId}&`);
 							const res = await (await fetch(src)).json();
 							alert(res);
 						},

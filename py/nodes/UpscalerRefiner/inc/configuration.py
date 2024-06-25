@@ -21,4 +21,5 @@ class Configuration:
         return entries
     
     def determine_output_value(name = '', input_value = None, preset_value = None):
-        return input_value if input_value is not None else preset_value if preset_value is not None else ''        
+        return input_value if input_value is not None else preset_value if preset_value is not None else '' 
+    

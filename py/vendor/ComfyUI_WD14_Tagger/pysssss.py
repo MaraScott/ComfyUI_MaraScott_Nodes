@@ -224,7 +224,7 @@ def update_node_status(client_id, node, text, progress=None):
     if client_id is None:
         return
 
-    PromptServer.instance.send_sync("MaraScott/vendor/ComfyUI_WD14_Tagger/pysssss/update_status", {
+    PromptServer.instance.send_sync("MaraScott/McBoaty_v4/update_status", {
         "node": node,
         "progress": progress,
         "text": text
