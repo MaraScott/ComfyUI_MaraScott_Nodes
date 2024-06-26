@@ -21,7 +21,7 @@ from server import PromptServer
 from aiohttp import web
 import folder_paths
 
-from .... import root_dir
+from .... import root_dir, __CACHE__
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
@@ -482,7 +482,6 @@ class McBoaty_Refiner_v4():
 
         return output_prompts, output_image, output_tiles
 
-cache = {}    
 class McBoaty_TilePrompter_v4():
 
     @classmethod
@@ -519,32 +518,44 @@ class McBoaty_TilePrompter_v4():
     @classmethod    
     def fn(self, **kwargs):
         
-        cache_name = 'input_prompts'
-        if False and cache_name in cache:
-            input_prompts = cache[cache_name]
-        else:
-            input_prompts = kwargs.get('prompts', None)
-            # for index, input_prompt in enumerate(input_prompts):
-            #     input_prompts[index] = f"{input_prompt} - test"
-            cache[cache_name] = input_prompts
-        log(input_prompts, None, None, "input_prompts")
-        output_prompts = []
-
-        log(kwargs, None, None, "kwargs")
-        for name, input_value in zip(NodePrompt.INPUT_NAMES, input_prompts):
-            _input = kwargs.get(name, input_value)
-            output_prompts.append(_input)
+        self.init()        
         
+        input_prompts = kwargs.get('prompts', ["No prompt"])
+        _input_prompts = __CACHE__[self.cache_name] if self.cache_name in __CACHE__ else ["No prompt"]
+        _input_prompts_edited = __CACHE__[self.cache_name_edited] if self.cache_name_edited in __CACHE__ else ["No prompt"]
+        if _input_prompts == input_prompts:
+            if _input_prompts_edited != _input_prompts:
+                input_prompts = _input_prompts_edited
+        else:
+            __CACHE__[self.cache_name] = input_prompts
+        log((input_prompts, _input_prompts, _input_prompts_edited), None, None, "input_prompts")
+
+        output_prompts = input_prompts
+                
         log(output_prompts, None, None, "Editor")
         return {"ui": {"prompts": output_prompts}, "result": (output_prompts,)}
+
+    @classmethod
+    def init(self):
+        self.cache_name = 'input_prompts'
+        self.cache_name_edited = f'{self.cache_name}_edited'
+        
     
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/set_prompt")
 async def set_prompt(request):
-    log(request.query.get("prompt", None))
-    log(request.query.get("index", None))
-    log(request.query.get("node", None))
-    log(request.query.get("clientId", None))
-    return web.json_response("Boom a prompt saved")
+    prompt = request.query.get("prompt", None)
+    index = int(request.query.get("index", -1))
+    nodeId = request.query.get("node", None)
+    clientId = request.query.get("clientId", None)
+    cache_name = 'input_prompts'
+    cache_name_edited = f'{cache_name}_edited'
+    _input_prompts = __CACHE__[cache_name] if cache_name in __CACHE__ else []
+    _input_prompts_edited = __CACHE__[cache_name_edited] if cache_name_edited in __CACHE__ else _input_prompts
+    if _input_prompts_edited and index < len(_input_prompts_edited):
+        _input_prompts_edited[index] = prompt
+        __CACHE__[cache_name_edited] = _input_prompts_edited
+    log((prompt, index, nodeId, clientId, _input_prompts_edited, __CACHE__[cache_name_edited]))
+    return web.json_response(f"Tile {index} prompt has been updated\n{prompt}")
 
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/tile_prompt")
 async def tile_prompt(request):

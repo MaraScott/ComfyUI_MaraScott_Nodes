@@ -113,8 +113,7 @@ app.registerExtension({
 					w.inputEl.dataId = "tile "+index;
 					w.value = list;
                     w.inputEl.addEventListener('focusout', async function() {
-                        const res = await (await fetch(`/MaraScott/McBoaty/v4/set_prompt?index=${this.dataId}&prompt=${this.value}&node=${this.id}&clientId=${api.clientId}`)).json();
-                        console.log(res)
+                        const res = await (await fetch(`/MaraScott/McBoaty/v4/set_prompt?index=${index}&prompt=${this.value}&node=${this.id}&clientId=${api.clientId}`)).json();
                         // You can add more functionality here that should run when the input loses focus
                     });
 				}
