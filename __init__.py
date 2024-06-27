@@ -55,6 +55,11 @@ if not os.path.exists(profiles_dir):
     os.makedirs(profiles_dir)
 __PROFILES_DIR__ = profiles_dir
 
+cache_dir = os.path.join(web_dir, "cache")
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+__CACHE_DIR__ = cache_dir
+
 from .MaraScott_Nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, WEB_DIRECTORY
 
 __all__ = [ 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY' ]

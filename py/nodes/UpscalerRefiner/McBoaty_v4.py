@@ -8,6 +8,7 @@
 ###
 
 import os
+import time
 import torch
 import math
 from types import SimpleNamespace
@@ -21,17 +22,17 @@ from server import PromptServer
 from aiohttp import web
 import folder_paths
 
-from .... import root_dir, __CACHE__
+from .... import root_dir
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
 from ...inc.lib.llm import MS_Llm
+from ...inc.lib.cache import MS_Cache
 
 from .inc.prompt import Node as NodePrompt
 
 from ...utils.log import log
 
-import time
 
 class McBoaty_Upscaler_v4():
 
@@ -518,16 +519,19 @@ class McBoaty_TilePrompter_v4():
     @classmethod    
     def fn(self, **kwargs):
         
-        self.init()        
-        
+        self.id = kwargs.get('id', 0)
         input_prompts = kwargs.get('prompts', ["No prompt"])
-        _input_prompts = __CACHE__[self.cache_name] if self.cache_name in __CACHE__ else ["No prompt"]
-        _input_prompts_edited = __CACHE__[self.cache_name_edited] if self.cache_name_edited in __CACHE__ else ["No prompt"]
+
+        self.init(self.id)
+        
+        _input_prompts = MS_Cache.get(self.cache_name) if MS_Cache.isset(self.cache_name) else input_prompts
+        _input_prompts_edited = MS_Cache.get(self.cache_name_edited) if MS_Cache.isset(self.cache_name_edited) else input_prompts
+        log((self.cache_name_edited, MS_Cache.isset(self.cache_name_edited), _input_prompts == input_prompts, _input_prompts_edited, _input_prompts, input_prompts), None, None, "_input_prompts == input_prompts")        
         if _input_prompts == input_prompts:
             if _input_prompts_edited != _input_prompts:
                 input_prompts = _input_prompts_edited
         else:
-            __CACHE__[self.cache_name] = input_prompts
+            MS_Cache.set(self.cache_name, input_prompts)
         log((input_prompts, _input_prompts, _input_prompts_edited), None, None, "input_prompts")
 
         output_prompts = input_prompts
@@ -536,8 +540,8 @@ class McBoaty_TilePrompter_v4():
         return {"ui": {"prompts": output_prompts}, "result": (output_prompts,)}
 
     @classmethod
-    def init(self):
-        self.cache_name = 'input_prompts'
+    def init(self, id = 0):
+        self.cache_name = f'input_prompts_{id}'
         self.cache_name_edited = f'{self.cache_name}_edited'
         
     
@@ -547,14 +551,14 @@ async def set_prompt(request):
     index = int(request.query.get("index", -1))
     nodeId = request.query.get("node", None)
     clientId = request.query.get("clientId", None)
-    cache_name = 'input_prompts'
+    cache_name = f'input_prompts_{nodeId}'
     cache_name_edited = f'{cache_name}_edited'
-    _input_prompts = __CACHE__[cache_name] if cache_name in __CACHE__ else []
-    _input_prompts_edited = __CACHE__[cache_name_edited] if cache_name_edited in __CACHE__ else _input_prompts
+    _input_prompts = MS_Cache.get(cache_name) if MS_Cache.isset(cache_name) else []
+    _input_prompts_edited = MS_Cache.get(cache_name_edited) if MS_Cache.isset(cache_name_edited) else _input_prompts
     if _input_prompts_edited and index < len(_input_prompts_edited):
         _input_prompts_edited[index] = prompt
-        __CACHE__[cache_name_edited] = _input_prompts_edited
-    log((prompt, index, nodeId, clientId, _input_prompts_edited, __CACHE__[cache_name_edited]))
+        MS_Cache.set(cache_name_edited, _input_prompts_edited)
+    log((prompt, index, nodeId, clientId, _input_prompts_edited, _input_prompts_edited))
     return web.json_response(f"Tile {index} prompt has been updated\n{prompt}")
 
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/tile_prompt")
