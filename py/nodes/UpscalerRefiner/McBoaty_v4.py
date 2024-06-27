@@ -311,7 +311,6 @@ class McBoaty_Upscaler_v4():
         prompt_context = llm.vision_llm.generate_prompt(image)
         total = len(grid_images)
         for index, grid_image in enumerate(grid_images):
-            prompt_tile = "beautiful"
             if self.PARAMS.tile_prompting_active:
                 log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Prompting {iteration}")
                 prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
@@ -399,8 +398,6 @@ class McBoaty_Refiner_v4():
         for name, value in zip(attribute_names, pipe):
             setattr(self, name, value)
             
-        self.PARAMS.tile_prompting_active = True
-        
         grid_images = kwargs.get('tiles', (None,) * len(self.OUTPUTS.grid_images))
         grid_images = list(grid_images)
         for i, image in enumerate(grid_images):
@@ -474,7 +471,6 @@ class McBoaty_Refiner_v4():
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
                 output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
             
-            # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
             output_images.append(output)
 
         feather_mask = self.PARAMS.feather_mask
@@ -500,6 +496,8 @@ class McBoaty_TilePrompter_v4():
             },
             "required":{
                 "prompts": ("STRING", {"label": "prompts" , "forceInput": True }),
+                # "prompts": ("MC_BOATY_PROMPT_PIPE", {"label": "Prompts" }),
+                # "prompt_suffix": ("STRING", {"label": "prompt (all) suffix" }),
             },
             "optional": {
                 **NodePrompt.ENTRIES,
