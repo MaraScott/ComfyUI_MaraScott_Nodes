@@ -31,7 +31,7 @@ from ...inc.lib.cache import MS_Cache
 
 from .inc.prompt import Node as NodePrompt
 
-from ...utils.log import log
+from ...utils.log import log, COLORS
 
 
 class McBoaty_Upscaler_v4():
@@ -354,7 +354,7 @@ class McBoaty_Refiner_v4():
     
     OUTPUT_IS_LIST = (
         False,
-        True,
+        False,
         False,
         False,
     )
@@ -408,7 +408,14 @@ class McBoaty_Refiner_v4():
                 grid_images[i] = self.OUTPUTS.grid_images[i]
         self.OUTPUTS.grid_images = grid_images
 
-        self.OUTPUTS.grid_prompts = list(self.OUTPUTS.grid_prompts)
+        grid_prompts = kwargs.get('prompts', (None,) * len(self.OUTPUTS.grid_prompts))
+        if len(grid_prompts) != len(self.OUTPUTS.grid_prompts):
+            grid_prompts = [gp if gp is not None else default_gp for gp, default_gp in zip(grid_prompts, self.OUTPUTS.grid_prompts)]
+        grid_prompts = list(grid_prompts)
+        for i, prompt in enumerate(grid_prompts):
+            if prompt is None:
+                grid_prompts[i] = self.OUTPUTS.grid_prompts[i]
+        self.OUTPUTS.grid_prompts = grid_prompts
             
     @classmethod
     def _get_info(self, execution_duration):
@@ -508,7 +515,7 @@ class McBoaty_TilePrompter_v4():
     )
     
     OUTPUT_IS_LIST = (
-        True,
+        False,
     )
         
     OUTPUT_NODE = True
@@ -524,19 +531,24 @@ class McBoaty_TilePrompter_v4():
 
         self.init(self.id)
         
-        _input_prompts = MS_Cache.get(self.cache_name) if MS_Cache.isset(self.cache_name) else input_prompts
-        _input_prompts_edited = MS_Cache.get(self.cache_name_edited) if MS_Cache.isset(self.cache_name_edited) else input_prompts
-        log((self.cache_name_edited, MS_Cache.isset(self.cache_name_edited), _input_prompts == input_prompts, _input_prompts_edited, _input_prompts, input_prompts), None, None, "_input_prompts == input_prompts")        
-        if _input_prompts == input_prompts:
-            if _input_prompts_edited != _input_prompts:
-                input_prompts = _input_prompts_edited
-        else:
-            MS_Cache.set(self.cache_name, input_prompts)
-        log((input_prompts, _input_prompts, _input_prompts_edited), None, None, "input_prompts")
+        _input_prompts = MS_Cache.get(self.cache_name, input_prompts)
+        _input_prompts_edited = MS_Cache.get(self.cache_name_edited, input_prompts)
+        
+        if not MS_Cache.isset(self.cache_name) or _input_prompts != input_prompts:
+            _input_prompts = input_prompts
+            MS_Cache.set(self.cache_name, _input_prompts)
+
+        if not MS_Cache.isset(self.cache_name_edited):
+            MS_Cache.set(self.cache_name_edited, _input_prompts)
+        elif len(_input_prompts_edited) != len(_input_prompts):
+            _input_prompts_edited = [gp if gp is not None else default_gp for gp, default_gp in zip(_input_prompts_edited, _input_prompts)]
+            MS_Cache.set(self.cache_name_edited, _input_prompts_edited)
+
+        if _input_prompts_edited != _input_prompts:                
+            input_prompts = _input_prompts_edited
 
         output_prompts = input_prompts
                 
-        log(output_prompts, None, None, "Editor")
         return {"ui": {"prompts": output_prompts}, "result": (output_prompts,)}
 
     @classmethod
@@ -553,12 +565,11 @@ async def set_prompt(request):
     clientId = request.query.get("clientId", None)
     cache_name = f'input_prompts_{nodeId}'
     cache_name_edited = f'{cache_name}_edited'
-    _input_prompts = MS_Cache.get(cache_name) if MS_Cache.isset(cache_name) else []
-    _input_prompts_edited = MS_Cache.get(cache_name_edited) if MS_Cache.isset(cache_name_edited) else _input_prompts
+    _input_prompts = MS_Cache.get(cache_name, [])
+    _input_prompts_edited = MS_Cache.get(cache_name_edited, _input_prompts)
     if _input_prompts_edited and index < len(_input_prompts_edited):
         _input_prompts_edited[index] = prompt
         MS_Cache.set(cache_name_edited, _input_prompts_edited)
-    log((prompt, index, nodeId, clientId, _input_prompts_edited, _input_prompts_edited))
     return web.json_response(f"Tile {index} prompt has been updated\n{prompt}")
 
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/tile_prompt")
