@@ -45,17 +45,6 @@ class McBoaty_Upscaler_v4():
         "nearest-exact"
     ]
     
-    SIGMAS_TYPES = [
-        'BasicScheduler', 
-        'SDTurboScheduler', 
-        'AlignYourStepsScheduler'
-    ]    
-    AYS_MODEL_TYPE_SIZES = {
-        'SD1': 512,
-        'SDXL': 1024,
-        'SD3': 1024,
-        'SVD': 1024,
-    }
     COLOR_MATCH_METHODS = [   
         'none',
         'mkl',
@@ -65,8 +54,6 @@ class McBoaty_Upscaler_v4():
         'hm-mvgd-hm', 
         'hm-mkl-hm',
     ]
-    
-    AYS_MODEL_TYPES = list(AYS_MODEL_TYPE_SIZES.keys())
     
     INPUTS = {}
     OUTPUTS = {}
@@ -91,20 +78,13 @@ class McBoaty_Upscaler_v4():
                 "seed": ("INT", { "label": "Seed", "default": 4, "min": 0, "max": 0xffffffffffffffff}),
 
                 "upscale_model": (folder_paths.get_filename_list("upscale_models"), { "label": "Upscale Model" }),
-                "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
-                "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
                 "output_upscale_method": (self.UPSCALE_METHODS, { "label": "Custom Output Upscale Method", "default": "bicubic"}),
-                "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
-                "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
-                "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
-                "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
-                "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
-                "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
+
                 "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
+
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
                 "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/Florence-2-large" }),
@@ -200,12 +180,12 @@ class McBoaty_Upscaler_v4():
         )
         
         self.PARAMS = SimpleNamespace(
-            upscale_size_type = kwargs.get('output_size_type', None),
-            upscale_size = kwargs.get('output_size', None),
             upscale_model_name = kwargs.get('upscale_model', None),
             upscale_method = kwargs.get('output_upscale_method', "lanczos"),
             feather_mask = kwargs.get('feather_mask', None),
             color_match_method = kwargs.get('color_match_method', 'none'),
+            upscale_size_type = None,
+            upscale_size = None,
             tile_prompting_active = kwargs.get('tile_prompting_active', False),
             grid_spec = None,
             rows_qty = 1,
@@ -221,22 +201,17 @@ class McBoaty_Upscaler_v4():
             clip = kwargs.get('clip', None),
             vae = kwargs.get('vae', None),
             noise_seed = kwargs.get('seed', None),
-            sampler_name = kwargs.get('sampler_name', None),
-            scheduler = kwargs.get('basic_scheduler', None),
+            sampler_name = None,
+            scheduler = None,
             positive = kwargs.get('positive', None),
             negative = kwargs.get('negative', None),
             add_noise = True,
-            sigmas_type = kwargs.get('sigmas_type', None),
-            ays_model_type = kwargs.get('ays_model_type', None),
-            steps = kwargs.get('steps', None),
-            cfg = kwargs.get('cfg', None),
-            denoise = kwargs.get('denoise', None),
+            sigmas_type = None,
+            ays_model_type = None,
+            steps = None,
+            cfg = None,
+            denoise = None,
         )
-        
-        self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
-        self.KSAMPLER.tile_size_sampler = self.AYS_MODEL_TYPE_SIZES[self.KSAMPLER.ays_model_type]
-        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
-        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
 
         # TODO : make the feather_mask proportional to tile size ?
         # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
@@ -276,20 +251,6 @@ class McBoaty_Upscaler_v4():
 
 """]        
     
-    @classmethod    
-    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, ays_model_type):
-        if sigmas_type == "SDTurboScheduler":
-            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
-            sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
-        elif sigmas_type == "AlignYourStepsScheduler":
-            SigmaScheduler = AlignYourStepsScheduler
-            sigmas = SigmaScheduler().get_sigmas(ays_model_type, steps, denoise)[0]
-        else: # BasicScheduler
-            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
-            sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
-        
-        return sigmas    
-    
     @classmethod
     def upscale(self, image, iteration):
         
@@ -322,6 +283,19 @@ class McBoaty_Upscaler_v4():
 
 class McBoaty_Refiner_v4():
 
+    SIGMAS_TYPES = [
+        'BasicScheduler', 
+        'SDTurboScheduler', 
+        'AlignYourStepsScheduler'
+    ]    
+    AYS_MODEL_TYPE_SIZES = {
+        'SD1': 512,
+        'SDXL': 1024,
+        'SD3': 1024,
+        'SVD': 1024,
+    }
+    AYS_MODEL_TYPES = list(AYS_MODEL_TYPE_SIZES.keys())
+    
     @classmethod
     def INPUT_TYPES(self):
         return {
@@ -330,6 +304,16 @@ class McBoaty_Refiner_v4():
             },
             "required":{
                 "pipe": ("MC_BOATY_PIPE", {"label": "Mc Boaty Pipe" }),
+                "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
+                "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
+                "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
+                "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
+                "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
+                "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
+                "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
+                "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
+                "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
+
             },
             "optional": {
                 "prompts": ("STRING", {"label": "Prompts", "forceInput": True }),
@@ -397,6 +381,22 @@ class McBoaty_Refiner_v4():
 
         for name, value in zip(attribute_names, pipe):
             setattr(self, name, value)
+
+        self.PARAMS.upscale_size_type = kwargs.get('output_size_type', None)
+        self.PARAMS.upscale_size = kwargs.get('output_size', None)
+
+        self.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
+        self.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
+        self.KSAMPLER.sigmas_type = kwargs.get('sigmas_type', None)
+        self.KSAMPLER.ays_model_type = kwargs.get('ays_model_type', None)
+        self.KSAMPLER.steps = kwargs.get('steps', None)
+        self.KSAMPLER.cfg = kwargs.get('cfg', None)
+        self.KSAMPLER.denoise = kwargs.get('denoise', None)
+        
+        self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
+        self.KSAMPLER.tile_size_sampler = self.AYS_MODEL_TYPE_SIZES[self.KSAMPLER.ays_model_type]
+        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
+        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
             
         grid_images = kwargs.get('tiles', (None,) * len(self.OUTPUTS.grid_images))
         grid_images = list(grid_images)
@@ -413,6 +413,21 @@ class McBoaty_Refiner_v4():
             if prompt is None:
                 grid_prompts[i] = self.OUTPUTS.grid_prompts[i]
         self.OUTPUTS.grid_prompts = grid_prompts
+        
+    @classmethod    
+    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, ays_model_type):
+        if sigmas_type == "SDTurboScheduler":
+            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
+            sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
+        elif sigmas_type == "AlignYourStepsScheduler":
+            SigmaScheduler = AlignYourStepsScheduler
+            sigmas = SigmaScheduler().get_sigmas(ays_model_type, steps, denoise)[0]
+        else: # BasicScheduler
+            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
+            sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
+        
+        return sigmas    
+    
             
     @classmethod
     def _get_info(self, execution_duration):
@@ -532,17 +547,21 @@ class McBoaty_TilePrompter_v4():
         _input_prompts = MS_Cache.get(self.cache_name, input_prompts)
         _input_prompts_edited = MS_Cache.get(self.cache_name_edited, input_prompts)
         
+        refresh = False
+        
         if not MS_Cache.isset(self.cache_name) or _input_prompts != input_prompts:
             _input_prompts = input_prompts
             MS_Cache.set(self.cache_name, _input_prompts)
+            refresh = True
 
-        if not MS_Cache.isset(self.cache_name_edited):
-            MS_Cache.set(self.cache_name_edited, _input_prompts)
+        if not MS_Cache.isset(self.cache_name_edited) or refresh:
+            _input_prompts_edited = input_prompts
+            MS_Cache.set(self.cache_name_edited, _input_prompts_edited)
         elif len(_input_prompts_edited) != len(_input_prompts):
-            _input_prompts_edited = [gp if gp is not None else default_gp for gp, default_gp in zip(_input_prompts_edited, _input_prompts)]
+            _input_prompts_edited = [gp if gp is not None else default_gp for gp, default_gp in zip(_input_prompts_edited, input_prompts)]
             MS_Cache.set(self.cache_name_edited, _input_prompts_edited)
 
-        if _input_prompts_edited != _input_prompts:                
+        if _input_prompts_edited != _input_prompts:
             input_prompts = _input_prompts_edited
 
         output_prompts = input_prompts
