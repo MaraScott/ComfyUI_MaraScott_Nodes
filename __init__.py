@@ -25,6 +25,8 @@
 
 import os 
 import sys 
+
+from .py.utils.version import VERSION
 from .py.inc.lib.llm import MS_Llm
 
 MS_Llm.prestartup_script()
@@ -39,8 +41,6 @@ base_dir = os.path.abspath(os.path.dirname(__ROOT__file__))
 root_dir = os.path.join(base_dir, "..", "..")
 web_dir = os.path.join(root_dir, "web", "extensions", "marascott")
 web_dir = os.path.realpath(web_dir)
-# comfy_dir = os.path.join(root_dir, "comfy")
-# sys.path.insert(0, root_dir)
 if not os.path.exists(web_dir):
     os.makedirs(web_dir)
 __WEB_DIR__ = web_dir
@@ -55,11 +55,14 @@ if not os.path.exists(profiles_dir):
     os.makedirs(profiles_dir)
 __PROFILES_DIR__ = profiles_dir
 
+cache_dir = os.path.join(web_dir, "cache")
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+__CACHE_DIR__ = cache_dir
+
 from .MaraScott_Nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, WEB_DIRECTORY
 
 __all__ = [ 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY' ]
-
-from .py.utils.version import VERSION
 
 MANIFEST = {
     "name": "MaraScott Nodes",

@@ -22,7 +22,7 @@ from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...inc.lib.llm import MS_Llm
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
 
-from ...utils.log import *
+from ...utils.log import log
 
 import time
 class UpscalerRefiner_McBoaty_v3():
@@ -92,12 +92,12 @@ class UpscalerRefiner_McBoaty_v3():
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
-                "tile_size": ("INT", { "label": "Tile Size", "default": 1024, "min": 320, "max": 4096, "step": 64}),
-                "feather_mask": ("INT", { "label": "Feather Mask", "default": 128, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
+                "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
+                "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
-                "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
+                "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
                 "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
                 "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
 
@@ -138,7 +138,7 @@ class UpscalerRefiner_McBoaty_v3():
         if not isinstance(self.INPUTS.image, torch.Tensor):
             raise ValueError("MaraScottUpscalerRefinerNode id XX: Image provided is not a Tensor")
         
-        log(f"McBoaty is starting to do its magic")
+        log("McBoaty is starting to do its magic")
         
         self.OUTPUTS.image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
 
@@ -164,7 +164,7 @@ class UpscalerRefiner_McBoaty_v3():
             int(end_time - start_time)
         )
         
-        log(f"McBoaty is done with its magic")
+        log("McBoaty is done with its magic")
         
         image = self.OUTPUTS.image
         
