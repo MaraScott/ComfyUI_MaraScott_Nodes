@@ -326,6 +326,7 @@ class McBoaty_Refiner_v4():
         "MC_BOATY_PIPE", 
         "IMAGE", 
         "IMAGE", 
+        "STRING",
         "IMAGE",
         "STRING"
     )
@@ -334,11 +335,13 @@ class McBoaty_Refiner_v4():
         "McBoaty Pipe", 
         "image", 
         "tiles", 
+        "prompts", 
         "original_resized", 
         "info", 
     )
     
     OUTPUT_IS_LIST = (
+        False,
         False,
         False,
         False,
@@ -387,6 +390,7 @@ class McBoaty_Refiner_v4():
             ),            
             self.OUTPUTS.output_image, 
             self.OUTPUTS.output_tiles, 
+            self.PARAMS.grid_prompts, 
             self.OUTPUTS.image, 
             output_info, 
         )
@@ -620,7 +624,9 @@ async def set_prompt(request):
     _input_prompts = MS_Cache.get(cache_name, [])
     _input_prompts_edited = MS_Cache.get(cache_name_edited, _input_prompts)
     if _input_prompts_edited and index < len(_input_prompts_edited):
-        _input_prompts_edited[index] = prompt
+        _input_prompts_edited_list = list(_input_prompts_edited)
+        _input_prompts_edited_list[index] = prompt
+        _input_prompts_edited = tuple(_input_prompts_edited_list)
         MS_Cache.set(cache_name_edited, _input_prompts_edited)
     return web.json_response(f"Tile {index} prompt has been updated\n{prompt}")
 
