@@ -7,7 +7,6 @@
 #
 ###
 
-from . import __SESSIONS_DIR__, __PROFILES_DIR__
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
 from .py.nodes.Info.DisplayInfoNode_v1 import DisplayInfoNode_v1
 from .py.nodes.UpscalerRefiner.McBoaty_v2 import UpscalerRefiner_McBoaty_v2
