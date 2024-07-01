@@ -10,6 +10,9 @@ from .image import MS_Image_v2 as MS_Image
 
 from ...utils.log import log
 
+# class MS_Llm_NYU():
+#     # https://github.com/cambrian-mllm/cambrian/blob/main/inference.py
+
 class MS_Llm_Microsoft():
 
     @classmethod

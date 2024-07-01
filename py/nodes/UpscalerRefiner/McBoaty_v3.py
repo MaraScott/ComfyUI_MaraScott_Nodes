@@ -22,7 +22,7 @@ from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...inc.lib.llm import MS_Llm
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
 
-from ...utils.log import *
+from ...utils.log import log
 
 import time
 class UpscalerRefiner_McBoaty_v3():
@@ -138,7 +138,7 @@ class UpscalerRefiner_McBoaty_v3():
         if not isinstance(self.INPUTS.image, torch.Tensor):
             raise ValueError("MaraScottUpscalerRefinerNode id XX: Image provided is not a Tensor")
         
-        log(f"McBoaty is starting to do its magic")
+        log("McBoaty is starting to do its magic")
         
         self.OUTPUTS.image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
 
@@ -164,7 +164,7 @@ class UpscalerRefiner_McBoaty_v3():
             int(end_time - start_time)
         )
         
-        log(f"McBoaty is done with its magic")
+        log("McBoaty is done with its magic")
         
         image = self.OUTPUTS.image
         

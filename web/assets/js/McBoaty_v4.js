@@ -90,7 +90,7 @@ app.registerExtension({
 				const pos = this.widgets.findIndex((w) => w.name === "prompts");
 				if (pos !== -1) {
 					for (let i = pos; i < this.widgets.length; i++) {
-						this.widgets[i].onRemove?.();
+                        if(this.widgets[i].name === "prompts") this.widgets[i].onRemove?.();
 					}
 					this.widgets.length = pos;
 				}

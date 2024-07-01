@@ -17,7 +17,6 @@ import comfy_extras
 import comfy_extras.nodes_custom_sampler
 from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
 import nodes
-from PIL import Image
 from server import PromptServer
 from aiohttp import web
 import folder_paths
@@ -31,7 +30,7 @@ from ...inc.lib.cache import MS_Cache
 
 from .inc.prompt import Node as NodePrompt
 
-from ...utils.log import log, COLORS
+from ...utils.log import log
 
 
 class McBoaty_Upscaler_v4():
@@ -103,7 +102,7 @@ class McBoaty_Upscaler_v4():
     )
     
     RETURN_NAMES = (
-        "pipe",
+        "McBoaty Pipe",
         "prompts", 
         "tiles (Upscaled)",
         "info", 
@@ -220,6 +219,7 @@ class McBoaty_Upscaler_v4():
             grid_images = [],
             grid_prompts = [],
             output_info = ["No info"],
+            grid_tiles_to_process = [],
         )
     
         
@@ -303,7 +303,8 @@ class McBoaty_Refiner_v4():
                 "id":"UNIQUE_ID",
             },
             "required":{
-                "pipe": ("MC_BOATY_PIPE", {"label": "Mc Boaty Pipe" }),
+                "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
+                "tile_to_process": (list(range(65)), { "label": "Tile to process", "default": 0, "min": 0, "max": 64}),
                 "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
                 "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
                 "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
@@ -317,11 +318,12 @@ class McBoaty_Refiner_v4():
             },
             "optional": {
                 "prompts": ("STRING", {"label": "Prompts", "forceInput": True }),
-                "tiles": ("IMAGE", {"label": "Tiles" }),
+                "tiles": ("IMAGE", {"label": "Tiles", "forceInput": True }),
             }
         }
 
     RETURN_TYPES = (
+        "MC_BOATY_PIPE", 
         "IMAGE", 
         "IMAGE", 
         "IMAGE",
@@ -329,6 +331,7 @@ class McBoaty_Refiner_v4():
     )
     
     RETURN_NAMES = (
+        "McBoaty Pipe", 
         "image", 
         "tiles", 
         "original_resized", 
@@ -336,6 +339,7 @@ class McBoaty_Refiner_v4():
     )
     
     OUTPUT_IS_LIST = (
+        False,
         False,
         False,
         False,
@@ -357,17 +361,30 @@ class McBoaty_Refiner_v4():
 
         log("McBoaty (Refiner) is starting to do its magic")
         
-        self.PARAMS.grid_prompts, self.OUTPUTS.output_image, self.OUTPUTS.output_tiles = self.refine(self.OUTPUTS.image, "Upscaling")
+        self.PARAMS.grid_prompts, self.OUTPUTS.output_image, self.OUTPUTS.output_tiles, grid_tiles_to_process = self.refine(self.OUTPUTS.image, "Upscaling")
+            
+        INPUTS = self.INPUTS
+        PARAMS = self.PARAMS
+        KSAMPLER = self.KSAMPLER
+        OUTPUTS = self.OUTPUTS
+        
+        OUTPUTS.grid_tiles_to_process = grid_tiles_to_process
             
         end_time = time.time()
 
         output_info = self._get_info(
             int(end_time - start_time)
         )
-        
+
         log("McBoaty (Refiner) is done with its magic")
         
         return (
+            (
+                INPUTS,
+                PARAMS,
+                KSAMPLER,
+                OUTPUTS,
+            ),            
             self.OUTPUTS.output_image, 
             self.OUTPUTS.output_tiles, 
             self.OUTPUTS.image, 
@@ -384,6 +401,7 @@ class McBoaty_Refiner_v4():
 
         self.PARAMS.upscale_size_type = kwargs.get('output_size_type', None)
         self.PARAMS.upscale_size = kwargs.get('output_size', None)
+        self.PARAMS.tile_to_process = kwargs.get('tile_to_process', 0)
 
         self.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
         self.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
@@ -449,44 +467,56 @@ class McBoaty_Refiner_v4():
         grid_latent_outputs = []
         output_images = []
         total = len(self.OUTPUTS.grid_images)
+        
+        tile_to_process_index = self.PARAMS.tile_to_process - 1
                         
-        for index, upscaled_image_grid in enumerate(self.OUTPUTS.grid_images):            
-            if self.KSAMPLER.tiled:
-                log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
-                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
-            else:
-                log(f"tile {index + 1}/{total}", None, None, f"VAEEncoding {iteration}")
-                latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
+        for index, upscaled_image_grid in enumerate(self.OUTPUTS.grid_images):
+            latent_image = None
+            if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
+                if self.KSAMPLER.tiled:
+                    log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
+                    latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
+                else:
+                    log(f"tile {index + 1}/{total}", None, None, f"VAEEncoding {iteration}")
+                    latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
             grid_latents.append(latent_image)
         
         for index, latent_image in enumerate(grid_latents):
-            positive = self.KSAMPLER.positive
-            if self.PARAMS.tile_prompting_active:
-                log(f"tile {index + 1}/{total} : {self.OUTPUTS.grid_prompts[index]}", None, None, f"ClipTextEncoding {iteration}")
-                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
-            log(f"tile {index + 1}/{total}", None, None, f"Refining {iteration}")
-            latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
-                self.KSAMPLER.model, 
-                self.KSAMPLER.add_noise, 
-                self.KSAMPLER.noise_seed, 
-                self.KSAMPLER.cfg, 
-                positive, 
-                self.KSAMPLER.negative, 
-                self.KSAMPLER.sampler, 
-                self.KSAMPLER.sigmas, 
-                latent_image
-            )[0]
+            latent_output = None
+            if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
+                positive = self.KSAMPLER.positive
+                if self.PARAMS.tile_prompting_active:
+                    log(f"tile {index + 1}/{total} : {self.OUTPUTS.grid_prompts[index]}", None, None, f"ClipTextEncoding {iteration}")
+                    positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
+                log(f"tile {index + 1}/{total}", None, None, f"Refining {iteration}")
+                latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
+                    self.KSAMPLER.model, 
+                    self.KSAMPLER.add_noise, 
+                    self.KSAMPLER.noise_seed, 
+                    self.KSAMPLER.cfg, 
+                    positive, 
+                    self.KSAMPLER.negative, 
+                    self.KSAMPLER.sampler, 
+                    self.KSAMPLER.sigmas, 
+                    latent_image
+                )[0]
             grid_latent_outputs.append(latent_output)
 
         for index, latent_output in enumerate(grid_latent_outputs):            
-            if self.KSAMPLER.tiled:
-                log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
-                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae)[0].unsqueeze(0))[0]
-            else:
-                log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
-                output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
-            
+            output = None
+            if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
+                if self.KSAMPLER.tiled:
+                    log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
+                    output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae)[0].unsqueeze(0))[0]
+                else:
+                    log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
+                    output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]            
             output_images.append(output)
+
+        if self.PARAMS.tile_to_process > 0:
+            grid_tiles_to_process = list(self.OUTPUTS.grid_tiles_to_process)
+            grid_tiles_to_process[tile_to_process_index] = output_images[tile_to_process_index]
+            output_images = tuple(grid_tiles_to_process)
 
         feather_mask = self.PARAMS.feather_mask
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
@@ -494,12 +524,13 @@ class McBoaty_Refiner_v4():
         if self.PARAMS.color_match_method != 'none':
             output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
 
+        _tiles_order = tuple(output for _, output, _ in tiles_order)
         tiles_order.sort(key=lambda x: x[0])
         output_tiles = tuple(output for _, output, _ in tiles_order)
         output_tiles = torch.cat(output_tiles)
         output_prompts = tuple(prompt for _, _, prompt in tiles_order)
 
-        return output_prompts, output_image, output_tiles
+        return output_prompts, output_image, output_tiles, _tiles_order
 
 class McBoaty_TilePrompter_v4():
 
@@ -510,9 +541,9 @@ class McBoaty_TilePrompter_v4():
                 "id":"UNIQUE_ID",
             },
             "required":{
+                "prompt_suffix": ("STRING", {"label": "prompt (all) suffix", "default": "" }),
                 "prompts": ("STRING", {"label": "prompts" , "forceInput": True }),
                 # "prompts": ("MC_BOATY_PROMPT_PIPE", {"label": "Prompts" }),
-                # "prompt_suffix": ("STRING", {"label": "prompt (all) suffix" }),
             },
             "optional": {
                 **NodePrompt.ENTRIES,
@@ -541,6 +572,7 @@ class McBoaty_TilePrompter_v4():
         
         self.id = kwargs.get('id', 0)
         input_prompts = kwargs.get('prompts', ["No prompt"])
+        prompt_suffix = kwargs.get('prompt_suffix', "")
 
         self.init(self.id)
         
@@ -564,9 +596,12 @@ class McBoaty_TilePrompter_v4():
         if _input_prompts_edited != _input_prompts:
             input_prompts = _input_prompts_edited
 
-        output_prompts = input_prompts
-                
-        return {"ui": {"prompts": output_prompts}, "result": (output_prompts,)}
+        output_prompts_js = input_prompts
+        output_prompts = output_prompts_js
+        if prompt_suffix != "":
+            output_prompts = tuple(f"{prompt}{prompt_suffix}" for prompt in output_prompts)
+                    
+        return {"ui": {"prompts": output_prompts_js}, "result": (output_prompts,)}
 
     @classmethod
     def init(self, id = 0):
@@ -579,7 +614,7 @@ async def set_prompt(request):
     prompt = request.query.get("prompt", None)
     index = int(request.query.get("index", -1))
     nodeId = request.query.get("node", None)
-    clientId = request.query.get("clientId", None)
+    # clientId = request.query.get("clientId", None)
     cache_name = f'input_prompts_{nodeId}'
     cache_name_edited = f'{cache_name}_edited'
     _input_prompts = MS_Cache.get(cache_name, [])
@@ -610,7 +645,5 @@ async def tile_prompt(request):
 
     if not os.path.isfile(image_path):
         return web.Response(status=404)
-
-    # image = Image.open(image_path)
 
     return web.json_response(f"here is the prompt \n{image_path}")
