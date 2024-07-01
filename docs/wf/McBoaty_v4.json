@@ -1,1554 +1,2003 @@
 {
-    "last_node_id": 79,
-    "last_link_id": 175,
-    "nodes": [
-      {
-        "id": 17,
-        "type": "ModelSamplingSD3",
-        "pos": [
-          190,
-          590
-        ],
-        "size": {
-          "0": 315,
-          "1": 58
-        },
-        "flags": {},
-        "order": 2,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "model",
-            "label": "model",
-            "type": "MODEL",
-            "link": 23
-          }
-        ],
-        "outputs": [
-          {
-            "name": "MODEL",
-            "label": "MODEL",
-            "type": "MODEL",
-            "links": [],
-            "shape": 3,
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "ModelSamplingSD3"
-        },
-        "widgets_values": [
-          3
-        ]
+  "last_node_id": 96,
+  "last_link_id": 225,
+  "nodes": [
+    {
+      "id": 7,
+      "type": "CLIPTextEncode",
+      "pos": [
+        150,
+        940
+      ],
+      "size": {
+        "0": 425.27801513671875,
+        "1": 180.6060791015625
       },
-      {
-        "id": 7,
-        "type": "CLIPTextEncode",
-        "pos": [
-          150,
-          940
-        ],
-        "size": {
-          "0": 425.27801513671875,
-          "1": 180.6060791015625
-        },
-        "flags": {},
-        "order": 3,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "clip",
-            "type": "CLIP",
-            "link": 5
-          }
-        ],
-        "outputs": [
-          {
-            "name": "CONDITIONING",
-            "type": "CONDITIONING",
-            "links": [
-              25
-            ],
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "CLIPTextEncode"
-        },
-        "widgets_values": [
-          ""
-        ]
-      },
-      {
-        "id": 18,
-        "type": "SD3NegativeConditioning+",
-        "pos": [
-          620,
-          940
-        ],
-        "size": {
-          "0": 317.4000244140625,
-          "1": 58
-        },
-        "flags": {},
-        "order": 6,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "conditioning",
-            "label": "conditioning",
-            "type": "CONDITIONING",
-            "link": 25
-          }
-        ],
-        "outputs": [
-          {
-            "name": "CONDITIONING",
-            "label": "CONDITIONING",
-            "type": "CONDITIONING",
-            "links": [
-              43
-            ],
-            "shape": 3,
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "SD3NegativeConditioning+"
-        },
-        "widgets_values": [
-          0.1
-        ]
-      },
-      {
-        "id": 45,
-        "type": "CLIPTextEncodeSD3",
-        "pos": [
-          150,
-          700
-        ],
-        "size": {
-          "0": 418.03143310546875,
-          "1": 179.58460998535156
-        },
-        "flags": {},
-        "order": 7,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "clip",
-            "label": "clip",
-            "type": "CLIP",
-            "link": 92
-          },
-          {
-            "name": "clip_l",
-            "label": "clip_l",
-            "type": "STRING",
-            "link": 94,
-            "widget": {
-              "name": "clip_l"
-            }
-          },
-          {
-            "name": "clip_g",
-            "label": "clip_g",
-            "type": "STRING",
-            "link": 95,
-            "widget": {
-              "name": "clip_g"
-            }
-          },
-          {
-            "name": "t5xxl",
-            "label": "t5xxl",
-            "type": "STRING",
-            "link": 96,
-            "widget": {
-              "name": "t5xxl"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "CONDITIONING",
-            "label": "CONDITIONING",
-            "type": "CONDITIONING",
-            "links": [
-              91
-            ],
-            "shape": 3,
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "CLIPTextEncodeSD3"
-        },
-        "widgets_values": [
-          "massive dieselpunk bus, polished steel, parked in a dark, dystopian city. bus features intricate designs of machines, pumps, and turbines, with visible pipes and gears. The city around filled with looming buildings and a gritty atmosphere, illuminated by dim, flickering lights. bus itself has a sleek yet rugged appearance, with details that highlight its mechanical complexity. The scene evokes a sense of industrial decay and a futuristic yet bleak world.",
-          "massive dieselpunk bus, polished steel, parked in a dark, dystopian city. bus features intricate designs of machines, pumps, and turbines, with visible pipes and gears. The city around filled with looming buildings and a gritty atmosphere, illuminated by dim, flickering lights. bus itself has a sleek yet rugged appearance, with details that highlight its mechanical complexity. The scene evokes a sense of industrial decay and a futuristic yet bleak world.",
-          "massive dieselpunk bus, polished steel, parked in a dark, dystopian city. bus features intricate designs of machines, pumps, and turbines, with visible pipes and gears. The city around filled with looming buildings and a gritty atmosphere, illuminated by dim, flickering lights. bus itself has a sleek yet rugged appearance, with details that highlight its mechanical complexity. The scene evokes a sense of industrial decay and a futuristic yet bleak world.",
-          "none"
-        ]
-      },
-      {
-        "id": 4,
-        "type": "CheckpointLoaderSimple",
-        "pos": [
-          -350,
-          420
-        ],
-        "size": {
-          "0": 315,
-          "1": 98
-        },
-        "flags": {},
-        "order": 0,
-        "mode": 0,
-        "outputs": [
-          {
-            "name": "MODEL",
-            "type": "MODEL",
-            "links": [
-              23,
-              163
-            ],
-            "slot_index": 0
-          },
-          {
-            "name": "CLIP",
-            "type": "CLIP",
-            "links": [
-              5,
-              38,
-              92
-            ],
-            "slot_index": 1
-          },
-          {
-            "name": "VAE",
-            "type": "VAE",
-            "links": [
-              39
-            ],
-            "slot_index": 2
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "CheckpointLoaderSimple"
-        },
-        "widgets_values": [
-          "sd3_medium_incl_clips_t5xxlfp16.safetensors"
-        ]
-      },
-      {
-        "id": 47,
-        "type": "MaraScottPromptFromImage_v1",
-        "pos": [
-          -340,
-          730
-        ],
-        "size": {
-          "0": 319.20001220703125,
-          "1": 82
-        },
-        "flags": {},
-        "order": 4,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "image",
-            "label": "image",
-            "type": "IMAGE",
-            "link": 93
-          }
-        ],
-        "outputs": [
-          {
-            "name": "Prompt",
-            "label": "Prompt",
-            "type": "STRING",
-            "links": [
-              94,
-              95,
-              96
-            ],
-            "shape": 3,
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "MaraScottPromptFromImage_v1"
-        },
-        "widgets_values": [
-          "microsoft/Florence-2-large",
-          "llama3-70b-8192"
-        ]
-      },
-      {
-        "id": 30,
-        "type": "ImageResize+",
-        "pos": [
-          -370,
-          130
-        ],
-        "size": {
-          "0": 315,
-          "1": 218
-        },
-        "flags": {},
-        "order": 5,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "image",
-            "label": "image",
-            "type": "IMAGE",
-            "link": 97
-          }
-        ],
-        "outputs": [
-          {
-            "name": "IMAGE",
-            "label": "IMAGE",
-            "type": "IMAGE",
-            "links": [
-              84
-            ],
-            "shape": 3,
-            "slot_index": 0
-          },
-          {
-            "name": "width",
-            "label": "width",
-            "type": "INT",
-            "links": null,
-            "shape": 3
-          },
-          {
-            "name": "height",
-            "label": "height",
-            "type": "INT",
-            "links": null,
-            "shape": 3
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "ImageResize+"
-        },
-        "widgets_values": [
-          1536,
-          1536,
-          "nearest",
-          "keep proportion",
-          "always",
-          0
-        ]
-      },
-      {
-        "id": 27,
-        "type": "PreviewImage",
-        "pos": [
-          1100,
-          1140
-        ],
-        "size": {
-          "0": 1168.5672607421875,
-          "1": 810.4166870117188
-        },
-        "flags": {},
-        "order": 10,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "images",
-            "label": "image",
-            "type": "IMAGE",
-            "link": 48
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "PreviewImage"
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 5
         }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            25
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
       },
-      {
-        "id": 19,
-        "type": "McBoaty_Upscaler_v4",
-        "pos": [
-          1100,
-          400
-        ],
-        "size": {
-          "0": 306.2229309082031,
-          "1": 422
-        },
-        "flags": {},
-        "order": 8,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "image",
-            "label": "Image",
-            "type": "IMAGE",
-            "link": 84
-          },
-          {
-            "name": "model",
-            "label": "Model",
-            "type": "MODEL",
-            "link": 163
-          },
-          {
-            "name": "clip",
-            "label": "Clip",
-            "type": "CLIP",
-            "link": 38
-          },
-          {
-            "name": "vae",
-            "label": "VAE",
-            "type": "VAE",
-            "link": 39
-          },
-          {
-            "name": "positive",
-            "label": "Positive",
-            "type": "CONDITIONING",
-            "link": 91
-          },
-          {
-            "name": "negative",
-            "label": "Negative",
-            "type": "CONDITIONING",
-            "link": 43
-          }
-        ],
-        "outputs": [
-          {
-            "name": "pipe",
-            "label": "pipe",
-            "type": "MC_BOATY_PIPE",
-            "links": [
-              100
-            ],
-            "shape": 3,
-            "slot_index": 0
-          },
-          {
-            "name": "prompts",
-            "label": "prompts",
-            "type": "STRING",
-            "links": [
-              164
-            ],
-            "shape": 3,
-            "slot_index": 1
-          },
-          {
-            "name": "tiles (Upscaled)",
-            "label": "tiles (Upscaled)",
-            "type": "IMAGE",
-            "links": [
-              48
-            ],
-            "shape": 3,
-            "slot_index": 2
-          },
-          {
-            "name": "info",
-            "label": "info",
-            "type": "STRING",
-            "links": [
-              47
-            ],
-            "shape": 3,
-            "slot_index": 3
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "McBoaty_Upscaler_v4"
-        },
-        "widgets_values": [
-          22227888038658,
-          "fixed",
-          "RealESRGAN_x2.pth",
-          "bicubic",
-          1024,
-          128,
-          "microsoft/Florence-2-large",
-          512,
-          "hm-mvgd-hm",
-          true,
-          "microsoft/Florence-2-large",
-          "llama3-70b-8192"
-        ]
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 18,
+      "type": "SD3NegativeConditioning+",
+      "pos": [
+        620,
+        940
+      ],
+      "size": {
+        "0": 317.4000244140625,
+        "1": 58
       },
-      {
-        "id": 77,
-        "type": "Reroute (rgthree)",
-        "pos": {
-          "0": 1900,
-          "1": 740,
-          "2": 0,
-          "3": 0,
-          "4": 0,
-          "5": 0,
-          "6": 0,
-          "7": 0,
-          "8": 0,
-          "9": 0
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "label": "conditioning",
+          "type": "CONDITIONING",
+          "link": 25
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "label": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            43
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SD3NegativeConditioning+"
+      },
+      "widgets_values": [
+        0.1
+      ]
+    },
+    {
+      "id": 45,
+      "type": "CLIPTextEncodeSD3",
+      "pos": [
+        150,
+        700
+      ],
+      "size": {
+        "0": 418.03143310546875,
+        "1": 179.58460998535156
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "label": "clip",
+          "type": "CLIP",
+          "link": 92
         },
+        {
+          "name": "clip_l",
+          "label": "clip_l",
+          "type": "STRING",
+          "link": 94,
+          "widget": {
+            "name": "clip_l"
+          }
+        },
+        {
+          "name": "clip_g",
+          "label": "clip_g",
+          "type": "STRING",
+          "link": 95,
+          "widget": {
+            "name": "clip_g"
+          }
+        },
+        {
+          "name": "t5xxl",
+          "label": "t5xxl",
+          "type": "STRING",
+          "link": 96,
+          "widget": {
+            "name": "t5xxl"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "label": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            91
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncodeSD3"
+      },
+      "widgets_values": [
+        "massive dieselpunk bus, polished steel, parked in a dark, dystopian city. bus features intricate designs of machines, pumps, and turbines, with visible pipes and gears. The city around filled with looming buildings and a gritty atmosphere, illuminated by dim, flickering lights. bus itself has a sleek yet rugged appearance, with details that highlight its mechanical complexity. The scene evokes a sense of industrial decay and a futuristic yet bleak world.",
+        "massive dieselpunk bus, polished steel, parked in a dark, dystopian city. bus features intricate designs of machines, pumps, and turbines, with visible pipes and gears. The city around filled with looming buildings and a gritty atmosphere, illuminated by dim, flickering lights. bus itself has a sleek yet rugged appearance, with details that highlight its mechanical complexity. The scene evokes a sense of industrial decay and a futuristic yet bleak world.",
+        "massive dieselpunk bus, polished steel, parked in a dark, dystopian city. bus features intricate designs of machines, pumps, and turbines, with visible pipes and gears. The city around filled with looming buildings and a gritty atmosphere, illuminated by dim, flickering lights. bus itself has a sleek yet rugged appearance, with details that highlight its mechanical complexity. The scene evokes a sense of industrial decay and a futuristic yet bleak world.",
+        "none"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        -350,
+        420
+      ],
+      "size": {
+        "0": 315,
+        "1": 98
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            23
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            5,
+            38,
+            92
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            39
+          ],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "sd3_medium_incl_clips_t5xxlfp16.safetensors"
+      ]
+    },
+    {
+      "id": 47,
+      "type": "MaraScottPromptFromImage_v1",
+      "pos": [
+        -340,
+        730
+      ],
+      "size": {
+        "0": 319.20001220703125,
+        "1": 82
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "label": "image",
+          "type": "IMAGE",
+          "link": 93
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Prompt",
+          "label": "Prompt",
+          "type": "STRING",
+          "links": [
+            94,
+            95,
+            96
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottPromptFromImage_v1"
+      },
+      "widgets_values": [
+        "microsoft/Florence-2-large",
+        "llama3-70b-8192"
+      ]
+    },
+    {
+      "id": 27,
+      "type": "PreviewImage",
+      "pos": [
+        1100,
+        1140
+      ],
+      "size": {
+        "0": 1168.5672607421875,
+        "1": 810.4166870117188
+      },
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "label": "image",
+          "type": "IMAGE",
+          "link": 48
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 23,
+      "type": "PreviewImage",
+      "pos": [
+        2970,
+        -110
+      ],
+      "size": {
+        "0": 410,
+        "1": 460
+      },
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "label": "image",
+          "type": "IMAGE",
+          "link": 209
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 56,
+      "type": "PreviewImage",
+      "pos": [
+        4360,
+        -110
+      ],
+      "size": {
+        "0": 470,
+        "1": 420
+      },
+      "flags": {},
+      "order": 30,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "label": "image",
+          "type": "IMAGE",
+          "link": 223
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 71,
+      "type": "PreviewImage",
+      "pos": [
+        4010,
+        1110
+      ],
+      "size": {
+        "0": 1020,
+        "1": 850
+      },
+      "flags": {},
+      "order": 31,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "label": "image",
+          "type": "IMAGE",
+          "link": 220
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 10,
+      "type": "LoadImage",
+      "pos": [
+        -880,
+        390
+      ],
+      "size": {
+        "0": 315,
+        "1": 314.0000305175781
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "label": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            93,
+            97
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "label": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "example.png",
+        "image"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "ModelSamplingSD3",
+      "pos": [
+        190,
+        590
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "label": "model",
+          "type": "MODEL",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "label": "MODEL",
+          "type": "MODEL",
+          "links": [
+            176
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingSD3"
+      },
+      "widgets_values": [
+        3
+      ]
+    },
+    {
+      "id": 80,
+      "type": "Image Perlin Noise",
+      "pos": [
+        0,
+        -440
+      ],
+      "size": {
+        "0": 320,
+        "1": 200
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "height",
+          "type": "INT",
+          "link": 189,
+          "widget": {
+            "name": "height"
+          }
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "link": 188,
+          "widget": {
+            "name": "width"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            177,
+            179
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Image Perlin Noise"
+      },
+      "widgets_values": [
+        512,
+        512,
+        2,
+        4,
+        0.5,
+        109941390670086,
+        "fixed"
+      ]
+    },
+    {
+      "id": 81,
+      "type": "PreviewImage",
+      "pos": [
+        80,
+        -790
+      ],
+      "size": {
+        "0": 210,
+        "1": 250
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 177
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 83,
+      "type": "PreviewImage",
+      "pos": [
+        460,
+        -1240
+      ],
+      "size": {
+        "0": 210,
+        "1": 250
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 180
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 84,
+      "type": "Generate Noise Image",
+      "pos": [
+        350,
+        -200
+      ],
+      "size": {
+        "0": 320,
+        "1": 150
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "link": 190,
+          "widget": {
+            "name": "width"
+          }
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "link": 191,
+          "widget": {
+            "name": "height"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            181,
+            183
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Generate Noise Image"
+      },
+      "widgets_values": [
+        "gaussian",
+        1,
+        512,
+        512,
+        1
+      ]
+    },
+    {
+      "id": 85,
+      "type": "PreviewImage",
+      "pos": [
+        420,
+        -520
+      ],
+      "size": {
+        "0": 220,
+        "1": 250
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 181
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 88,
+      "type": "Reroute (rgthree)",
+      "pos": {
+        "0": 110,
+        "1": -920,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0,
+        "9": 0
+      },
+      "size": [
+        40,
+        30
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "label": " ",
+          "type": "*",
+          "link": 185,
+          "dir": 3,
+          "has_old_label": true,
+          "old_label": ""
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "label": " ",
+          "type": "IMAGE",
+          "links": [
+            178
+          ],
+          "dir": 4,
+          "has_old_label": true,
+          "old_label": "",
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "resizable": false,
         "size": [
           40,
           30
-        ],
-        "flags": {},
-        "order": 9,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "",
-            "label": " ",
-            "type": "*",
-            "link": 164,
-            "dir": 3,
-            "has_old_label": true,
-            "old_label": "",
-            "widget": {
-              "name": "value"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "prompts",
-            "label": " ",
-            "type": "STRING",
-            "links": [
-              165,
-              166
-            ],
-            "dir": 4,
-            "has_old_label": true,
-            "old_label": "",
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "resizable": false,
-          "size": [
-            40,
-            30
-          ]
-        }
-      },
-      {
-        "id": 78,
-        "type": "Reroute (rgthree)",
-        "pos": {
-          "0": 2620,
-          "1": 1060,
-          "2": 0,
-          "3": 0,
-          "4": 0,
-          "5": 0,
-          "6": 0,
-          "7": 0,
-          "8": 0,
-          "9": 0
-        },
-        "size": [
-          40,
-          30
-        ],
-        "flags": {},
-        "order": 13,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "",
-            "label": " ",
-            "type": "*",
-            "link": 166,
-            "dir": 3,
-            "has_old_label": true,
-            "old_label": "",
-            "widget": {
-              "name": "value"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "prompts",
-            "label": " ",
-            "type": "STRING",
-            "links": [
-              167
-            ],
-            "dir": 4,
-            "has_old_label": true,
-            "old_label": "",
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "resizable": false,
-          "size": [
-            40,
-            30
-          ]
-        }
-      },
-      {
-        "id": 23,
-        "type": "PreviewImage",
-        "pos": [
-          2970,
-          -110
-        ],
-        "size": [
-          410,
-          460
-        ],
-        "flags": {},
-        "order": 16,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "images",
-            "label": "image",
-            "type": "IMAGE",
-            "link": 102
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "PreviewImage"
-        }
-      },
-      {
-        "id": 24,
-        "type": "Image Comparer (rgthree)",
-        "pos": {
-          "0": 3450,
-          "1": -110,
-          "2": 0,
-          "3": 0,
-          "4": 0,
-          "5": 0,
-          "6": 0,
-          "7": 0,
-          "8": 0,
-          "9": 0
-        },
-        "size": [
-          430,
-          440
-        ],
-        "flags": {},
-        "order": 18,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "image_a",
-            "label": "image_a",
-            "type": "IMAGE",
-            "link": 104,
-            "dir": 3
-          },
-          {
-            "name": "image_b",
-            "label": "image_b",
-            "type": "IMAGE",
-            "link": 103,
-            "dir": 3
-          }
-        ],
-        "outputs": [],
-        "properties": {
-          "comparer_mode": "Slide"
-        },
-        "widgets_values": [
-          [
-            {
-              "name": "A",
-              "selected": true,
-              "url": "/view?filename=rgthree.compare._temp_qpqlo_00079_.png&type=temp&subfolder=&preview=webp&rand=0.9235945826420513"
-            },
-            {
-              "name": "B",
-              "selected": true,
-              "url": "/view?filename=rgthree.compare._temp_qpqlo_00080_.png&type=temp&subfolder=&preview=webp&rand=0.062180663047423756"
-            }
-          ]
-        ]
-      },
-      {
-        "id": 79,
-        "type": "Reroute (rgthree)",
-        "pos": {
-          "0": 3360,
-          "1": 1060,
-          "2": 0,
-          "3": 0,
-          "4": 0,
-          "5": 0,
-          "6": 0,
-          "7": 0,
-          "8": 0,
-          "9": 0
-        },
-        "size": [
-          40,
-          30
-        ],
-        "flags": {},
-        "order": 15,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "",
-            "label": " ",
-            "type": "*",
-            "link": 167,
-            "dir": 3,
-            "has_old_label": true,
-            "old_label": "",
-            "widget": {
-              "name": "value"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "prompts",
-            "label": " ",
-            "type": "STRING",
-            "links": [
-              168
-            ],
-            "dir": 4,
-            "has_old_label": true,
-            "old_label": "",
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "resizable": false,
-          "size": [
-            40,
-            30
-          ]
-        }
-      },
-      {
-        "id": 62,
-        "type": "McBoaty_TilePrompter_v4",
-        "pos": [
-          2610,
-          510
-        ],
-        "size": {
-          "0": 340,
-          "1": 500
-        },
-        "flags": {},
-        "order": 12,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "prompts",
-            "label": "prompts",
-            "type": "STRING",
-            "link": 165,
-            "widget": {
-              "name": "prompts"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "prompts",
-            "label": "prompts",
-            "type": "STRING",
-            "links": [
-              122
-            ],
-            "shape": 3,
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "McBoaty_TilePrompter_v4"
-        },
-        "widgets_values": [
-          ", Van Gogh style painting",
-          "a stuffed animal on top of a green background",
-          "a teddy bear that is sitting on top of a green background",
-          "a stuffed animal holding a yellow and blue frosted umbrella",
-          "a stuffed animal holding a colorful umbrella on top of a green background",
-          "a stuffed animal on top of a green background",
-          "a stuffed animal on top of a green background",
-          "a stuffed animal holding a pink and white striped umbrella on top of a green background",
-          "a stuffed animal",
-          "a stuffed animal"
-        ]
-      },
-      {
-        "id": 22,
-        "type": "PreviewImage",
-        "pos": [
-          2620,
-          1140
-        ],
-        "size": [
-          1150,
-          810
-        ],
-        "flags": {},
-        "order": 17,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "images",
-            "label": "image",
-            "type": "IMAGE",
-            "link": 105
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "PreviewImage"
-        }
-      },
-      {
-        "id": 65,
-        "type": "McBoaty_TilePrompter_v4",
-        "pos": [
-          4000,
-          490
-        ],
-        "size": {
-          "0": 340,
-          "1": 500
-        },
-        "flags": {},
-        "order": 19,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "prompts",
-            "label": "prompts",
-            "type": "STRING",
-            "link": 168,
-            "widget": {
-              "name": "prompts"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "prompts",
-            "label": "prompts",
-            "type": "STRING",
-            "links": [
-              130
-            ],
-            "shape": 3,
-            "slot_index": 0
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "McBoaty_TilePrompter_v4"
-        },
-        "widgets_values": [
-          ", andy warhol style painting",
-          "a stuffed animal on top of a green background",
-          "a teddy bear that is sitting on top of a green background",
-          "a stuffed animal holding a yellow and blue frosted umbrella",
-          "a stuffed animal holding a colorful umbrella on top of a green background",
-          "a stuffed animal on top of a green background",
-          "a stuffed animal on top of a green background",
-          "a stuffed animal holding a pink and white striped umbrella on top of a green background",
-          "a stuffed animal",
-          "a stuffed animal"
-        ]
-      },
-      {
-        "id": 56,
-        "type": "PreviewImage",
-        "pos": [
-          4360,
-          -110
-        ],
-        "size": [
-          470,
-          420
-        ],
-        "flags": {},
-        "order": 21,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "images",
-            "label": "image",
-            "type": "IMAGE",
-            "link": 173
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "PreviewImage"
-        }
-      },
-      {
-        "id": 64,
-        "type": "McBoaty_Refiner_v4",
-        "pos": [
-          4380,
-          410
-        ],
-        "size": {
-          "0": 370,
-          "1": 570
-        },
-        "flags": {},
-        "order": 20,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "pipe",
-            "label": "McBoaty Pipe",
-            "type": "MC_BOATY_PIPE",
-            "link": 124
-          },
-          {
-            "name": "tiles",
-            "label": "Tiles",
-            "type": "IMAGE",
-            "link": null
-          },
-          {
-            "name": "prompts",
-            "label": "Prompts",
-            "type": "STRING",
-            "link": 130,
-            "widget": {
-              "name": "prompts"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "McBoaty Pipe",
-            "label": "McBoaty Pipe",
-            "type": "MC_BOATY_PIPE",
-            "links": [],
-            "shape": 3,
-            "slot_index": 0
-          },
-          {
-            "name": "image",
-            "label": "image",
-            "type": "IMAGE",
-            "links": [
-              173,
-              174
-            ],
-            "shape": 3,
-            "slot_index": 1
-          },
-          {
-            "name": "tiles",
-            "label": "tiles",
-            "type": "IMAGE",
-            "links": [
-              153
-            ],
-            "shape": 3,
-            "slot_index": 2
-          },
-          {
-            "name": "original_resized",
-            "label": "original_resized",
-            "type": "IMAGE",
-            "links": null,
-            "shape": 3
-          },
-          {
-            "name": "info",
-            "label": "info",
-            "type": "STRING",
-            "links": [],
-            "shape": 3,
-            "slot_index": 4
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "McBoaty_Refiner_v4"
-        },
-        "widgets_values": [
-          5,
-          true,
-          1,
-          "BasicScheduler",
-          "SD3",
-          "dpmpp_2m",
-          "sgm_uniform",
-          10,
-          2.5,
-          0.51,
-          ""
-        ]
-      },
-      {
-        "id": 54,
-        "type": "McBoaty_Refiner_v4",
-        "pos": [
-          3010,
-          430
-        ],
-        "size": {
-          "0": 370,
-          "1": 570
-        },
-        "flags": {},
-        "order": 14,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "pipe",
-            "label": "McBoaty Pipe",
-            "type": "MC_BOATY_PIPE",
-            "link": 100
-          },
-          {
-            "name": "tiles",
-            "label": "Tiles",
-            "type": "IMAGE",
-            "link": null
-          },
-          {
-            "name": "prompts",
-            "label": "Prompts",
-            "type": "STRING",
-            "link": 122,
-            "widget": {
-              "name": "prompts"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "McBoaty Pipe",
-            "label": "McBoaty Pipe",
-            "type": "MC_BOATY_PIPE",
-            "links": [
-              124
-            ],
-            "shape": 3,
-            "slot_index": 0
-          },
-          {
-            "name": "image",
-            "label": "image",
-            "type": "IMAGE",
-            "links": [
-              102,
-              104,
-              175
-            ],
-            "shape": 3,
-            "slot_index": 1
-          },
-          {
-            "name": "tiles",
-            "label": "tiles",
-            "type": "IMAGE",
-            "links": [
-              105
-            ],
-            "shape": 3,
-            "slot_index": 2
-          },
-          {
-            "name": "original_resized",
-            "label": "original_resized",
-            "type": "IMAGE",
-            "links": [
-              103
-            ],
-            "shape": 3,
-            "slot_index": 3
-          },
-          {
-            "name": "info",
-            "label": "info",
-            "type": "STRING",
-            "links": [],
-            "shape": 3,
-            "slot_index": 4
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "McBoaty_Refiner_v4"
-        },
-        "widgets_values": [
-          0,
-          true,
-          1,
-          "BasicScheduler",
-          "SD3",
-          "dpmpp_2m",
-          "sgm_uniform",
-          10,
-          2.5,
-          0.51,
-          ""
-        ]
-      },
-      {
-        "id": 57,
-        "type": "Image Comparer (rgthree)",
-        "pos": {
-          "0": 4900,
-          "1": 420,
-          "2": 0,
-          "3": 0,
-          "4": 0,
-          "5": 0,
-          "6": 0,
-          "7": 0,
-          "8": 0,
-          "9": 0
-        },
-        "size": {
-          "0": 384.7647705078125,
-          "1": 331.9132385253906
-        },
-        "flags": {},
-        "order": 22,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "image_a",
-            "label": "image_a",
-            "type": "IMAGE",
-            "link": 174,
-            "dir": 3
-          },
-          {
-            "name": "image_b",
-            "label": "image_b",
-            "type": "IMAGE",
-            "link": 175,
-            "dir": 3
-          }
-        ],
-        "outputs": [],
-        "properties": {
-          "comparer_mode": "Slide"
-        },
-        "widgets_values": [
-          [
-            {
-              "name": "A",
-              "selected": true,
-              "url": "/view?filename=rgthree.compare._temp_vtsoh_00055_.png&type=temp&subfolder=&preview=webp&rand=0.7153227104215254"
-            },
-            {
-              "name": "B",
-              "selected": true,
-              "url": "/view?filename=rgthree.compare._temp_vtsoh_00056_.png&type=temp&subfolder=&preview=webp&rand=0.7908298021475499"
-            }
-          ]
-        ]
-      },
-      {
-        "id": 71,
-        "type": "PreviewImage",
-        "pos": [
-          4010,
-          1110
-        ],
-        "size": [
-          1020,
-          850
-        ],
-        "flags": {},
-        "order": 23,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "images",
-            "label": "image",
-            "type": "IMAGE",
-            "link": 153
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "PreviewImage"
-        }
-      },
-      {
-        "id": 10,
-        "type": "LoadImage",
-        "pos": [
-          -880,
-          390
-        ],
-        "size": {
-          "0": 315,
-          "1": 314.0000305175781
-        },
-        "flags": {},
-        "order": 1,
-        "mode": 0,
-        "outputs": [
-          {
-            "name": "IMAGE",
-            "label": "IMAGE",
-            "type": "IMAGE",
-            "links": [
-              93,
-              97
-            ],
-            "shape": 3,
-            "slot_index": 0
-          },
-          {
-            "name": "MASK",
-            "label": "MASK",
-            "type": "MASK",
-            "links": null,
-            "shape": 3
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "LoadImage"
-        },
-        "widgets_values": [
-          "example.png",
-          "image"
-        ]
-      },
-      {
-        "id": 26,
-        "type": "MaraScottDisplayInfo_v1",
-        "pos": [
-          1110,
-          -120
-        ],
-        "size": {
-          "0": 1110,
-          "1": 460
-        },
-        "flags": {},
-        "order": 11,
-        "mode": 0,
-        "inputs": [
-          {
-            "name": "text",
-            "label": "text",
-            "type": "STRING",
-            "link": 47,
-            "widget": {
-              "name": "text"
-            }
-          }
-        ],
-        "outputs": [
-          {
-            "name": "STRING",
-            "label": "STRING",
-            "type": "STRING",
-            "links": null,
-            "shape": 6
-          }
-        ],
-        "properties": {
-          "Node name for S&R": "MaraScottDisplayInfo_v1"
-        },
-        "widgets_values": [
-          "",
-          "\n\n    IMAGE (INPUT)\n        width   :   1536\n        height  :   1536\n        image divisible by 8 : True\n\n    ------------------------------\n\n    ------------------------------\n    \n    TILES PROMPTS\n        [1] a stuffed animal on top of a green background\n        [2] a teddy bear that is sitting on top of a green background\n        [3] a stuffed animal holding a yellow and blue frosted umbrella\n        [4] a stuffed animal holding a colorful umbrella on top of a green background\n        [5] a stuffed animal on top of a green background\n        [6] a stuffed animal on top of a green background\n        [7] a stuffed animal holding a pink and white striped umbrella on top of a green background\n        [8] a stuffed animal\n        [9] a stuffed animal    \n        \n    ------------------------------\n\n    EXECUTION\n        DURATION : 41 seconds\n\n    NODE INFO\n        version : 4.3.3\n\n"
         ]
       }
-    ],
-    "links": [
-      [
-        5,
-        4,
-        1,
-        7,
-        0,
-        "CLIP"
+    },
+    {
+      "id": 82,
+      "type": "Image Blending Mode",
+      "pos": [
+        450,
+        -920
       ],
-      [
-        23,
-        4,
-        0,
-        17,
-        0,
-        "MODEL"
+      "size": {
+        "0": 315,
+        "1": 102
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_a",
+          "type": "IMAGE",
+          "link": 178
+        },
+        {
+          "name": "image_b",
+          "type": "IMAGE",
+          "link": 179
+        }
       ],
-      [
-        25,
-        7,
-        0,
-        18,
-        0,
-        "CONDITIONING"
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            180,
+            182
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
       ],
-      [
-        38,
-        4,
-        1,
-        19,
-        2,
-        "CLIP"
-      ],
-      [
-        39,
-        4,
-        2,
-        19,
-        3,
-        "VAE"
-      ],
-      [
-        43,
-        18,
-        0,
-        19,
-        5,
-        "CONDITIONING"
-      ],
-      [
-        47,
-        19,
-        3,
-        26,
-        0,
-        "STRING"
-      ],
-      [
-        48,
-        19,
-        2,
-        27,
-        0,
-        "IMAGE"
-      ],
-      [
-        84,
-        30,
-        0,
-        19,
-        0,
-        "IMAGE"
-      ],
-      [
-        91,
-        45,
-        0,
-        19,
-        4,
-        "CONDITIONING"
-      ],
-      [
-        92,
-        4,
-        1,
-        45,
-        0,
-        "CLIP"
-      ],
-      [
-        93,
-        10,
-        0,
-        47,
-        0,
-        "IMAGE"
-      ],
-      [
-        94,
-        47,
-        0,
-        45,
-        1,
-        "STRING"
-      ],
-      [
-        95,
-        47,
-        0,
-        45,
-        2,
-        "STRING"
-      ],
-      [
-        96,
-        47,
-        0,
-        45,
-        3,
-        "STRING"
-      ],
-      [
-        97,
-        10,
-        0,
-        30,
-        0,
-        "IMAGE"
-      ],
-      [
-        100,
-        19,
-        0,
-        54,
-        0,
-        "MC_BOATY_PIPE"
-      ],
-      [
-        102,
-        54,
-        1,
-        23,
-        0,
-        "IMAGE"
-      ],
-      [
-        103,
-        54,
-        3,
-        24,
-        1,
-        "IMAGE"
-      ],
-      [
-        104,
-        54,
-        1,
-        24,
-        0,
-        "IMAGE"
-      ],
-      [
-        105,
-        54,
-        2,
-        22,
-        0,
-        "IMAGE"
-      ],
-      [
-        122,
-        62,
-        0,
-        54,
-        2,
-        "STRING"
-      ],
-      [
-        124,
-        54,
-        0,
-        64,
-        0,
-        "MC_BOATY_PIPE"
-      ],
-      [
-        130,
-        65,
-        0,
-        64,
-        2,
-        "STRING"
-      ],
-      [
-        153,
-        64,
-        2,
-        71,
-        0,
-        "IMAGE"
-      ],
-      [
-        163,
-        4,
-        0,
-        19,
-        1,
-        "MODEL"
-      ],
-      [
-        164,
-        19,
-        1,
-        77,
-        0,
-        "*"
-      ],
-      [
-        165,
-        77,
-        0,
-        62,
-        0,
-        "STRING"
-      ],
-      [
-        166,
-        77,
-        0,
-        78,
-        0,
-        "*"
-      ],
-      [
-        167,
-        78,
-        0,
-        79,
-        0,
-        "*"
-      ],
-      [
-        168,
-        79,
-        0,
-        65,
-        0,
-        "STRING"
-      ],
-      [
-        173,
-        64,
-        1,
-        56,
-        0,
-        "IMAGE"
-      ],
-      [
-        174,
-        64,
-        1,
-        57,
-        0,
-        "IMAGE"
-      ],
-      [
-        175,
-        54,
-        1,
-        57,
-        1,
-        "IMAGE"
+      "properties": {
+        "Node name for S&R": "Image Blending Mode"
+      },
+      "widgets_values": [
+        "add",
+        0.19
       ]
+    },
+    {
+      "id": 86,
+      "type": "Image Blending Mode",
+      "pos": [
+        880,
+        -920
+      ],
+      "size": {
+        "0": 315,
+        "1": 102
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_a",
+          "type": "IMAGE",
+          "link": 182
+        },
+        {
+          "name": "image_b",
+          "type": "IMAGE",
+          "link": 183
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            184,
+            186
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Image Blending Mode"
+      },
+      "widgets_values": [
+        "add",
+        0.19
+      ]
+    },
+    {
+      "id": 30,
+      "type": "ImageResize+",
+      "pos": [
+        -370,
+        130
+      ],
+      "size": {
+        "0": 315,
+        "1": 218
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "label": "image",
+          "type": "IMAGE",
+          "link": 97
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "label": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            185,
+            187
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "width",
+          "label": "width",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "height",
+          "label": "height",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageResize+"
+      },
+      "widgets_values": [
+        1536,
+        1536,
+        "nearest",
+        "keep proportion",
+        "always",
+        8
+      ]
+    },
+    {
+      "id": 89,
+      "type": "GetImageSize+",
+      "pos": [
+        100,
+        150
+      ],
+      "size": {
+        "0": 210,
+        "1": 66
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "label": "image",
+          "type": "IMAGE",
+          "link": 187
+        }
+      ],
+      "outputs": [
+        {
+          "name": "width",
+          "label": "width",
+          "type": "INT",
+          "links": [
+            188,
+            190
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "height",
+          "label": "height",
+          "type": "INT",
+          "links": [
+            189,
+            191
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "count",
+          "label": "count",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetImageSize+"
+      }
+    },
+    {
+      "id": 87,
+      "type": "PreviewImage",
+      "pos": [
+        930,
+        -1220
+      ],
+      "size": {
+        "0": 210,
+        "1": 250
+      },
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 184
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 26,
+      "type": "MaraScottDisplayInfo_v1",
+      "pos": [
+        1110,
+        -120
+      ],
+      "size": {
+        "0": 1110,
+        "1": 460
+      },
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "label": "text",
+          "type": "STRING",
+          "link": 47,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "label": "STRING",
+          "type": "STRING",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottDisplayInfo_v1"
+      },
+      "widgets_values": [
+        "",
+        "\n\n    IMAGE (INPUT)\n        width   :   1536\n        height  :   1536\n        image divisible by 8 : True\n\n    ------------------------------\n\n    ------------------------------\n    \n    TILES PROMPTS\n        [1] a stuffed animal with a yellow frisbee on top of it\n        [2] a stuffed animal with a cartoon character\n        [3] a stuffed animal holding a yellow and blue frosted umbrella\n        [4] a stuffed animal with a cartoon character\n        [5] a stuffed animal with a cartoon character on it\n        [6] a cartoon character on top of a stuffed animal and a skateboard\n        [7] a small stuffed animal with a cartoon character holding a pink and white striped umbrella\n        [8] a stuffed animal\n        [9] a cartoon character on top of a stuffed animal holding a pink and yellow umbrella    \n        \n    ------------------------------\n\n    EXECUTION\n        DURATION : 45 seconds\n\n    NODE INFO\n        version : 4.4.0\n\n"
+      ]
+    },
+    {
+      "id": 22,
+      "type": "PreviewImage",
+      "pos": [
+        2450,
+        1150
+      ],
+      "size": {
+        "0": 1150,
+        "1": 810
+      },
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "label": "image",
+          "type": "IMAGE",
+          "link": 214
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 94,
+      "type": "MaraScottDisplayInfo_v1",
+      "pos": [
+        2800,
+        2060
+      ],
+      "size": {
+        "0": 1110,
+        "1": 460
+      },
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "label": "text",
+          "type": "STRING",
+          "link": 217,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "label": "STRING",
+          "type": "STRING",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottDisplayInfo_v1"
+      },
+      "widgets_values": [
+        "",
+        "a stuffed animal with a yellow frisbee on top of it, Van Gogh style painting,a stuffed animal with a cartoon character, Van Gogh style painting,a stuffed animal holding a yellow and blue frosted umbrella, Van Gogh style painting,a stuffed animal with a cartoon character, Van Gogh style painting,a stuffed animal with a cartoon character on it, Van Gogh style painting,a cartoon character on top of a stuffed animal and a skateboard, Van Gogh style painting,a small stuffed animal with a cartoon character holding a pink and white striped umbrella, Van Gogh style painting,a stuffed animal, Van Gogh style painting,a cartoon character on top of a stuffed animal holding a pink and yellow umbrella, Van Gogh style painting"
+      ]
+    },
+    {
+      "id": 95,
+      "type": "MaraScottDisplayInfo_v1",
+      "pos": [
+        5247.366388025001,
+        1014.3714001160156
+      ],
+      "size": {
+        "0": 1110,
+        "1": 460
+      },
+      "flags": {},
+      "order": 32,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "label": "text",
+          "type": "STRING",
+          "link": 225,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "label": "STRING",
+          "type": "STRING",
+          "links": null,
+          "shape": 6
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottDisplayInfo_v1"
+      },
+      "widgets_values": [
+        "",
+        "a stuffed animal with a yellow frisbee on top of it, black & white,mouse, black & white,a stuffed animal holding a yellow and blue frosted umbrella, black & white,a stuffed animal with a cartoon character, black & white,a stuffed animal with a cartoon character on it, black & white,a cartoon character on top of a stuffed animal and a skateboard, black & white,a small stuffed animal with a cartoon character holding a pink and white striped umbrella, black & white,a stuffed animal, black & white,a cartoon character on top of a stuffed animal holding a pink and yellow umbrella, black & white"
+      ]
+    },
+    {
+      "id": 57,
+      "type": "Image Comparer (rgthree)",
+      "pos": {
+        "0": 4850,
+        "1": 440,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0,
+        "9": 0
+      },
+      "size": {
+        "0": 384.7647705078125,
+        "1": 331.9132385253906
+      },
+      "flags": {},
+      "order": 29,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_a",
+          "label": "image_a",
+          "type": "IMAGE",
+          "link": 221,
+          "dir": 3
+        },
+        {
+          "name": "image_b",
+          "label": "image_b",
+          "type": "IMAGE",
+          "link": 222,
+          "dir": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "comparer_mode": "Slide"
+      },
+      "widgets_values": [
+        [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "/view?filename=rgthree.compare._temp_bdvky_00025_.png&type=temp&subfolder=&preview=webp&rand=0.9370843043712886"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "/view?filename=rgthree.compare._temp_bdvky_00026_.png&type=temp&subfolder=&preview=webp&rand=0.1532107041735975"
+          }
+        ]
+      ]
+    },
+    {
+      "id": 24,
+      "type": "Image Comparer (rgthree)",
+      "pos": {
+        "0": 3470,
+        "1": -100,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0,
+        "9": 0
+      },
+      "size": {
+        "0": 430,
+        "1": 440
+      },
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_a",
+          "label": "image_a",
+          "type": "IMAGE",
+          "link": 210,
+          "dir": 3
+        },
+        {
+          "name": "image_b",
+          "label": "image_b",
+          "type": "IMAGE",
+          "link": 211,
+          "dir": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "comparer_mode": "Slide"
+      },
+      "widgets_values": [
+        [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "/view?filename=rgthree.compare._temp_gllqv_00041_.png&type=temp&subfolder=&preview=webp&rand=0.7545603100780252"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "/view?filename=rgthree.compare._temp_gllqv_00042_.png&type=temp&subfolder=&preview=webp&rand=0.024152867914546627"
+          }
+        ]
+      ]
+    },
+    {
+      "id": 19,
+      "type": "McBoaty_Upscaler_v4",
+      "pos": [
+        1100,
+        400
+      ],
+      "size": {
+        "0": 306.2229309082031,
+        "1": 422
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "label": "Image",
+          "type": "IMAGE",
+          "link": 186
+        },
+        {
+          "name": "model",
+          "label": "Model",
+          "type": "MODEL",
+          "link": 176
+        },
+        {
+          "name": "clip",
+          "label": "Clip",
+          "type": "CLIP",
+          "link": 38
+        },
+        {
+          "name": "vae",
+          "label": "VAE",
+          "type": "VAE",
+          "link": 39
+        },
+        {
+          "name": "positive",
+          "label": "Positive",
+          "type": "CONDITIONING",
+          "link": 91
+        },
+        {
+          "name": "negative",
+          "label": "Negative",
+          "type": "CONDITIONING",
+          "link": 43
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "label": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            207
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "prompts",
+          "label": "prompts",
+          "type": "STRING",
+          "links": [
+            216,
+            224
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "tiles (Upscaled)",
+          "label": "tiles (Upscaled)",
+          "type": "IMAGE",
+          "links": [
+            48
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "info",
+          "label": "info",
+          "type": "STRING",
+          "links": [
+            47
+          ],
+          "shape": 3,
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "McBoaty_Upscaler_v4"
+      },
+      "widgets_values": [
+        22227888038658,
+        "fixed",
+        "RealESRGAN_x2.pth",
+        "bicubic",
+        1024,
+        128,
+        "microsoft/Florence-2-large",
+        512,
+        "none",
+        true,
+        "microsoft/Florence-2-large",
+        "llama3-70b-8192"
+      ]
+    },
+    {
+      "id": 93,
+      "type": "McBoaty_Refiner_v4",
+      "pos": [
+        2990,
+        490
+      ],
+      "size": {
+        "0": 370,
+        "1": 590
+      },
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "label": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 207
+        },
+        {
+          "name": "tiles",
+          "label": "Tiles",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "prompts",
+          "label": "Prompts",
+          "type": "STRING",
+          "link": 208,
+          "widget": {
+            "name": "prompts"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "label": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            218
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "image",
+          "label": "image",
+          "type": "IMAGE",
+          "links": [
+            209,
+            210,
+            222
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "tiles",
+          "label": "tiles",
+          "type": "IMAGE",
+          "links": [
+            214
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "prompts",
+          "label": "prompts",
+          "type": "STRING",
+          "links": [
+            217
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "original_resized",
+          "label": "original_resized",
+          "type": "IMAGE",
+          "links": [
+            211
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "info",
+          "label": "info",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "McBoaty_Refiner_v4"
+      },
+      "widgets_values": [
+        0,
+        true,
+        1,
+        "BasicScheduler",
+        "SD3",
+        "dpmpp_2m",
+        "sgm_uniform",
+        10,
+        2.5,
+        0.51,
+        ""
+      ]
+    },
+    {
+      "id": 62,
+      "type": "McBoaty_TilePrompter_v4",
+      "pos": [
+        2580,
+        540
+      ],
+      "size": {
+        "0": 340,
+        "1": 500
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "prompts",
+          "label": "prompts",
+          "type": "STRING",
+          "link": 216,
+          "widget": {
+            "name": "prompts"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "prompts",
+          "label": "prompts",
+          "type": "STRING",
+          "links": [
+            208
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "McBoaty_TilePrompter_v4"
+      },
+      "widgets_values": [
+        ", Van Gogh style painting",
+        "a stuffed animal with a yellow frisbee on top of it",
+        "a stuffed animal with a cartoon character",
+        "a stuffed animal holding a yellow and blue frosted umbrella",
+        "a stuffed animal with a cartoon character",
+        "a stuffed animal with a cartoon character on it",
+        "a cartoon character on top of a stuffed animal and a skateboard",
+        "a small stuffed animal with a cartoon character holding a pink and white striped umbrella",
+        "a stuffed animal",
+        "a cartoon character on top of a stuffed animal holding a pink and yellow umbrella"
+      ]
+    },
+    {
+      "id": 65,
+      "type": "McBoaty_TilePrompter_v4",
+      "pos": [
+        3920,
+        440
+      ],
+      "size": {
+        "0": 340,
+        "1": 500
+      },
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "prompts",
+          "label": "prompts",
+          "type": "STRING",
+          "link": 224,
+          "widget": {
+            "name": "prompts"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "prompts",
+          "label": "prompts",
+          "type": "STRING",
+          "links": [
+            219
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "McBoaty_TilePrompter_v4"
+      },
+      "widgets_values": [
+        ", black & white",
+        "a stuffed animal with a yellow frisbee on top of it",
+        "mouse",
+        "a stuffed animal holding a yellow and blue frosted umbrella",
+        "a stuffed animal with a cartoon character",
+        "a stuffed animal with a cartoon character on it",
+        "a cartoon character on top of a stuffed animal and a skateboard",
+        "a small stuffed animal with a cartoon character holding a pink and white striped umbrella",
+        "a stuffed animal",
+        "a cartoon character on top of a stuffed animal holding a pink and yellow umbrella"
+      ]
+    },
+    {
+      "id": 96,
+      "type": "McBoaty_Refiner_v4",
+      "pos": [
+        4380,
+        450
+      ],
+      "size": {
+        "0": 370,
+        "1": 590
+      },
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "label": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 218
+        },
+        {
+          "name": "tiles",
+          "label": "Tiles",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "prompts",
+          "label": "Prompts",
+          "type": "STRING",
+          "link": 219,
+          "widget": {
+            "name": "prompts"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "label": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "image",
+          "label": "image",
+          "type": "IMAGE",
+          "links": [
+            221,
+            223
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "tiles",
+          "label": "tiles",
+          "type": "IMAGE",
+          "links": [
+            220
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "prompts",
+          "label": "prompts",
+          "type": "STRING",
+          "links": [
+            225
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "original_resized",
+          "label": "original_resized",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "info",
+          "label": "info",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "McBoaty_Refiner_v4"
+      },
+      "widgets_values": [
+        5,
+        true,
+        1,
+        "BasicScheduler",
+        "SD3",
+        "dpmpp_2m",
+        "sgm_uniform",
+        30,
+        5,
+        0.51,
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      5,
+      4,
+      1,
+      7,
+      0,
+      "CLIP"
     ],
-    "groups": [],
-    "config": {},
-    "extra": {},
-    "version": 0.4
-  }
+    [
+      23,
+      4,
+      0,
+      17,
+      0,
+      "MODEL"
+    ],
+    [
+      25,
+      7,
+      0,
+      18,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      38,
+      4,
+      1,
+      19,
+      2,
+      "CLIP"
+    ],
+    [
+      39,
+      4,
+      2,
+      19,
+      3,
+      "VAE"
+    ],
+    [
+      43,
+      18,
+      0,
+      19,
+      5,
+      "CONDITIONING"
+    ],
+    [
+      47,
+      19,
+      3,
+      26,
+      0,
+      "STRING"
+    ],
+    [
+      48,
+      19,
+      2,
+      27,
+      0,
+      "IMAGE"
+    ],
+    [
+      91,
+      45,
+      0,
+      19,
+      4,
+      "CONDITIONING"
+    ],
+    [
+      92,
+      4,
+      1,
+      45,
+      0,
+      "CLIP"
+    ],
+    [
+      93,
+      10,
+      0,
+      47,
+      0,
+      "IMAGE"
+    ],
+    [
+      94,
+      47,
+      0,
+      45,
+      1,
+      "STRING"
+    ],
+    [
+      95,
+      47,
+      0,
+      45,
+      2,
+      "STRING"
+    ],
+    [
+      96,
+      47,
+      0,
+      45,
+      3,
+      "STRING"
+    ],
+    [
+      97,
+      10,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      176,
+      17,
+      0,
+      19,
+      1,
+      "MODEL"
+    ],
+    [
+      177,
+      80,
+      0,
+      81,
+      0,
+      "IMAGE"
+    ],
+    [
+      178,
+      88,
+      0,
+      82,
+      0,
+      "IMAGE"
+    ],
+    [
+      179,
+      80,
+      0,
+      82,
+      1,
+      "IMAGE"
+    ],
+    [
+      180,
+      82,
+      0,
+      83,
+      0,
+      "IMAGE"
+    ],
+    [
+      181,
+      84,
+      0,
+      85,
+      0,
+      "IMAGE"
+    ],
+    [
+      182,
+      82,
+      0,
+      86,
+      0,
+      "IMAGE"
+    ],
+    [
+      183,
+      84,
+      0,
+      86,
+      1,
+      "IMAGE"
+    ],
+    [
+      184,
+      86,
+      0,
+      87,
+      0,
+      "IMAGE"
+    ],
+    [
+      185,
+      30,
+      0,
+      88,
+      0,
+      "*"
+    ],
+    [
+      186,
+      86,
+      0,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      187,
+      30,
+      0,
+      89,
+      0,
+      "IMAGE"
+    ],
+    [
+      188,
+      89,
+      0,
+      80,
+      1,
+      "INT"
+    ],
+    [
+      189,
+      89,
+      1,
+      80,
+      0,
+      "INT"
+    ],
+    [
+      190,
+      89,
+      0,
+      84,
+      0,
+      "INT"
+    ],
+    [
+      191,
+      89,
+      1,
+      84,
+      1,
+      "INT"
+    ],
+    [
+      207,
+      19,
+      0,
+      93,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      208,
+      62,
+      0,
+      93,
+      2,
+      "STRING"
+    ],
+    [
+      209,
+      93,
+      1,
+      23,
+      0,
+      "IMAGE"
+    ],
+    [
+      210,
+      93,
+      1,
+      24,
+      0,
+      "IMAGE"
+    ],
+    [
+      211,
+      93,
+      4,
+      24,
+      1,
+      "IMAGE"
+    ],
+    [
+      214,
+      93,
+      2,
+      22,
+      0,
+      "IMAGE"
+    ],
+    [
+      216,
+      19,
+      1,
+      62,
+      0,
+      "STRING"
+    ],
+    [
+      217,
+      93,
+      3,
+      94,
+      0,
+      "STRING"
+    ],
+    [
+      218,
+      93,
+      0,
+      96,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      219,
+      65,
+      0,
+      96,
+      2,
+      "STRING"
+    ],
+    [
+      220,
+      96,
+      2,
+      71,
+      0,
+      "IMAGE"
+    ],
+    [
+      221,
+      96,
+      1,
+      57,
+      0,
+      "IMAGE"
+    ],
+    [
+      222,
+      93,
+      1,
+      57,
+      1,
+      "IMAGE"
+    ],
+    [
+      223,
+      96,
+      1,
+      56,
+      0,
+      "IMAGE"
+    ],
+    [
+      224,
+      19,
+      1,
+      65,
+      0,
+      "STRING"
+    ],
+    [
+      225,
+      96,
+      3,
+      95,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

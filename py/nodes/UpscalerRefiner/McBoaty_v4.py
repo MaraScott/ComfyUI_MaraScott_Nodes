@@ -272,11 +272,11 @@ class McBoaty_Upscaler_v4():
         prompt_context = llm.vision_llm.generate_prompt(image)
         total = len(grid_images)
         for index, grid_image in enumerate(grid_images):
+            prompt_tile = prompt_context
             if self.PARAMS.tile_prompting_active:
                 log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Prompting {iteration}")
                 prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
                 log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
-
             grid_prompts.append(prompt_tile)
                             
         return grid_specs, grid_images, grid_prompts
@@ -326,6 +326,7 @@ class McBoaty_Refiner_v4():
         "MC_BOATY_PIPE", 
         "IMAGE", 
         "IMAGE", 
+        "STRING",
         "IMAGE",
         "STRING"
     )
@@ -334,11 +335,13 @@ class McBoaty_Refiner_v4():
         "McBoaty Pipe", 
         "image", 
         "tiles", 
+        "prompts", 
         "original_resized", 
         "info", 
     )
     
     OUTPUT_IS_LIST = (
+        False,
         False,
         False,
         False,
@@ -361,15 +364,13 @@ class McBoaty_Refiner_v4():
 
         log("McBoaty (Refiner) is starting to do its magic")
         
-        self.PARAMS.grid_prompts, self.OUTPUTS.output_image, self.OUTPUTS.output_tiles, grid_tiles_to_process = self.refine(self.OUTPUTS.image, "Upscaling")
-            
         INPUTS = self.INPUTS
         PARAMS = self.PARAMS
         KSAMPLER = self.KSAMPLER
         OUTPUTS = self.OUTPUTS
         
-        OUTPUTS.grid_tiles_to_process = grid_tiles_to_process
-            
+        PARAMS.grid_prompts, OUTPUTS.output_image, OUTPUTS.output_tiles, OUTPUTS.grid_tiles_to_process = self.refine(self.OUTPUTS.image, "Upscaling")
+                    
         end_time = time.time()
 
         output_info = self._get_info(
@@ -385,9 +386,10 @@ class McBoaty_Refiner_v4():
                 KSAMPLER,
                 OUTPUTS,
             ),            
-            self.OUTPUTS.output_image, 
-            self.OUTPUTS.output_tiles, 
-            self.OUTPUTS.image, 
+            OUTPUTS.output_image, 
+            OUTPUTS.output_tiles, 
+            PARAMS.grid_prompts, 
+            OUTPUTS.image, 
             output_info, 
         )
         
@@ -417,11 +419,17 @@ class McBoaty_Refiner_v4():
         self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
             
         grid_images = kwargs.get('tiles', (None,) * len(self.OUTPUTS.grid_images))
+        if len(grid_images) != len(self.OUTPUTS.grid_images):
+            grid_images = [gp if gp is not None else default_gp for gp, default_gp in zip(grid_images, self.OUTPUTS.grid_images)]
         grid_images = list(grid_images)
         for i, image in enumerate(grid_images):
             if image is None:
-                grid_images[i] = self.OUTPUTS.grid_images[i]
-        self.OUTPUTS.grid_images = grid_images
+                grid_images[i] = image = self.OUTPUTS.grid_images[i]
+            if len(image.shape) == 3:
+                grid_images[i] = image = image.unsqueeze(0)
+            if len(self.OUTPUTS.grid_images[i].shape) == 3:
+                self.OUTPUTS.grid_images[i] = self.OUTPUTS.grid_images[i].unsqueeze(0)
+        self.OUTPUTS.grid_images = tuple(grid_images)
 
         grid_prompts = kwargs.get('prompts', (None,) * len(self.OUTPUTS.grid_prompts))
         if len(grid_prompts) != len(self.OUTPUTS.grid_prompts):
@@ -469,7 +477,7 @@ class McBoaty_Refiner_v4():
         total = len(self.OUTPUTS.grid_images)
         
         tile_to_process_index = self.PARAMS.tile_to_process - 1
-                        
+        
         for index, upscaled_image_grid in enumerate(self.OUTPUTS.grid_images):
             latent_image = None
             if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
@@ -620,7 +628,9 @@ async def set_prompt(request):
     _input_prompts = MS_Cache.get(cache_name, [])
     _input_prompts_edited = MS_Cache.get(cache_name_edited, _input_prompts)
     if _input_prompts_edited and index < len(_input_prompts_edited):
-        _input_prompts_edited[index] = prompt
+        _input_prompts_edited_list = list(_input_prompts_edited)
+        _input_prompts_edited_list[index] = prompt
+        _input_prompts_edited = tuple(_input_prompts_edited_list)
         MS_Cache.set(cache_name_edited, _input_prompts_edited)
     return web.json_response(f"Tile {index} prompt has been updated\n{prompt}")
 

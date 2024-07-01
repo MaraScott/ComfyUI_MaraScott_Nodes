@@ -5,18 +5,18 @@
 
 import comfy_extras.nodes_images
 import torch
-import torch.nn.functional as F
+# import torch.nn.functional as F
 import math
 import numpy as np
 from PIL import Image
 
 import nodes
-import comfy
+# import comfy
 import comfy_extras
 
 from .array import MS_Array
 
-from ...utils.log import *
+from ...utils.log import log
 
 class MS_Image:
     @classmethod
