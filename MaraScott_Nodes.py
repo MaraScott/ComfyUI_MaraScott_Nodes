@@ -22,6 +22,7 @@ WEB_DIRECTORY = "./web/assets/js"
 NODE_CLASS_MAPPINGS = {
     "MaraScottAnyBus_v2": AnyBus_v2,
     "MaraScottDisplayInfo_v1": DisplayInfoNode_v1,
+    "MaraScottUpscalerRefinerNode_v3": UpscalerRefiner_McBoaty_v3,
     "McBoaty_Upscaler_v4": McBoaty_Upscaler_v4,
     "McBoaty_TilePrompter_v4": McBoaty_TilePrompter_v4,
     "McBoaty_Refiner_v4": McBoaty_Refiner_v4,
@@ -34,7 +35,6 @@ NODE_CLASS_MAPPINGS = {
     "MaraScottAnyBusNode": AnyBus_v2,
     "MaraScottDisplayInfoNode": DisplayInfoNode_v1,
     "MaraScottUpscalerRefinerNode_v2": UpscalerRefiner_McBoaty_v2,
-    "MaraScottUpscalerRefinerNode_v3": UpscalerRefiner_McBoaty_v3,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes 
@@ -43,6 +43,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottAnyBus_v2": "\ud83d\udc30 AnyBus - UniversalBus v2 /*",
     "MaraScottDisplayInfo_v1": "\ud83d\udc30 Display Info - Text v1 /i",
+    "MaraScottUpscalerRefinerNode_v3": "\ud83d\udc30 Large Refiner - McBoaty v3 /u",
     "McBoaty_Upscaler_v4": "\ud83d\udc30 Upscaler - McBoaty [1/3] v4 /u",
     "McBoaty_TilePrompter_v4": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v4 /u",
     "McBoaty_Refiner_v4": "\ud83d\udc30 Refiner - McBoaty [3/3] v4 /u",
@@ -55,7 +56,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottAnyBusNode": "\u274C AnyBus - UniversalBus v2 /*",
     "MaraScottDisplayInfoNode": "\u274C Display Info - Text v1 /i",
     "MaraScottUpscalerRefinerNode_v2": "\u274C Large Refiner - McBoaty v2 /u",
-    "MaraScottUpscalerRefinerNode_v3": "\u274C Large Refiner - McBoaty v3 /u",
 }
 
 print('\033[34m[MaraScott] \033[92mLoaded\033[0m')

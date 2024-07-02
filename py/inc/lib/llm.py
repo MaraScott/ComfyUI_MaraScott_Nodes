@@ -16,7 +16,7 @@ from ...utils.log import log
 class MS_Llm_Microsoft():
 
     @classmethod
-    def __init__(self, model_name = "microsoft/kosmos-2-patch14-224"):
+    def __init__(self, model_name = "microsoft/Florence-2-large"):
         self.name = model_name
         if model_name == 'microsoft/kosmos-2-patch14-224':
             self.model = AutoModelForVision2Seq.from_pretrained(self.name)

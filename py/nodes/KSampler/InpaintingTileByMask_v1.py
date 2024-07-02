@@ -22,7 +22,7 @@ from ...inc.lib.sampler import MS_Sampler
 from ...vendor.ComfyUI_LayerStyle.py.image_blend_v2 import ImageBlendV2, chop_mode_v2
 from ...vendor.ComfyUI_Impact_Pack.modules.impact.util_nodes import RemoveNoiseMask
 
-from ...utils.log import *
+from ...utils.log import log, get_log
 
 class KSampler_setInpaintingTileByMask_v1:
 
@@ -65,25 +65,25 @@ class KSampler_setInpaintingTileByMask_v1:
 
     # INPUT_IS_LIST = False
     RETURN_TYPES = (
-        'IMAGE',
-        'IMAGE',
-        'STRING',
-        'STRING',
         'MS_INPAINTINGTILEBYMASK_PIPE',
+        'IMAGE',
+        'IMAGE',
+        'STRING',
+        'STRING',
     )
     RETURN_NAMES = (
+        'ms_pipe',
         'image_inpainted',
         'image_noised',
         'text_pos_image_inpainted',
         'text_neg_image_inpainted',
-        'ms_pipe',
     )
     RETURN_LABELS = (
+        'pipe (InpaintingTileByMask)',
         'Inpainted Tile',
         'Noised Tile',
         'positive (text)',
         'negative (text)',
-        'pipe (InpaintingTileByMask)',
     )
     OUTPUT_IS_LIST = (
         False,
@@ -136,11 +136,11 @@ class KSampler_setInpaintingTileByMask_v1:
             )
         
         return (
+            s.pipe,
             s.tile.inpainted,
             s.tile.noised_by_mask,
             s.text_pos_image_inpainted, 
             s.text_neg_image_inpainted,
-            s.pipe,
         )
 
     def init(s, **kwargs):
@@ -314,9 +314,9 @@ class KSampler_pasteInpaintingTileByMask_v1:
     def INPUT_TYPES(s):
         return {
             "required": {
+                "ms_pipe": ("MS_INPAINTINGTILEBYMASK_PIPE", { "label": "pipe (InpaintingTileByMask)" }),
                 "image_tile": ("IMAGE", { "label": "Image (Tile)" }),
                 "mask_tile": ("MASK", { "label": "Mask (Tile)" }),
-                "ms_pipe": ("MS_INPAINTINGTILEBYMASK_PIPE", { "label": "pipe (InpaintingTileByMask)" }),
                 "text_pos_inpaint": ("STRING", { "label": "Positive (text) optional", "multiline": True }),
                 "text_neg_inpaint": ("STRING", { "label": "Negative (text) optional", "multiline": True }),
 
