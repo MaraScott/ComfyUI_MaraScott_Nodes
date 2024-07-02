@@ -22,7 +22,7 @@ from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...inc.lib.llm import MS_Llm
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
 
-from ...utils.log import log
+from ...utils.log import log, get_log
 
 import time
 class UpscalerRefiner_McBoaty_v3():
@@ -98,7 +98,7 @@ class UpscalerRefiner_McBoaty_v3():
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
-                "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
+                "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/Florence-2-large" }),
                 "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
 
             },
@@ -178,6 +178,10 @@ class UpscalerRefiner_McBoaty_v3():
     @classmethod
     def init(self, **kwargs):
         # Initialize the bus tuple with None values for each parameter
+        self.INFO = SimpleNamespace(
+            id = kwargs.get('id', None),
+        )
+
         self.INPUTS = SimpleNamespace(
             image = kwargs.get('image', None),
         )
@@ -228,7 +232,7 @@ class UpscalerRefiner_McBoaty_v3():
         # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
 
         self.OUTPUTS = SimpleNamespace(
-            output_info = [f"No info"],        
+            output_info = ["No info"],        
         )
     
         
@@ -282,14 +286,19 @@ class UpscalerRefiner_McBoaty_v3():
     def upscale_refine(self, image, iteration):
         
         feather_mask = self.PARAMS.feather_mask
-
-        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
-
-        rows_qty_float = upscaled_image.shape[1] / self.KSAMPLER.tile_size
-        cols_qty_float = upscaled_image.shape[2] / self.KSAMPLER.tile_size
+        
+        rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model.scale) / self.KSAMPLER.tile_size
+        cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model.scale) / self.KSAMPLER.tile_size
         rows_qty = math.ceil(rows_qty_float)
         cols_qty = math.ceil(cols_qty_float)
+
+        tiles_qty = rows_qty * cols_qty        
+        if tiles_qty > 64 :
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 64 ({tiles_qty} for {cols_qty} cols and {rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"McBoaty_Upscaler_v4 - Node id {self.INFO.id}")
+            raise ValueError(msg)
         
+        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
+
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
         grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, rows_qty, cols_qty, feather_mask)[0]
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)

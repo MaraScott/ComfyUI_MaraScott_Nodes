@@ -30,7 +30,7 @@ from ...inc.lib.cache import MS_Cache
 
 from .inc.prompt import Node as NodePrompt
 
-from ...utils.log import log
+from ...utils.log import log, get_log, COLORS
 
 
 class McBoaty_Upscaler_v4():
@@ -129,10 +129,10 @@ class McBoaty_Upscaler_v4():
         self.init(**kwargs)
         
         if self.INPUTS.image is None:
-            raise ValueError("MaraScottUpscalerRefinerNode id XX: No image provided")
+            raise ValueError(f"MaraScottUpscalerRefinerNode id {self.INFO.id}: No image provided")
 
         if not isinstance(self.INPUTS.image, torch.Tensor):
-            raise ValueError("MaraScottUpscalerRefinerNode id XX: Image provided is not a Tensor")
+            raise ValueError(f"MaraScottUpscalerRefinerNode id {self.INFO.id}: Image provided is not a Tensor")
         
         log("McBoaty (Upscaler) is starting to do its magic")
         
@@ -169,6 +169,10 @@ class McBoaty_Upscaler_v4():
     @classmethod
     def init(self, **kwargs):
         # Initialize the bus tuple with None values for each parameter
+        self.INFO = SimpleNamespace(
+            id = kwargs.get('id', None),
+        )
+        
         self.INPUTS = SimpleNamespace(
             image = kwargs.get('image', None),
         )
@@ -255,13 +259,21 @@ class McBoaty_Upscaler_v4():
     def upscale(self, image, iteration):
         
         feather_mask = self.PARAMS.feather_mask
+        rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model.scale) / self.KSAMPLER.tile_size
+        cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model.scale) / self.KSAMPLER.tile_size
+        rows_qty = math.ceil(rows_qty_float)
+        cols_qty = math.ceil(cols_qty_float)
+
+        tiles_qty = rows_qty * cols_qty        
+        if tiles_qty > 64 :
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 64 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"McBoaty_Upscaler_v4 - Node id {self.INFO.id}")
+            raise ValueError(msg)
 
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
 
-        rows_qty_float = upscaled_image.shape[1] / self.KSAMPLER.tile_size
-        cols_qty_float = upscaled_image.shape[2] / self.KSAMPLER.tile_size
-        self.PARAMS.rows_qty = math.ceil(rows_qty_float)
-        self.PARAMS.cols_qty = math.ceil(cols_qty_float)
+        self.PARAMS.rows_qty = rows_qty
+        self.PARAMS.cols_qty = cols_qty
+        
         
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
         grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, feather_mask)[0]

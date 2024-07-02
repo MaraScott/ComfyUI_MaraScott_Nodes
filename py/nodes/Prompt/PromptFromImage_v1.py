@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 from ...inc.lib.llm import MS_Llm
 
-from ...utils.log import *
+from ...utils.log import log
 
 class PromptFromImage_v1:
     
@@ -22,7 +22,7 @@ class PromptFromImage_v1:
         return {
             "required": {
                 "image": ("IMAGE", {"label": "image"}),
-                "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/kosmos-2-patch14-224" }),
+                "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/Florence-2-large" }),
                 "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
             },
             "hidden": {
