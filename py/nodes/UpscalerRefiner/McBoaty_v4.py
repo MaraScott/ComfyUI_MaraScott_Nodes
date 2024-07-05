@@ -333,9 +333,9 @@ class McBoaty_Refiner_v4():
                 "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "control_net_name": (self.CONTROLNET_CANNY_ONLY , { "label": "ControlNet (Canny only)", "default": "None" }),
-                "low_threshold": ("FLOAT", {"label": "Low Threshold (Canny)", "default": 0.4, "min": 0.01, "max": 0.99, "step": 0.01}),
-                "high_threshold": ("FLOAT", {"label": "High Threshold (Canny)", "default": 0.8, "min": 0.01, "max": 0.99, "step": 0.01}),
-                "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01}),
+                "low_threshold": ("FLOAT", {"label": "Low Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
+                "high_threshold": ("FLOAT", {"label": "High Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
+                "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.4, "min": 0.0, "max": 10.0, "step": 0.01}),
                 "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001})
                 
