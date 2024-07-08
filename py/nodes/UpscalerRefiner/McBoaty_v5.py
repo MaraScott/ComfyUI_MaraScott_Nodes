@@ -9,6 +9,7 @@
 
 import os
 import time
+import random
 import torch
 import math
 from types import SimpleNamespace
@@ -21,6 +22,9 @@ import nodes
 from server import PromptServer
 from aiohttp import web
 import folder_paths
+
+from PIL import Image
+import numpy as np
 
 from .... import root_dir
 from ...utils.version import VERSION
@@ -342,8 +346,8 @@ class McBoaty_Refiner_v5():
 
             },
             "optional": {
+                "tiles": ("IMAGE", {"label": "Tiles" }),
                 "prompts": ("STRING", {"label": "Prompts", "forceInput": True }),
-                "tiles": ("IMAGE", {"label": "Tiles", "forceInput": True }),
             }
         }
 
@@ -595,8 +599,9 @@ class McBoaty_TilePrompter_v5():
                 "id":"UNIQUE_ID",
             },
             "required":{
-                "prompt_suffix": ("STRING", {"label": "prompt (all) suffix", "default": "" }),
-                "prompts": ("STRING", {"label": "prompts" , "forceInput": True }),
+                "tiles": ("IMAGE", {"label": "Tiles" }),
+                "prompt_suffix": ("STRING", {"label": "Prompt (all) suffix", "default": "" }),
+                "prompts": ("STRING", {"label": "Prompts" , "forceInput": True }),
                 # "prompts": ("MC_BOATY_PROMPT_PIPE", {"label": "Prompts" }),
             },
             "optional": {
@@ -627,6 +632,7 @@ class McBoaty_TilePrompter_v5():
         self.id = kwargs.get('id', 0)
         input_prompts = kwargs.get('prompts', ["No prompt"])
         prompt_suffix = kwargs.get('prompt_suffix', "")
+        input_tiles = kwargs.get('tiles', (None, ) * len(input_prompts))
 
         self.init(self.id)
         
@@ -654,13 +660,31 @@ class McBoaty_TilePrompter_v5():
         output_prompts = output_prompts_js
         if prompt_suffix != "":
             output_prompts = tuple(f"{prompt}{prompt_suffix}" for prompt in output_prompts)
+
+        results = list()
+        for index, tile in enumerate(input_tiles):
+            filename_prefix = "McBoaty" + "_temp_" + ''.join(random.choice("abcdefghijklmnopqrstupvxyz") for x in range(5))
+            full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir, tile.shape[1], tile.shape[0])
+            i = 255. * tile.cpu().numpy()
+            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            metadata = None
+            file = f"{filename}_{index:05}.png"
+            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=4)
+            results.append({
+                "filename": file,
+                "subfolder": subfolder,
+                "type": "temp"
+            })
+            counter += 1
+
                     
-        return {"ui": {"prompts": output_prompts_js}, "result": (output_prompts,)}
+        return {"ui": {"prompts": output_prompts_js, "tiles": results}, "result": (output_prompts,)}
 
     @classmethod
     def init(self, id = 0):
         self.cache_name = f'input_prompts_{id}'
         self.cache_name_edited = f'{self.cache_name}_edited'
+        self.output_dir = folder_paths.get_temp_directory()
         
     
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/set_prompt")

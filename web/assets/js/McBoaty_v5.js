@@ -2,6 +2,73 @@ import { app } from "../../scripts/app.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { api } from "../../scripts/api.js";
 
+function imageDataToUrl(data) {
+    return api.apiURL(`/view?filename=${encodeURIComponent(data.filename)}&type=${data.type}&subfolder=${data.subfolder}${app.getPreviewFormatParam()}${app.getRandParam()}`);
+}
+
+export const McBoatyWidgets = {
+
+    WRAPPER: (key, index, prompt, tile, node) => {
+
+        const inputEl = document.createElement("div");
+        inputEl.className = "comfy-wrapper-mcboaty";
+        
+        const wrapper = document.createElement("div");
+        wrapper.style.display = "flex";
+        wrapper.style.alignItems = "center";
+        wrapper.style.gap = "10px";
+
+        const text = document.createElement("p");
+        text.textContent = index + 1;
+        
+        const textarea = document.createElement("textarea");
+        textarea.style.opacity = 0.6;
+        textarea.style.flexGrow = 1;
+        textarea.className = "comfy-wrapper-mcboaty-input";
+        textarea.value = prompt || "";
+        textarea.placeholder = prompt || "";
+        textarea.placeholder = "tile "+index;
+        textarea.dataId = "tile "+index;
+        textarea.dataNodeId = node.id;
+        textarea.addEventListener('focusout', async function() {
+            
+            const res = await (await fetch(`/MaraScott/McBoaty/v4/set_prompt?index=${index}&prompt=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
+            // You can add more functionality here that should run when the input loses focus
+            
+        });
+        
+        var img = document.createElement('img');
+        img.src = imageDataToUrl(tile);  // Replace with the actual image path
+        img.alt = prompt;
+        img.width = 64;
+        img.height = img.width;
+        img.style.maxWidth = img.width + "px";
+        img.style.maxHeight = img.height + "px";
+        img.style.flexShrink = "0";
+        wrapper.appendChild(text);
+        wrapper.appendChild(img);
+        wrapper.appendChild(textarea);        
+        inputEl.appendChild(wrapper);        
+        
+        const widget = node.addDOMWidget(name, "customtext", inputEl, {
+            getValue() {
+                return inputEl.value;
+            },
+            setValue(v) {
+                inputEl.value = v;
+            },
+        });
+        widget.inputEl = inputEl;
+        widget.value = prompt;
+        
+        textarea.addEventListener("input", () => {
+            widget.callback?.(widget.value);
+        });
+    
+        return widget;
+    }
+}
+
 class McBoaty_v5 {
 	constructor() {
 		if (!window.__McBoaty_v5__) {
@@ -105,18 +172,8 @@ app.registerExtension({
 				this.onResize?.(this.size);
                 this.graph.setDirtyCanvas(true, true);
 
-				for (const [index, list] of message.prompts.entries()) {
-					const w = ComfyWidgets["STRING"](this, "tile "+index, ["STRING", { multiline: true }], app).widget;
-					// w.inputEl.readOnly = false;
-					w.inputEl.style.opacity = 0.6;
-					w.inputEl.placeholder = "tile "+index;
-					w.inputEl.dataId = "tile "+index;
-					w.inputEl.dataNodeId = this.id;
-					w.value = list;
-                    w.inputEl.addEventListener('focusout', async function() {
-                        const res = await (await fetch(`/MaraScott/McBoaty/v4/set_prompt?index=${index}&prompt=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
-                        // You can add more functionality here that should run when the input loses focus
-                    });
+				for (const [index, prompt] of message.prompts.entries()) {
+                    const w = McBoatyWidgets.WRAPPER("tile "+index, index, prompt, message.tiles[index], this)
 				}
 
 				this.onResize?.(this.size);
