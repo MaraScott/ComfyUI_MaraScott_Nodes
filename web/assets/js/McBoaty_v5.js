@@ -14,17 +14,19 @@ export const McBoatyWidgets = {
         inputEl.className = "comfy-wrapper-mcboaty";
         
         const wrapper = document.createElement("div");
+        wrapper.style.height = "100%";
         wrapper.style.display = "flex";
         wrapper.style.alignItems = "center";
         wrapper.style.gap = "10px";
 
         const text = document.createElement("p");
-        text.textContent = index + 1;
+        text.textContent = String(index + 1).padStart(2, '0');
         
         const textarea = document.createElement("textarea");
         textarea.style.opacity = 0.6;
         textarea.style.flexGrow = 1;
-        textarea.className = "comfy-wrapper-mcboaty-input";
+        textarea.style.height = "100%";
+        textarea.className = "comfy-multiline-input";
         textarea.value = prompt || "";
         textarea.placeholder = prompt || "";
         textarea.placeholder = "tile "+index;
@@ -40,10 +42,9 @@ export const McBoatyWidgets = {
         var img = document.createElement('img');
         img.src = imageDataToUrl(tile);  // Replace with the actual image path
         img.alt = prompt;
-        img.width = 64;
-        img.height = img.width;
-        img.style.maxWidth = img.width + "px";
-        img.style.maxHeight = img.height + "px";
+        img.style.height = "100%";
+        img.style.maxWidth = "128px";
+        img.style.maxHeight = "128px";
         img.style.flexShrink = "0";
         wrapper.appendChild(text);
         wrapper.appendChild(img);
