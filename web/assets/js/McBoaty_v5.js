@@ -2,6 +2,18 @@ import { app } from "../../scripts/app.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { api } from "../../scripts/api.js";
 
+if (!window.marascott) {
+	window.marascott = {}
+}
+if (!window.marascott.McBoaty_v5) {
+	window.marascott.McBoaty_v5 = {
+		init: false,
+		clean: false,
+        message: null,
+	}
+}
+
+
 function imageDataToUrl(data) {
     return api.apiURL(`/view?filename=${encodeURIComponent(data.filename)}&type=${data.type}&subfolder=${data.subfolder}${app.getPreviewFormatParam()}${app.getRandParam()}`);
 }
@@ -29,11 +41,10 @@ export const McBoatyWidgets = {
         textarea.className = "comfy-multiline-input";
         textarea.value = prompt || "";
         textarea.placeholder = prompt || "";
-        textarea.placeholder = "tile "+index;
+        textarea.placeholder = "tile "+text.textContent;
         textarea.dataId = "tile "+index;
         textarea.dataNodeId = node.id;
         textarea.addEventListener('focusout', async function() {
-            
             const res = await (await fetch(`/MaraScott/McBoaty/v4/set_prompt?index=${index}&prompt=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
             // You can add more functionality here that should run when the input loses focus
             
@@ -68,6 +79,187 @@ export const McBoatyWidgets = {
     
         return widget;
     }
+}
+
+class MaraScottMcBoatyNodePrompter {
+
+	static clean(node) {
+
+		window.marascott.McBoaty_v5.clean = false
+
+        const cleanedLabel = " ... cleaned"
+		node.title = node.title + cleanedLabel
+		setTimeout(() => {
+			// Remove " (cleaned)" from the title
+			node.title = node.title.replace(cleanedLabel, "");
+		}, 500);
+
+	}
+
+}
+
+class MaraScottMcBoatyNodeWidget {
+
+	static INDEX = {
+		name: "Filter by Indexes",
+		default: "",
+	}
+	static PROMPT = {
+		name: "Prompt (all filtered)",
+		default: "",
+	}
+	static CLEAN = {
+		name: 'Reset',
+		default: false,
+	}
+
+	static init(node) {
+
+		this.setIndexInput(node)
+		this.setPromptInput(node)
+		this.setCleanSwitch(node)
+
+	}
+
+	static getByName(node, name) {
+		return node.widgets?.find((w) => w.name === name);
+	}
+
+	static setValue(node, name, value) {
+
+		const nodeWidget = this.getByName(node, name);
+		nodeWidget.value = value
+		node.setProperty(name, nodeWidget.value ?? node.properties[name])
+		node.setDirtyCanvas(true)
+
+	}
+
+	static setIndexInput(node) {
+
+		const nodeWidget = this.getByName(node, this.INDEX.name);
+
+		if (nodeWidget == undefined) {
+			node.addWidget(
+				"text",
+				this.INDEX.name,
+				node.properties[this.INDEX.name] ?? this.INDEX.default,
+				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
+					this.setValue(node, this.INDEX.name, value);
+                    this.setValue(node, this.PROMPT.name, this.PROMPT.default);
+				},
+				{}
+			)
+			this.setValue(node, this.INDEX.name, this.INDEX.default)
+		}
+
+	}
+
+    static setPromptInput(node) {
+
+		const nodeWidget = this.getByName(node, this.PROMPT.name);
+
+		if (nodeWidget == undefined) {
+			node.addWidget(
+				"text",
+				this.PROMPT.name,
+				node.properties[this.PROMPT.name] ?? this.PROMPT.default,
+				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
+					this.setValue(node, this.PROMPT.name, value);
+                    
+                    const input_list = node.properties[this.INDEX.name] ?? this.INDEX.default;
+                    if(input_list != "") {
+                        node.widgets = node.widgets.filter(widget => {
+
+                            const focusOutEvent = new Event('focusout');
+                            const index_filtered = input_list.split(",").map(num => Number(num) - 1);
+                            if (widget.type == "customtext") {
+                                const textarea = widget.inputEl.querySelector('[placeholder^="tile "]');
+                                if ( textarea != null) {
+                                    const dataId = textarea.getAttribute('placeholder');
+                                    const indexValue = parseInt(dataId.replace('tile ', ''), 10);
+                                    const indexFound = index_filtered.indexOf(indexValue - 1);
+                                    if(indexFound > -1) {
+                                        window.marascott.McBoaty_v5.message.prompts[indexValue] = value;
+                                        textarea.value = value;
+                                        textarea.dispatchEvent(focusOutEvent);
+                                        return false;
+                                    }
+                                }
+                            }
+                            return true;
+
+                        });
+                    }
+                    node.widgets = node.widgets.filter(widget => {
+                        if (widget.type == "customtext") {
+                            widget.onRemove?.();
+                            return false;
+                        }
+                        return true;
+                    });
+    
+                    node.widgets = node.widgets.filter(widget => {
+                        if(widget.name === MaraScottMcBoatyNodeWidget.CLEAN.name) {
+                            widget.onRemove?.();
+                            return false;
+                        }
+                        return true;
+                    });
+    
+                    MaraScottMcBoatyNodeWidget.setIndexInput(node)
+                    MaraScottMcBoatyNodeWidget.setPromptInput(node)
+            
+                    node.onResize?.(node.size);
+                    node.graph.setDirtyCanvas(true, true);
+    
+                    MaraScottMcBoatyNodeWidget.setPrompterInputs(node)
+    
+                    MaraScottMcBoatyNodeWidget.setCleanSwitch(node)
+    
+                    node.onResize?.(node.size);
+                    node.graph.setDirtyCanvas(true, true);    
+				},
+				{}
+			)
+			this.setValue(node, this.PROMPT.name, this.PROMPT.default)
+		}
+
+	}
+
+	static setCleanSwitch(node) {
+
+		const nodeWidget = this.getByName(node, this.CLEAN.name);
+		if (nodeWidget == undefined) {
+			node.addWidget(
+				"toggle",
+				this.CLEAN.name,
+				this.CLEAN.default,
+				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
+                    MaraScottMcBoatyNodePrompter.clean(node)
+					this.setValue(node, this.CLEAN.name, this.CLEAN.default)
+				},
+				{}
+			)
+			this.setValue(node, this.CLEAN.name, this.CLEAN.default)
+		}
+
+	}
+
+    static setPrompterInputs(node) {
+
+        let index_list = (node.properties[this.INDEX.name] ?? this.INDEX.default).trim().split(",");
+		index_list = (index_list.length === 1 && index_list[0] === '') ? [] : index_list;
+        const index_filtered = index_list.map(num => Number(num) - 1);
+
+        for (const [index, prompt] of window.marascott.McBoaty_v5.message.prompts.entries()) {
+            if (index_list.length == 0 || index_filtered.indexOf(index) > -1) {
+                const w = McBoatyWidgets.WRAPPER("tile "+index, index, prompt, window.marascott.McBoaty_v5.message.tiles[index], node);
+            }
+        }
+
+
+    }
+
 }
 
 class McBoaty_v5 {
@@ -153,29 +345,34 @@ app.registerExtension({
 
             const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
+                window.marascott.McBoaty_v5.message = message;
 				const r = onExecuted?.apply?.(this, arguments);
 
-				const pos = this.widgets.findIndex((w) => w.name === "prompts");
-				if (pos !== -1) {
-					for (let i = pos; i < this.widgets.length; i++) {
-                        if(this.widgets[i].name === "prompts") this.widgets[i].onRemove?.();
-					}
-					this.widgets.length = pos;
-				}
-
                 this.widgets = this.widgets.filter(widget => {
-                    if (widget.name.startsWith("tile ")) {
+                    if (widget.type == "customtext") {
                         widget.onRemove?.();
                         return false;
                     }
                     return true;
                 });
+
+                this.widgets = this.widgets.filter(widget => {
+                    if(widget.name === MaraScottMcBoatyNodeWidget.CLEAN.name) {
+                        widget.onRemove?.();
+                        return false;
+                    }
+                    return true;
+                });
+
+                MaraScottMcBoatyNodeWidget.setIndexInput(this)
+                MaraScottMcBoatyNodeWidget.setPromptInput(this)
+        
 				this.onResize?.(this.size);
                 this.graph.setDirtyCanvas(true, true);
 
-				for (const [index, prompt] of message.prompts.entries()) {
-                    const w = McBoatyWidgets.WRAPPER("tile "+index, index, prompt, message.tiles[index], this)
-				}
+                MaraScottMcBoatyNodeWidget.setPrompterInputs(this)
+
+                MaraScottMcBoatyNodeWidget.setCleanSwitch(this)
 
 				this.onResize?.(this.size);
                 this.graph.setDirtyCanvas(true, true);
@@ -185,7 +382,7 @@ app.registerExtension({
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function () {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
-    
+
                 this.widgets = this.widgets.filter(widget => {
                     if (widget.name.startsWith("tile ")) {
                         widget.onRemove?.();
@@ -193,6 +390,8 @@ app.registerExtension({
                     }
                     return true;
                 });
+
+                MaraScottMcBoatyNodeWidget.init(this);
                 this.onResize?.(this.size);
 
                 return r;

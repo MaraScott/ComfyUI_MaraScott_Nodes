@@ -600,7 +600,8 @@ class McBoaty_TilePrompter_v5():
             },
             "required":{
                 "tiles": ("IMAGE", {"label": "Tiles" }),
-                "prompt_suffix": ("STRING", {"label": "Prompt (all) suffix", "default": "" }),
+                # "prompter": ("STRING", {"label": "Prompt (edit selected tiles)", "default": "" }),
+                # "tiles_index": ("STRING", {"label": "Indexes", "default": "" }),
                 "prompts": ("STRING", {"label": "Prompts" , "forceInput": True }),
                 # "prompts": ("MC_BOATY_PROMPT_PIPE", {"label": "Prompts" }),
             },
@@ -631,7 +632,6 @@ class McBoaty_TilePrompter_v5():
         
         self.id = kwargs.get('id', 0)
         input_prompts = kwargs.get('prompts', ["No prompt"])
-        prompt_suffix = kwargs.get('prompt_suffix', "")
         input_tiles = kwargs.get('tiles', (None, ) * len(input_prompts))
 
         self.init(self.id)
@@ -658,8 +658,6 @@ class McBoaty_TilePrompter_v5():
 
         output_prompts_js = input_prompts
         output_prompts = output_prompts_js
-        if prompt_suffix != "":
-            output_prompts = tuple(f"{prompt}{prompt_suffix}" for prompt in output_prompts)
 
         results = list()
         for index, tile in enumerate(input_tiles):
