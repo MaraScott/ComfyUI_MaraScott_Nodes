@@ -9,7 +9,16 @@ if (!window.marascott.McBoaty_v5) {
 	window.marascott.McBoaty_v5 = {
 		init: false,
 		clean: false,
-        message: null,
+        message: {
+            prompts: [],
+            tiles: [],
+            denoises: [],
+        },
+        inputs: {
+            prompts: [],
+            tiles: [],
+            denoises: [],
+        },
 	}
 }
 
@@ -18,9 +27,15 @@ function imageDataToUrl(data) {
     return api.apiURL(`/view?filename=${encodeURIComponent(data.filename)}&type=${data.type}&subfolder=${data.subfolder}${app.getPreviewFormatParam()}${app.getRandParam()}`);
 }
 
+function clearProcessedFlag() {
+    document.querySelectorAll('textarea[data-processed]').forEach(textarea => {
+        textarea.removeAttribute('data-processed');
+    });
+}
+
 export const McBoatyWidgets = {
 
-    WRAPPER: (key, index, prompt, tile, node) => {
+    WRAPPER: (key, index, prompt, tile, denoise, node) => {
 
         const inputEl = document.createElement("div");
         inputEl.className = "comfy-wrapper-mcboaty";
@@ -40,12 +55,28 @@ export const McBoatyWidgets = {
         textarea.style.height = "100%";
         textarea.className = "comfy-multiline-input";
         textarea.value = prompt || "";
-        textarea.placeholder = prompt || "";
         textarea.placeholder = "tile "+text.textContent;
         textarea.dataId = "tile "+index;
         textarea.dataNodeId = node.id;
+
         textarea.addEventListener('focusout', async function() {
             const res = await (await fetch(`/MaraScott/McBoaty/v4/set_prompt?index=${index}&prompt=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
+            // You can add more functionality here that should run when the input loses focus
+            
+        });
+
+        const input = document.createElement("input");
+        input.style.opacity = 0.6;
+        input.style.height = "100%";
+        input.style.maxWidth = "1.8rem";
+        input.style.flexShrink = "0";
+        input.className = "comfy-multiline-input";
+        input.value = denoise || '';
+        input.placeholder = "denoise "+text.textContent;
+        input.dataId = "tile "+index;
+        input.dataNodeId = node.id;
+        input.addEventListener('focusout', async function() {
+            const res = await (await fetch(`/MaraScott/McBoaty/v4/set_denoise?index=${index}&denoise=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
             // You can add more functionality here that should run when the input loses focus
             
         });
@@ -59,8 +90,9 @@ export const McBoatyWidgets = {
         img.style.flexShrink = "0";
         wrapper.appendChild(text);
         wrapper.appendChild(img);
-        wrapper.appendChild(textarea);        
-        inputEl.appendChild(wrapper);        
+        wrapper.appendChild(textarea);
+        wrapper.appendChild(input);
+        inputEl.appendChild(wrapper);
         
         const widget = node.addDOMWidget(name, "customtext", inputEl, {
             getValue() {
@@ -71,7 +103,7 @@ export const McBoatyWidgets = {
             },
         });
         widget.inputEl = inputEl;
-        widget.value = prompt;
+        MaraScottMcBoatyNodeWidget.setValue(node, widget.name, prompt);
         
         textarea.addEventListener("input", () => {
             widget.callback?.(widget.value);
@@ -83,12 +115,40 @@ export const McBoatyWidgets = {
 
 class MaraScottMcBoatyNodePrompter {
 
-	static clean(node) {
+	static async clean(node) {
 
 		window.marascott.McBoaty_v5.clean = false
 
         const cleanedLabel = " ... cleaned"
 		node.title = node.title + cleanedLabel
+        
+        const res = await (await fetch(`/MaraScott/McBoaty/v4/get_input_prompts?node=${node.id}`)).json();
+
+        window.marascott.McBoaty_v5.message.prompts = window.marascott.McBoaty_v5.inputs.prompts = res.prompts_in;
+        window.marascott.McBoaty_v5.message.tiles = window.marascott.McBoaty_v5.inputs.tiles;
+        window.marascott.McBoaty_v5.inputs.denoises = window.marascott.McBoaty_v5.message.denoises = new Array(window.marascott.McBoaty_v5.message.prompts.length).fill('');
+        MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.INDEX.name, MaraScottMcBoatyNodeWidget.INDEX.default);
+        MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.PROMPT.name, MaraScottMcBoatyNodeWidget.PROMPT.default);
+        MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.DENOISE.name, MaraScottMcBoatyNodeWidget.DENOISE.prepend_values[0]);
+        node.widgets = node.widgets.filter(widget => {
+            const focusOutEvent = new Event('focusout');
+            if (widget.type == "customtext") {
+                const textarea = widget.inputEl.querySelector('[placeholder^="tile "]');
+                if ( textarea != null) {
+                    const dataId = textarea.getAttribute('placeholder');
+                    const indexValue = parseInt(dataId.replace('tile ', ''), 10);
+                    const realIndexValue = indexValue - 1;
+                    const value = window.marascott.McBoaty_v5.inputs.prompts[realIndexValue];
+                    MaraScottMcBoatyNodeWidget.setValue(node, widget.name, value);
+                    textarea.value = value;
+                    textarea.dispatchEvent(focusOutEvent);
+                }
+            }
+            return true;
+
+        });
+
+        MaraScottMcBoatyNodeWidget.refresh(node);
 		setTimeout(() => {
 			// Remove " (cleaned)" from the title
 			node.title = node.title.replace(cleanedLabel, "");
@@ -105,18 +165,57 @@ class MaraScottMcBoatyNodeWidget {
 		default: "",
 	}
 	static PROMPT = {
-		name: "Prompt (all filtered)",
+		name: "Prompt",
 		default: "",
+	}
+	static DENOISE = {
+		name: "Denoise",
+        prepend_values: ['unchanged', 'Use Global Denoise'],
+		default: "Use Global Denoise",
+		min: 0.00,
+		max: 1.00,
+		step: 0.01,
 	}
 	static CLEAN = {
 		name: 'Reset',
 		default: false,
 	}
 
+	static refresh(node) {
+
+        node.widgets = node.widgets.filter(widget => {
+            if (widget.type == "customtext") {
+                widget.onRemove?.();
+                return false;
+            }
+            if(widget.name === this.CLEAN.name) {
+                widget.onRemove?.();
+                return false;
+            }
+            return true;
+        });
+
+        this.setIndexInput(node)
+        this.setPromptInput(node)
+        this.setDenoiseInput(node)
+
+        node.onResize?.(node.size);
+        node.graph.setDirtyCanvas(true, true);
+
+        this.setPrompterInputs(node)
+
+        this.setCleanSwitch(node)
+
+        node.onResize?.(node.size);
+        node.graph.setDirtyCanvas(true, true);
+
+	}
+
 	static init(node) {
 
 		this.setIndexInput(node)
 		this.setPromptInput(node)
+		this.setDenoiseInput(node)
 		this.setCleanSwitch(node)
 
 	}
@@ -142,10 +241,12 @@ class MaraScottMcBoatyNodeWidget {
 			node.addWidget(
 				"text",
 				this.INDEX.name,
-				node.properties[this.INDEX.name] ?? this.INDEX.default,
+				this.INDEX.default,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
 					this.setValue(node, this.INDEX.name, value);
                     this.setValue(node, this.PROMPT.name, this.PROMPT.default);
+                    this.setValue(node, this.DENOISE.name, this.DENOISE.prepend_values[0]);
+                    this.refresh(node);
 				},
 				{}
 			)
@@ -162,62 +263,32 @@ class MaraScottMcBoatyNodeWidget {
 			node.addWidget(
 				"text",
 				this.PROMPT.name,
-				node.properties[this.PROMPT.name] ?? this.PROMPT.default,
+				this.PROMPT.default,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
 					this.setValue(node, this.PROMPT.name, value);
                     
                     const input_list = node.properties[this.INDEX.name] ?? this.INDEX.default;
-                    if(input_list != "") {
-                        node.widgets = node.widgets.filter(widget => {
+                    node.widgets = node.widgets.filter(widget => {
 
-                            const focusOutEvent = new Event('focusout');
-                            const index_filtered = input_list.split(",").map(num => Number(num) - 1);
-                            if (widget.type == "customtext") {
-                                const textarea = widget.inputEl.querySelector('[placeholder^="tile "]');
-                                if ( textarea != null) {
-                                    const dataId = textarea.getAttribute('placeholder');
-                                    const indexValue = parseInt(dataId.replace('tile ', ''), 10);
-                                    const indexFound = index_filtered.indexOf(indexValue - 1);
-                                    if(indexFound > -1) {
-                                        window.marascott.McBoaty_v5.message.prompts[indexValue] = value;
-                                        textarea.value = value;
-                                        textarea.dispatchEvent(focusOutEvent);
-                                        return false;
-                                    }
+                        const focusOutEvent = new Event('focusout');
+                        const index_filtered = input_list.split(",").map(num => Number(num) - 1);
+                        if (widget.type == "customtext") {
+                            const textarea = widget.inputEl.querySelector('[placeholder^="tile "]');
+                            if ( textarea != null) {
+                                const dataId = textarea.getAttribute('placeholder');
+                                const indexValue = parseInt(dataId.replace('tile ', ''), 10);
+                                const realIndexValue = indexValue - 1;
+                                const indexFound = index_filtered.indexOf(indexValue - 1);
+                                if((input_list != "" && indexFound > -1) || input_list == "") {
+                                    window.marascott.McBoaty_v5.message.prompts[realIndexValue] = value;
+                                    textarea.value = value;
+                                    textarea.dispatchEvent(focusOutEvent);
                                 }
                             }
-                            return true;
+                        }
+                        return true;
 
-                        });
-                    }
-                    node.widgets = node.widgets.filter(widget => {
-                        if (widget.type == "customtext") {
-                            widget.onRemove?.();
-                            return false;
-                        }
-                        return true;
                     });
-    
-                    node.widgets = node.widgets.filter(widget => {
-                        if(widget.name === MaraScottMcBoatyNodeWidget.CLEAN.name) {
-                            widget.onRemove?.();
-                            return false;
-                        }
-                        return true;
-                    });
-    
-                    MaraScottMcBoatyNodeWidget.setIndexInput(node)
-                    MaraScottMcBoatyNodeWidget.setPromptInput(node)
-            
-                    node.onResize?.(node.size);
-                    node.graph.setDirtyCanvas(true, true);
-    
-                    MaraScottMcBoatyNodeWidget.setPrompterInputs(node)
-    
-                    MaraScottMcBoatyNodeWidget.setCleanSwitch(node)
-    
-                    node.onResize?.(node.size);
-                    node.graph.setDirtyCanvas(true, true);    
 				},
 				{}
 			)
@@ -225,6 +296,65 @@ class MaraScottMcBoatyNodeWidget {
 		}
 
 	}
+
+	static setDenoiseInput(node) {
+
+		const nodeWidget = this.getByName(node, this.DENOISE.name);
+
+		if (nodeWidget == undefined) {
+
+			let values = this.DENOISE.prepend_values
+
+			for (let i = this.DENOISE.min; i <= this.DENOISE.max; i = parseFloat((i + this.DENOISE.step).toFixed(2))) {
+				values.push(i);
+			}
+
+			node.addWidget(
+				"combo",
+				this.DENOISE.name,
+				this.DENOISE.prepend_values[0],
+				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
+
+                    
+                    this.setValue(node, this.DENOISE.name, value);
+                    
+                    if (value != "unchanged") {
+                        if (value == 'Use Global Denoise') value = '';
+
+                        const input_list = node.properties[this.INDEX.name] ?? this.INDEX.default;
+                        node.widgets = node.widgets.filter(widget => {
+
+                            const focusOutEvent = new Event('focusout');
+                            const index_filtered = input_list.split(",").map(num => Number(num) - 1);
+                            if (widget.type == "customtext") {
+                                const input = widget.inputEl.querySelector('[placeholder^="denoise "]');
+                                if ( input != null) {
+                                    const dataId = input.getAttribute('placeholder');
+                                    const indexValue = parseInt(dataId.replace('denoise ', ''), 10);
+                                    const realIndexValue = indexValue - 1;
+                                    const indexFound = index_filtered.indexOf(indexValue - 1);
+                                    if((input_list != "" && indexFound > -1) || input_list == "") {
+                                        window.marascott.McBoaty_v5.message.denoises[realIndexValue] = value;
+                                        input.value = value;
+                                        input.dispatchEvent(focusOutEvent);
+                                    }
+                                }
+                            }
+                            return true;
+
+                        });
+                    }
+
+				},
+				{
+					"values": values
+				}
+			)
+			this.setValue(node, this.INDEX.name, this.INDEX.default)
+		}
+
+	}
+
 
 	static setCleanSwitch(node) {
 
@@ -235,8 +365,8 @@ class MaraScottMcBoatyNodeWidget {
 				this.CLEAN.name,
 				this.CLEAN.default,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-                    MaraScottMcBoatyNodePrompter.clean(node)
 					this.setValue(node, this.CLEAN.name, this.CLEAN.default)
+                    MaraScottMcBoatyNodePrompter.clean(node)
 				},
 				{}
 			)
@@ -250,10 +380,10 @@ class MaraScottMcBoatyNodeWidget {
         let index_list = (node.properties[this.INDEX.name] ?? this.INDEX.default).trim().split(",");
 		index_list = (index_list.length === 1 && index_list[0] === '') ? [] : index_list;
         const index_filtered = index_list.map(num => Number(num) - 1);
-
+        
         for (const [index, prompt] of window.marascott.McBoaty_v5.message.prompts.entries()) {
             if (index_list.length == 0 || index_filtered.indexOf(index) > -1) {
-                const w = McBoatyWidgets.WRAPPER("tile "+index, index, prompt, window.marascott.McBoaty_v5.message.tiles[index], node);
+                const w = McBoatyWidgets.WRAPPER("tile "+index, index, prompt, window.marascott.McBoaty_v5.message.tiles[index], window.marascott.McBoaty_v5.message.denoises[index], node);
             }
         }
 
@@ -345,37 +475,14 @@ app.registerExtension({
 
             const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
-                window.marascott.McBoaty_v5.message = message;
 				const r = onExecuted?.apply?.(this, arguments);
 
-                this.widgets = this.widgets.filter(widget => {
-                    if (widget.type == "customtext") {
-                        widget.onRemove?.();
-                        return false;
-                    }
-                    return true;
-                });
+                window.marascott.McBoaty_v5.inputs.prompts = message.prompts_in || [];
+                window.marascott.McBoaty_v5.message.prompts = message.prompts_out || [];
+                window.marascott.McBoaty_v5.inputs.tiles = window.marascott.McBoaty_v5.message.tiles = message.tiles || [];
+                window.marascott.McBoaty_v5.inputs.denoises = window.marascott.McBoaty_v5.message.denoises = new Array(window.marascott.McBoaty_v5.message.prompts.length).fill('');
 
-                this.widgets = this.widgets.filter(widget => {
-                    if(widget.name === MaraScottMcBoatyNodeWidget.CLEAN.name) {
-                        widget.onRemove?.();
-                        return false;
-                    }
-                    return true;
-                });
-
-                MaraScottMcBoatyNodeWidget.setIndexInput(this)
-                MaraScottMcBoatyNodeWidget.setPromptInput(this)
-        
-				this.onResize?.(this.size);
-                this.graph.setDirtyCanvas(true, true);
-
-                MaraScottMcBoatyNodeWidget.setPrompterInputs(this)
-
-                MaraScottMcBoatyNodeWidget.setCleanSwitch(this)
-
-				this.onResize?.(this.size);
-                this.graph.setDirtyCanvas(true, true);
+                MaraScottMcBoatyNodeWidget.refresh(this);
 
 				return r;
 			};
@@ -391,7 +498,6 @@ app.registerExtension({
                     return true;
                 });
 
-                MaraScottMcBoatyNodeWidget.init(this);
                 this.onResize?.(this.size);
 
                 return r;

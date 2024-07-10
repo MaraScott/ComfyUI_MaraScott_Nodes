@@ -9,7 +9,7 @@
 
 import os
 import time
-import random
+import glob
 import torch
 import math
 from types import SimpleNamespace
@@ -630,12 +630,23 @@ class McBoaty_TilePrompter_v5():
     @classmethod    
     def fn(self, **kwargs):
         
+        
         self.id = kwargs.get('id', 0)
         input_prompts = kwargs.get('prompts', ["No prompt"])
         input_tiles = kwargs.get('tiles', (None, ) * len(input_prompts))
 
         self.init(self.id)
         
+        filename_prefix = "McBoaty" + "_temp_" + "tilePrompter" + "_id_" + self.id
+        search_pattern = os.path.join(self.output_dir, filename_prefix + '*')
+        files_to_delete = glob.glob(search_pattern)
+        for file_path in files_to_delete:
+            try:
+                os.remove(file_path)
+                # log(f"Deleted: {file_path}", None, None, "SUCCESS")
+            except Exception as e:
+                log(f"Error deleting {file_path}: {e}", None, None, "ERROR")        
+    
         _input_prompts = MS_Cache.get(self.cache_name, input_prompts)
         _input_prompts_edited = MS_Cache.get(self.cache_name_edited, input_prompts)
         
@@ -657,17 +668,21 @@ class McBoaty_TilePrompter_v5():
             input_prompts = _input_prompts_edited
 
         output_prompts_js = input_prompts
+        input_prompts_js = _input_prompts
         output_prompts = output_prompts_js
 
         results = list()
         for index, tile in enumerate(input_tiles):
-            filename_prefix = "McBoaty" + "_temp_" + ''.join(random.choice("abcdefghijklmnopqrstupvxyz") for x in range(5))
             full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir, tile.shape[1], tile.shape[0])
-            i = 255. * tile.cpu().numpy()
-            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-            metadata = None
             file = f"{filename}_{index:05}.png"
-            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=4)
+            file_path = os.path.join(full_output_folder, file)
+            
+            if not os.path.exists(file_path):
+                i = 255. * tile.cpu().numpy()
+                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+                metadata = None
+                img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=4)                
+
             results.append({
                 "filename": file,
                 "subfolder": subfolder,
@@ -676,7 +691,7 @@ class McBoaty_TilePrompter_v5():
             counter += 1
 
                     
-        return {"ui": {"prompts": output_prompts_js, "tiles": results}, "result": (output_prompts,)}
+        return {"ui": {"prompts_out": output_prompts_js, "prompts_in": input_prompts_js , "tiles": results}, "result": (output_prompts,)}
 
     @classmethod
     def init(self, id = 0):
@@ -684,6 +699,12 @@ class McBoaty_TilePrompter_v5():
         self.cache_name_edited = f'{self.cache_name}_edited'
         self.output_dir = folder_paths.get_temp_directory()
         
+@PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/get_input_prompts")
+async def get_input_prompts(request):
+    nodeId = request.query.get("node", None)
+    cache_name = f'input_prompts_{nodeId}'
+    input_prompts = MS_Cache.get(cache_name, [])
+    return web.json_response({ "prompts_in": input_prompts })
     
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/set_prompt")
 async def set_prompt(request):
@@ -701,6 +722,23 @@ async def set_prompt(request):
         _input_prompts_edited = tuple(_input_prompts_edited_list)
         MS_Cache.set(cache_name_edited, _input_prompts_edited)
     return web.json_response(f"Tile {index} prompt has been updated\n{prompt}")
+
+@PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/set_denoise")
+async def set_denoise(request):
+    denoise = request.query.get("denoise", None)
+    index = int(request.query.get("index", -1))
+    nodeId = request.query.get("node", None)
+    # clientId = request.query.get("clientId", None)
+    cache_name = f'input_denoises_{nodeId}'
+    cache_name_edited = f'{cache_name}_edited'
+    _input_denoises = MS_Cache.get(cache_name, [])
+    _input_denoises_edited = MS_Cache.get(cache_name_edited, _input_denoises)
+    if _input_denoises_edited and index < len(_input_denoises_edited):
+        _input_denoises_edited_list = list(_input_denoises_edited)
+        _input_denoises_edited_list[index] = denoise
+        _input_denoises_edited = tuple(_input_denoises_edited_list)
+        MS_Cache.set(cache_name_edited, _input_denoises_edited)
+    return web.json_response(f"Tile {index} denoise has been updated\n{denoise}")
 
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/tile_prompt")
 async def tile_prompt(request):
