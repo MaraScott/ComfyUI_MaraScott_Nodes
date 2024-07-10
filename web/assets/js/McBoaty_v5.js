@@ -292,6 +292,7 @@ class MaraScottMcBoatyNodeWidget {
 
                     });
                     this.setValue(node, this.PROMPT.name, this.PROMPT.default);
+
 				},
 				{}
 			)
@@ -347,6 +348,7 @@ class MaraScottMcBoatyNodeWidget {
 
                         });
                         this.setValue(node, this.DENOISE.name, this.DENOISE.prepend_values[0]);
+
                     }
 
 				},

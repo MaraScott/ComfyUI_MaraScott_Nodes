@@ -615,6 +615,7 @@ class McBoaty_TilePrompter_v5():
                 "pipe": ("MC_PROMPTY_PIPE_IN", {"label": "McPrompty Pipe" }),
             },
             "optional": {
+                "requeue (change to force)": ("INT", {"default": 0, "min": 0, "max": 99999999999, "step": 1}),                
                 **NodePrompt.ENTRIES,
             }
         }
