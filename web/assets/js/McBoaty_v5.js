@@ -120,13 +120,15 @@ class MaraScottMcBoatyNodePrompter {
 		window.marascott.McBoaty_v5.clean = false
 
         const cleanedLabel = " ... cleaned"
-		node.title = node.title + cleanedLabel
+        const nodeTitle = node.title
+		node.title = nodeTitle + cleanedLabel
         
-        const res = await (await fetch(`/MaraScott/McBoaty/v4/get_input_prompts?node=${node.id}`)).json();
+        const res_prompts = await (await fetch(`/MaraScott/McBoaty/v4/get_input_prompts?node=${node.id}`)).json();
+        const res_denoises = await (await fetch(`/MaraScott/McBoaty/v4/get_input_denoises?node=${node.id}`)).json();
 
-        window.marascott.McBoaty_v5.message.prompts = window.marascott.McBoaty_v5.inputs.prompts = res.prompts_in;
+        window.marascott.McBoaty_v5.message.prompts = window.marascott.McBoaty_v5.inputs.prompts = res_prompts.prompts_in;
+        window.marascott.McBoaty_v5.inputs.denoises = window.marascott.McBoaty_v5.message.denoises = res_denoises.denoises_in;
         window.marascott.McBoaty_v5.message.tiles = window.marascott.McBoaty_v5.inputs.tiles;
-        window.marascott.McBoaty_v5.inputs.denoises = window.marascott.McBoaty_v5.message.denoises = new Array(window.marascott.McBoaty_v5.message.prompts.length).fill('');
         MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.INDEX.name, MaraScottMcBoatyNodeWidget.INDEX.default);
         MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.PROMPT.name, MaraScottMcBoatyNodeWidget.PROMPT.default);
         MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.DENOISE.name, MaraScottMcBoatyNodeWidget.DENOISE.prepend_values[0]);
@@ -151,7 +153,7 @@ class MaraScottMcBoatyNodePrompter {
         MaraScottMcBoatyNodeWidget.refresh(node);
 		setTimeout(() => {
 			// Remove " (cleaned)" from the title
-			node.title = node.title.replace(cleanedLabel, "");
+			node.title = nodeTitle;
 		}, 500);
 
 	}
@@ -479,8 +481,9 @@ app.registerExtension({
 
                 window.marascott.McBoaty_v5.inputs.prompts = message.prompts_in || [];
                 window.marascott.McBoaty_v5.message.prompts = message.prompts_out || [];
+                window.marascott.McBoaty_v5.inputs.denoises = message.denoises_in || [];
+                window.marascott.McBoaty_v5.message.denoises = message.denoises_out || [];
                 window.marascott.McBoaty_v5.inputs.tiles = window.marascott.McBoaty_v5.message.tiles = message.tiles || [];
-                window.marascott.McBoaty_v5.inputs.denoises = window.marascott.McBoaty_v5.message.denoises = new Array(window.marascott.McBoaty_v5.message.prompts.length).fill('');
 
                 MaraScottMcBoatyNodeWidget.refresh(this);
 

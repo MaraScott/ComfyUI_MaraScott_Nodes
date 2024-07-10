@@ -634,9 +634,54 @@ class McBoaty_TilePrompter_v5():
         self.id = kwargs.get('id', 0)
         input_prompts = kwargs.get('prompts', ["No prompt"])
         input_tiles = kwargs.get('tiles', (None, ) * len(input_prompts))
+        input_denoises = (None, ) * len(input_prompts)
 
         self.init(self.id)
         
+        _input_prompts = MS_Cache.get(self.cache_prompt, input_prompts)
+        _input_prompts_edited = MS_Cache.get(self.cache_prompt_edited, input_prompts)
+        _input_denoises = MS_Cache.get(self.cache_denoise, input_denoises)
+        _input_denoises_edited = MS_Cache.get(self.cache_denoise_edited, input_denoises)
+        
+        refresh = False
+        
+        if not MS_Cache.isset(self.cache_denoise):
+            _input_denoises = input_denoises
+            MS_Cache.set(self.cache_denoise, _input_denoises)
+        if not MS_Cache.isset(self.cache_prompt) or _input_prompts != input_prompts:
+            _input_prompts = input_prompts
+            MS_Cache.set(self.cache_prompt, _input_prompts)
+            _input_denoises = input_denoises
+            MS_Cache.set(self.cache_denoise, input_denoises)
+            refresh = True
+
+        if not MS_Cache.isset(self.cache_denoise_edited) or refresh:
+            _input_denoises_edited = input_denoises
+            MS_Cache.set(self.cache_denoise_edited, _input_denoises_edited)
+        if not MS_Cache.isset(self.cache_prompt_edited) or refresh:
+            _input_prompts_edited = input_prompts
+            MS_Cache.set(self.cache_prompt_edited, _input_prompts_edited)
+            _input_denoises_edited = input_denoises
+            MS_Cache.set(self.cache_denoise_edited, _input_denoises_edited)
+        elif len(_input_prompts_edited) != len(_input_prompts):
+            _input_prompts_edited = [gp if gp is not None else default_gp for gp, default_gp in zip(_input_prompts_edited, input_prompts)]
+            MS_Cache.set(self.cache_prompt_edited, _input_prompts_edited)
+            _input_denoises_edited = [gp if gp is not None else default_gp for gp, default_gp in zip(_input_denoises_edited, input_denoises)]
+            MS_Cache.set(self.cache_denoise_edited, _input_denoises_edited)
+
+        if _input_denoises_edited != _input_denoises:
+            input_denoises = _input_denoises_edited
+        if _input_prompts_edited != _input_prompts:
+            input_prompts = _input_prompts_edited
+
+        output_prompts_js = input_prompts
+        input_prompts_js = _input_prompts
+        output_prompts = output_prompts_js
+        output_denoises_js = input_denoises
+        input_denoises_js = _input_denoises
+        output_denoises = output_denoises_js
+
+        results = list()
         filename_prefix = "McBoaty" + "_temp_" + "tilePrompter" + "_id_" + self.id
         search_pattern = os.path.join(self.output_dir, filename_prefix + '*')
         files_to_delete = glob.glob(search_pattern)
@@ -646,32 +691,7 @@ class McBoaty_TilePrompter_v5():
                 # log(f"Deleted: {file_path}", None, None, "SUCCESS")
             except Exception as e:
                 log(f"Error deleting {file_path}: {e}", None, None, "ERROR")        
-    
-        _input_prompts = MS_Cache.get(self.cache_name, input_prompts)
-        _input_prompts_edited = MS_Cache.get(self.cache_name_edited, input_prompts)
-        
-        refresh = False
-        
-        if not MS_Cache.isset(self.cache_name) or _input_prompts != input_prompts:
-            _input_prompts = input_prompts
-            MS_Cache.set(self.cache_name, _input_prompts)
-            refresh = True
-
-        if not MS_Cache.isset(self.cache_name_edited) or refresh:
-            _input_prompts_edited = input_prompts
-            MS_Cache.set(self.cache_name_edited, _input_prompts_edited)
-        elif len(_input_prompts_edited) != len(_input_prompts):
-            _input_prompts_edited = [gp if gp is not None else default_gp for gp, default_gp in zip(_input_prompts_edited, input_prompts)]
-            MS_Cache.set(self.cache_name_edited, _input_prompts_edited)
-
-        if _input_prompts_edited != _input_prompts:
-            input_prompts = _input_prompts_edited
-
-        output_prompts_js = input_prompts
-        input_prompts_js = _input_prompts
-        output_prompts = output_prompts_js
-
-        results = list()
+            
         for index, tile in enumerate(input_tiles):
             full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir, tile.shape[1], tile.shape[0])
             file = f"{filename}_{index:05}.png"
@@ -691,12 +711,20 @@ class McBoaty_TilePrompter_v5():
             counter += 1
 
                     
-        return {"ui": {"prompts_out": output_prompts_js, "prompts_in": input_prompts_js , "tiles": results}, "result": (output_prompts,)}
+        return {"ui": {
+            "prompts_out": output_prompts_js, 
+            "prompts_in": input_prompts_js , 
+            "denoises_out": output_denoises_js, 
+            "denoises_in": input_denoises_js , 
+            "tiles": results
+        }, "result": (output_prompts, output_denoises)}
 
     @classmethod
     def init(self, id = 0):
-        self.cache_name = f'input_prompts_{id}'
-        self.cache_name_edited = f'{self.cache_name}_edited'
+        self.cache_prompt = f'input_prompts_{id}'
+        self.cache_prompt_edited = f'{self.cache_prompt}_edited'
+        self.cache_denoise = f'input_denoises_{id}'
+        self.cache_denoise_edited = f'{self.cache_denoise}_edited'
         self.output_dir = folder_paths.get_temp_directory()
         
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/get_input_prompts")
@@ -705,6 +733,13 @@ async def get_input_prompts(request):
     cache_name = f'input_prompts_{nodeId}'
     input_prompts = MS_Cache.get(cache_name, [])
     return web.json_response({ "prompts_in": input_prompts })
+    
+@PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/get_input_denoises")
+async def get_input_denoises(request):
+    nodeId = request.query.get("node", None)
+    cache_name = f'input_denoises_{nodeId}'
+    input_denoises = MS_Cache.get(cache_name, [])
+    return web.json_response({ "denoises_in": input_denoises })
     
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v4/set_prompt")
 async def set_prompt(request):
