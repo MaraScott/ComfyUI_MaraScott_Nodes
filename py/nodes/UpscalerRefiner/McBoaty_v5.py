@@ -101,20 +101,17 @@ class McBoaty_Upscaler_v5():
 
     RETURN_TYPES = (
         "MC_BOATY_PIPE", 
-        "STRING",
-        "IMAGE",
+        "MC_PROMPTY_PIPE_IN",
         "STRING",
     )
     
     RETURN_NAMES = (
         "McBoaty Pipe",
-        "prompts", 
-        "tiles (Upscaled)",
+        "McPrompty Pipe",
         "info", 
     )
     
     OUTPUT_IS_LIST = (
-        False,
         False,
         False,
         False,
@@ -166,8 +163,10 @@ class McBoaty_Upscaler_v5():
                 self.KSAMPLER,
                 self.OUTPUTS,
             ),
-            self.OUTPUTS.grid_prompts,
-            output_tiles,
+            (
+                self.OUTPUTS.grid_prompts,
+                output_tiles,
+            ),
             output_info
         )
         
@@ -346,13 +345,13 @@ class McBoaty_Refiner_v5():
 
             },
             "optional": {
-                "tiles": ("IMAGE", {"label": "Tiles" }),
-                "prompts": ("STRING", {"label": "Prompts", "forceInput": True }),
+                "pipe_prompty": ("MC_PROMPTY_PIPE_OUT", {"label": "McPrompty Pipe" }),
             }
         }
 
     RETURN_TYPES = (
         "MC_BOATY_PIPE", 
+        "MC_PROMPTY_PIPE_IN", 
         "IMAGE", 
         "IMAGE", 
         "STRING",
@@ -362,6 +361,7 @@ class McBoaty_Refiner_v5():
     
     RETURN_NAMES = (
         "McBoaty Pipe", 
+        "McPrompty Pipe", 
         "image", 
         "tiles", 
         "prompts", 
@@ -370,6 +370,7 @@ class McBoaty_Refiner_v5():
     )
     
     OUTPUT_IS_LIST = (
+        False,
         False,
         False,
         False,
@@ -399,12 +400,14 @@ class McBoaty_Refiner_v5():
         OUTPUTS = self.OUTPUTS
         
         PARAMS.grid_prompts, OUTPUTS.output_image, OUTPUTS.output_tiles, OUTPUTS.grid_tiles_to_process = self.refine(self.OUTPUTS.image, "Upscaling")
-                    
+        
         end_time = time.time()
 
         output_info = self._get_info(
             int(end_time - start_time)
         )
+        
+        output_tiles = torch.cat(self.OUTPUTS.grid_images),
 
         log("McBoaty (Refiner) is done with its magic")
         
@@ -414,6 +417,10 @@ class McBoaty_Refiner_v5():
                 PARAMS,
                 KSAMPLER,
                 OUTPUTS,
+            ),
+            (
+                self.OUTPUTS.grid_prompts,
+                output_tiles,
             ),            
             OUTPUTS.output_image, 
             OUTPUTS.output_tiles, 
@@ -461,20 +468,8 @@ class McBoaty_Refiner_v5():
             self.CONTROLNET.path = folder_paths.get_full_path("controlnet", self.CONTROLNET.name)
             self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)
             
-        grid_images = kwargs.get('tiles', (None,) * len(self.OUTPUTS.grid_images))
-        if len(grid_images) != len(self.OUTPUTS.grid_images):
-            grid_images = [gp if gp is not None else default_gp for gp, default_gp in zip(grid_images, self.OUTPUTS.grid_images)]
-        grid_images = list(grid_images)
-        for i, image in enumerate(grid_images):
-            if image is None:
-                grid_images[i] = image = self.OUTPUTS.grid_images[i]
-            if len(image.shape) == 3:
-                grid_images[i] = image = image.unsqueeze(0)
-            if len(self.OUTPUTS.grid_images[i].shape) == 3:
-                self.OUTPUTS.grid_images[i] = self.OUTPUTS.grid_images[i].unsqueeze(0)
-        self.OUTPUTS.grid_images = tuple(grid_images)
-
-        grid_prompts = kwargs.get('prompts', (None,) * len(self.OUTPUTS.grid_prompts))
+        grid_prompts, grid_denoises = kwargs.get('pipe_prompty', (None, None))
+            
         if len(grid_prompts) != len(self.OUTPUTS.grid_prompts):
             grid_prompts = [gp if gp is not None else default_gp for gp, default_gp in zip(grid_prompts, self.OUTPUTS.grid_prompts)]
         grid_prompts = list(grid_prompts)
@@ -482,6 +477,16 @@ class McBoaty_Refiner_v5():
             if prompt is None:
                 grid_prompts[i] = self.OUTPUTS.grid_prompts[i]
         self.OUTPUTS.grid_prompts = grid_prompts
+
+        if len(grid_denoises) != len(self.OUTPUTS.grid_prompts):
+            grid_denoises = [gp if gp is not None else default_gp for gp, default_gp in zip(grid_denoises, (None,) * len(self.OUTPUTS.grid_prompts))]
+        grid_denoises = list(grid_denoises)
+        for i, denoise in enumerate(grid_denoises):
+            if denoise == "":
+                grid_denoises[i] = self.KSAMPLER.denoise
+            else:
+                grid_denoises[i] = float(grid_denoises[i])
+        self.OUTPUTS.grid_denoises = grid_denoises
         
     @classmethod    
     def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, ays_model_type):
@@ -535,11 +540,19 @@ class McBoaty_Refiner_v5():
         for index, latent_image in enumerate(grid_latents):
             latent_output = None
             if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
+
                 positive = self.KSAMPLER.positive
                 negative = self.KSAMPLER.negative
-                if self.PARAMS.tile_prompting_active:
-                    log(f"tile {index + 1}/{total} : {self.OUTPUTS.grid_prompts[index]}", None, None, f"ClipTextEncoding {iteration}")
-                    positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
+
+                sigmas = self.KSAMPLER.sigmas
+                if self.OUTPUTS.grid_denoises[index] != self.KSAMPLER.denoise:
+                    denoise = self.OUTPUTS.grid_denoises[index]
+                    sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.OUTPUTS.grid_denoises[index], self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
+                else:
+                    denoise = self.KSAMPLER.denoise
+                    
+                log(f"tile {index + 1}/{total} : {denoise} / {self.OUTPUTS.grid_prompts[index]}", None, None, f"Denoise/ClipTextEncoding {iteration}")
+                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
                 if self.CONTROLNET.controlnet is not None:
                     log(f"tile {index + 1}/{total}", None, None, f"Canny {iteration}")
                     canny_image = Canny().detect_edge(self.OUTPUTS.grid_images[index], self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
@@ -555,7 +568,7 @@ class McBoaty_Refiner_v5():
                     positive, 
                     negative, 
                     self.KSAMPLER.sampler, 
-                    self.KSAMPLER.sigmas, 
+                    sigmas, 
                     latent_image
                 )[0]
             grid_latent_outputs.append(latent_output)
@@ -598,12 +611,8 @@ class McBoaty_TilePrompter_v5():
             "hidden": {
                 "id":"UNIQUE_ID",
             },
-            "required":{
-                "tiles": ("IMAGE", {"label": "Tiles" }),
-                # "prompter": ("STRING", {"label": "Prompt (edit selected tiles)", "default": "" }),
-                # "tiles_index": ("STRING", {"label": "Indexes", "default": "" }),
-                "prompts": ("STRING", {"label": "Prompts" , "forceInput": True }),
-                # "prompts": ("MC_BOATY_PROMPT_PIPE", {"label": "Prompts" }),
+            "required":{    
+                "pipe": ("MC_PROMPTY_PIPE_IN", {"label": "McPrompty Pipe" }),
             },
             "optional": {
                 **NodePrompt.ENTRIES,
@@ -611,11 +620,11 @@ class McBoaty_TilePrompter_v5():
         }
 
     RETURN_TYPES = (
-        "STRING",
+        "MC_PROMPTY_PIPE_OUT",
     )
     
     RETURN_NAMES = (
-        "prompts",
+        "McPrompty Pipe",
     )
     
     OUTPUT_IS_LIST = (
@@ -632,9 +641,8 @@ class McBoaty_TilePrompter_v5():
         
         
         self.id = kwargs.get('id', 0)
-        input_prompts = kwargs.get('prompts', ["No prompt"])
-        input_tiles = kwargs.get('tiles', (None, ) * len(input_prompts))
-        input_denoises = (None, ) * len(input_prompts)
+        input_prompts, input_tiles = kwargs.get('pipe', (None, None))
+        input_denoises = ('', ) * len(input_prompts)
 
         self.init(self.id)
         
@@ -716,8 +724,8 @@ class McBoaty_TilePrompter_v5():
             "prompts_in": input_prompts_js , 
             "denoises_out": output_denoises_js, 
             "denoises_in": input_denoises_js , 
-            "tiles": results
-        }, "result": (output_prompts, output_denoises)}
+            "tiles": results,
+        }, "result": ((output_prompts, output_denoises),)}
 
     @classmethod
     def init(self, id = 0):
