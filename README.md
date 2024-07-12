@@ -156,7 +156,7 @@ I would like to thank my [AI Classroom Discord](discord.gg/t28yZEewrp) buddies w
 
 ### McBoaty
 
-- [Rob Adams](https://www.youtube.com/@robadams2451) AKA Treeshark who provided the workflow in the first place which I converted into a ComfyUI Node, you can find his original workflow presentation in his YouTube video: [Advanced UpScaling in ComfyUI](https://www.youtube.com/watch?v=HStp7u682mE),
+- [Rob Adams](https://www.youtube.com/@robadams2451) AKA Treeshark who provided the workflow in the first place which I converted into a ComfyUI Node, you can find his original workflow presentation in his YouTube video: [Advanced UpScaling in ComfyUI](https://youtu.be/HStp7u682mE?si=dN-91k7H_JGjhufL),
 - DrLtData with his [ImpactPack](https://github.com/ltdrdata/ComfyUI-Impact-Pack),
 - Kijai with his [ColorMatch node](https://github.com/kijai/ComfyUI-KJNodes/blob/main/nodes/image_nodes.py)
 
