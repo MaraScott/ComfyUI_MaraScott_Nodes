@@ -9,6 +9,11 @@ if (!window.marascott.McBoaty_v5) {
 	window.marascott.McBoaty_v5 = {
 		init: false,
 		clean: false,
+        params: {
+            denoise: {
+                values: [],
+            }
+        },
         message: {
             prompts: [],
             tiles: [],
@@ -22,7 +27,6 @@ if (!window.marascott.McBoaty_v5) {
 	}
 }
 
-
 function imageDataToUrl(data) {
     return api.apiURL(`/view?filename=${encodeURIComponent(data.filename)}&type=${data.type}&subfolder=${data.subfolder}${app.getPreviewFormatParam()}${app.getRandParam()}`);
 }
@@ -34,6 +38,34 @@ function clearProcessedFlag() {
 }
 
 export const McBoatyWidgets = {
+
+    validateDenoiseValue: (value) => {
+        if (value === '') {
+            return true;
+        }
+        // Try to convert the value to a float
+        let num = parseFloat(value);
+        // Check if the conversion was successful and the number is between 0.00 and 1.00
+        return !isNaN(num) && num >= 0.00 && num <= 1.00;
+    },
+
+    formatDenoiseValue: (value) => {
+
+        if (value === '') {
+            return value;
+        }
+
+        // Convert the value to a string to check and modify
+        let strValue = value.toString();
+        
+        // If the string starts with a decimal point, prepend a zero
+        if (strValue.startsWith('.')) {
+            strValue = '0' + strValue;
+        }
+        
+        // Convert the string back to a float
+        return parseFloat(strValue).toFixed(2);
+    },
 
     WRAPPER: (key, index, prompt, tile, denoise, node) => {
 
@@ -60,9 +92,13 @@ export const McBoatyWidgets = {
         textarea.dataNodeId = node.id;
 
         textarea.addEventListener('focusout', async function() {
-            const res = await (await fetch(`/MaraScott/McBoaty/v4/set_prompt?index=${index}&prompt=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
-            // You can add more functionality here that should run when the input loses focus
-            
+            this.value = this.value.trim()
+            if(window.marascott.McBoaty_v5.message.prompts[index] != this.value) {
+                window.marascott.McBoaty_v5.message.prompts[index] = this.value;
+                const res = await (await fetch(`/MaraScott/McBoaty/v5/set_prompt?index=${index}&prompt=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
+                const nodeWidget = MaraScottMcBoatyNodeWidget.getByName(node, 'requeue');
+                MaraScottMcBoatyNodeWidget.setValue(node, 'requeue', ++nodeWidget.value);
+            }
         });
 
         const input = document.createElement("input");
@@ -76,9 +112,18 @@ export const McBoatyWidgets = {
         input.dataId = "tile "+index;
         input.dataNodeId = node.id;
         input.addEventListener('focusout', async function() {
-            const res = await (await fetch(`/MaraScott/McBoaty/v4/set_denoise?index=${index}&denoise=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
-            // You can add more functionality here that should run when the input loses focus
-            
+            this.value = this.value.trim()
+            if (! McBoatyWidgets.validateDenoiseValue(this.value)) {
+                this.value = '';
+            } else {
+                this.value = McBoatyWidgets.formatDenoiseValue(this.value);
+            }
+            if(window.marascott.McBoaty_v5.message.denoises[index] != this.value) {
+                window.marascott.McBoaty_v5.message.denoises[index] = this.value;
+                const res = await (await fetch(`/MaraScott/McBoaty/v5/set_denoise?index=${index}&denoise=${this.value}&node=${this.dataNodeId}&clientId=${api.clientId}`)).json();
+                const nodeWidget = MaraScottMcBoatyNodeWidget.getByName(node, 'requeue');
+                MaraScottMcBoatyNodeWidget.setValue(node, 'requeue', ++nodeWidget.value);
+            }
         });
         
         var img = document.createElement('img');
@@ -123,15 +168,17 @@ class MaraScottMcBoatyNodePrompter {
         const nodeTitle = node.title
 		node.title = nodeTitle + cleanedLabel
         
-        const res_prompts = await (await fetch(`/MaraScott/McBoaty/v4/get_input_prompts?node=${node.id}`)).json();
-        const res_denoises = await (await fetch(`/MaraScott/McBoaty/v4/get_input_denoises?node=${node.id}`)).json();
+        const res_prompts = await (await fetch(`/MaraScott/McBoaty/v5/get_input_prompts?node=${node.id}`)).json();
+        const res_denoises = await (await fetch(`/MaraScott/McBoaty/v5/get_input_denoises?node=${node.id}`)).json();
 
         window.marascott.McBoaty_v5.message.prompts = window.marascott.McBoaty_v5.inputs.prompts = res_prompts.prompts_in;
         window.marascott.McBoaty_v5.inputs.denoises = window.marascott.McBoaty_v5.message.denoises = res_denoises.denoises_in;
         window.marascott.McBoaty_v5.message.tiles = window.marascott.McBoaty_v5.inputs.tiles;
         MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.INDEX.name, MaraScottMcBoatyNodeWidget.INDEX.default);
         MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.PROMPT.name, MaraScottMcBoatyNodeWidget.PROMPT.default);
-        MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.DENOISE.name, MaraScottMcBoatyNodeWidget.DENOISE.prepend_values[0]);
+        MaraScottMcBoatyNodeWidget.setValue(node, MaraScottMcBoatyNodeWidget.DENOISE.name, MaraScottMcBoatyNodeWidget.DENOISE.default);
+        MaraScottMcBoatyNodeWidget.setValue(node, 'requeue', 0);
+
         node.widgets = node.widgets.filter(widget => {
             const focusOutEvent = new Event('focusout');
             if (widget.type == "customtext") {
@@ -172,8 +219,8 @@ class MaraScottMcBoatyNodeWidget {
 	}
 	static DENOISE = {
 		name: "Denoise",
-        prepend_values: ['unchanged', 'Use Global Denoise'],
-		default: "Use Global Denoise",
+        values: ['unchanged', 'Use Global Denoise'],
+		default: "unchanged",
 		min: 0.00,
 		max: 1.00,
 		step: 0.01,
@@ -247,7 +294,7 @@ class MaraScottMcBoatyNodeWidget {
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
 					this.setValue(node, this.INDEX.name, value);
                     this.setValue(node, this.PROMPT.name, this.PROMPT.default);
-                    this.setValue(node, this.DENOISE.name, this.DENOISE.prepend_values[0]);
+                    this.setValue(node, this.DENOISE.name, this.DENOISE.default);
                     this.refresh(node);
 				},
 				{}
@@ -260,14 +307,14 @@ class MaraScottMcBoatyNodeWidget {
     static setPromptInput(node) {
 
 		const nodeWidget = this.getByName(node, this.PROMPT.name);
-
+        
 		if (nodeWidget == undefined) {
-			node.addWidget(
-				"text",
+            node.addWidget(
+                "text",
 				this.PROMPT.name,
 				this.PROMPT.default,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-					this.setValue(node, this.PROMPT.name, value);
+                    this.setValue(node, this.PROMPT.name, value);
                     
                     const input_list = node.properties[this.INDEX.name] ?? this.INDEX.default;
                     node.widgets = node.widgets.filter(widget => {
@@ -282,7 +329,6 @@ class MaraScottMcBoatyNodeWidget {
                                 const realIndexValue = indexValue - 1;
                                 const indexFound = index_filtered.indexOf(indexValue - 1);
                                 if((input_list != "" && indexFound > -1) || input_list == "") {
-                                    window.marascott.McBoaty_v5.message.prompts[realIndexValue] = value;
                                     textarea.value = value;
                                     textarea.dispatchEvent(focusOutEvent);
                                 }
@@ -307,19 +353,11 @@ class MaraScottMcBoatyNodeWidget {
 
 		if (nodeWidget == undefined) {
 
-			let values = this.DENOISE.prepend_values
-
-			for (let i = this.DENOISE.min; i <= this.DENOISE.max; i = parseFloat((i + this.DENOISE.step).toFixed(2))) {
-				values.push(i);
-			}
-
 			node.addWidget(
 				"combo",
 				this.DENOISE.name,
-				this.DENOISE.prepend_values[0],
+				this.DENOISE.default,
 				(value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-
-                    
                     this.setValue(node, this.DENOISE.name, value);
                     
                     if (value != "unchanged") {
@@ -338,7 +376,6 @@ class MaraScottMcBoatyNodeWidget {
                                     const realIndexValue = indexValue - 1;
                                     const indexFound = index_filtered.indexOf(indexValue - 1);
                                     if((input_list != "" && indexFound > -1) || input_list == "") {
-                                        window.marascott.McBoaty_v5.message.denoises[realIndexValue] = value;
                                         input.value = value;
                                         input.dispatchEvent(focusOutEvent);
                                     }
@@ -347,16 +384,16 @@ class MaraScottMcBoatyNodeWidget {
                             return true;
 
                         });
-                        this.setValue(node, this.DENOISE.name, this.DENOISE.prepend_values[0]);
-
+                        this.setValue(node, this.DENOISE.name, this.DENOISE.default);
+    
                     }
 
 				},
 				{
-					"values": values
+					"values": window.marascott.McBoaty_v5.params.denoise.values
 				}
 			)
-			this.setValue(node, this.INDEX.name, this.INDEX.default)
+			this.setValue(node, this.DENOISE.name, this.DENOISE.default)
 		}
 
 	}
@@ -386,10 +423,10 @@ class MaraScottMcBoatyNodeWidget {
         let index_list = (node.properties[this.INDEX.name] ?? this.INDEX.default).trim().split(",");
 		index_list = (index_list.length === 1 && index_list[0] === '') ? [] : index_list;
         const index_filtered = index_list.map(num => Number(num) - 1);
-        
-        for (const [index, prompt] of window.marascott.McBoaty_v5.message.prompts.entries()) {
+
+        for (const [index] of window.marascott.McBoaty_v5.message.prompts.entries()) {
             if (index_list.length == 0 || index_filtered.indexOf(index) > -1) {
-                const w = McBoatyWidgets.WRAPPER("tile "+index, index, prompt, window.marascott.McBoaty_v5.message.tiles[index], window.marascott.McBoaty_v5.message.denoises[index], node);
+                const w = McBoatyWidgets.WRAPPER("tile "+index, index, window.marascott.McBoaty_v5.message.prompts[index], window.marascott.McBoaty_v5.message.tiles[index], window.marascott.McBoaty_v5.message.denoises[index], node);
             }
         }
 
@@ -397,6 +434,12 @@ class MaraScottMcBoatyNodeWidget {
     }
 
 }
+
+window.marascott.McBoaty_v5.params.denoise.values = MaraScottMcBoatyNodeWidget.DENOISE.values;
+for (let i = MaraScottMcBoatyNodeWidget.DENOISE.min; i <= MaraScottMcBoatyNodeWidget.DENOISE.max; i = parseFloat((i + MaraScottMcBoatyNodeWidget.DENOISE.step).toFixed(2))) {
+    window.marascott.McBoaty_v5.params.denoise.values.push(i.toFixed(2));
+}
+
 
 class McBoaty_v5 {
 	constructor() {
@@ -504,6 +547,8 @@ app.registerExtension({
                     }
                     return true;
                 });
+
+                MaraScottMcBoatyNodeWidget.init(this);
 
                 this.onResize?.(this.size);
 
