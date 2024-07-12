@@ -21,8 +21,8 @@ WEB_DIRECTORY = "./web/assets/js"
 
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
+
     "MaraScottAnyBus_v2": AnyBus_v2,
-    "MaraScottDisplayInfo_v1": DisplayInfoNode_v1,
     "UpscalerRefiner_McBoaty_v5": UpscalerRefiner_McBoaty_v5,
     "McBoaty_Upscaler_v5": McBoaty_Upscaler_v5,
     "McBoaty_TilePrompter_v5": McBoaty_TilePrompter_v5,
@@ -33,7 +33,9 @@ NODE_CLASS_MAPPINGS = {
     "MaraScottUpscalerRefinerNode_v3": UpscalerRefiner_McBoaty_v3,
     "MaraScottSetInpaintingByMask_v1": KSampler_setInpaintingTileByMask_v1,
     "MaraScottPasteInpaintingByMask_v1": KSampler_pasteInpaintingTileByMask_v1,
+
     "MaraScottPromptFromImage_v1": PromptFromImage_v1,
+    "MaraScottDisplayInfo_v1": DisplayInfoNode_v1,
 
     "MaraScott_Kijai_TokenCounter_v1": TokenCounter_v1,
 
@@ -46,7 +48,6 @@ NODE_CLASS_MAPPINGS = {
 # active : \ud83d\udc30
 # deprecated : \u274C
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "MaraScottAnyBus_v2": "\ud83d\udc30 AnyBus - UniversalBus v2 /*",
     "MaraScottDisplayInfo_v1": "\ud83d\udc30 Display Info - Text v1 /i",
     "MaraScottUpscalerRefinerNode_v3": "\ud83d\udc30 Large Refiner - McBoaty v3 /u",
     "McBoaty_Upscaler_v5": "\ud83d\udc30 Upscaler - McBoaty [1/3] v5 /u",
@@ -58,7 +59,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "UpscalerRefiner_McBoaty_v5": "\ud83d\udc30 Large Refiner - McBoaty [1/3] v5 /u",
     "MaraScottSetInpaintingByMask_v1": "\ud83d\udc30 Set Inpainting Tile by mask - McInpainty [1/2] v1 /m",
     "MaraScottPasteInpaintingByMask_v1": "\ud83d\udc30 Paste Inpainting Tile by mask - McInpainty [2/2] v1 /m",
+
     "MaraScottPromptFromImage_v1": "\ud83d\udc30 Prompt From Image - McPrompty v1 /p",
+    "MaraScottAnyBus_v2": "\ud83d\udc30 AnyBus - UniversalBus v2 /*",
 
     "MaraScott_Kijai_TokenCounter_v1": "\ud83d\udc30 TokenCounter (from kijai/ComfyUI-KJNodes) /v",
 
