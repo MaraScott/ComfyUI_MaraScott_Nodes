@@ -577,6 +577,9 @@ class McBoaty_Refiner_v4():
 
         if self.PARAMS.color_match_method != 'none':
             output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
+            
+        if not self.PARAMS.upscale_size_type:
+            output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), False)[0]
 
         _tiles_order = tuple(output for _, output, _ in tiles_order)
         tiles_order.sort(key=lambda x: x[0])
