@@ -312,7 +312,7 @@ class McBoaty_Refiner_v4():
     AYS_MODEL_TYPES = list(AYS_MODEL_TYPE_SIZES.keys())
 
     CONTROLNETS = folder_paths.get_filename_list("controlnet")
-    CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if 'canny' in controlnet_name.lower()]
+    CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
     
     @classmethod
     def INPUT_TYPES(self):
