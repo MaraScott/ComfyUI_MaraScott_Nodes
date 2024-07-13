@@ -234,7 +234,7 @@ class UpscalerRefiner_McBoaty_v3():
         self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
 
         self.CONTROLNET = SimpleNamespace(
-            name = kwargs.get('control_net_name', None),
+            name = kwargs.get('control_net_name', 'None'),
             path = None,
             controlnet = None,
             low_threshold = kwargs.get('low_threshold', None),

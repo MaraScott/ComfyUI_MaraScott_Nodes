@@ -341,8 +341,6 @@ class McBoaty_Refiner_v5():
                 "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.4, "min": 0.0, "max": 10.0, "step": 0.01}),
                 "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001})
-                
-
             },
             "optional": {
                 "pipe_prompty": ("MC_PROMPTY_PIPE_OUT", {"label": "McPrompty Pipe" }),
@@ -455,7 +453,7 @@ class McBoaty_Refiner_v5():
         self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
 
         self.CONTROLNET = SimpleNamespace(
-            name = kwargs.get('control_net_name', None),
+            name = kwargs.get('control_net_name', 'None'),
             path = None,
             controlnet = None,
             low_threshold = kwargs.get('low_threshold', None),
@@ -1000,6 +998,9 @@ class UpscalerRefiner_McBoaty_v5():
         
     @classmethod
     def init(self, **kwargs):
+        for controlnet_name in self.CONTROLNETS:
+            if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower()):
+                log(controlnet_name, None, None, 'controlnet_name') 
         # Initialize the bus tuple with None values for each parameter
         self.INFO = SimpleNamespace(
             id = kwargs.get('id', None),
