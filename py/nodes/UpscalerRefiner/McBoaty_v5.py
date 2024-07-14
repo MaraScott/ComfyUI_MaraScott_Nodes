@@ -1219,3 +1219,96 @@ class UpscalerRefiner_McBoaty_v5():
         output_prompts = tuple(prompt for _, _, prompt in tiles_order)
 
         return output_image, output_tiles, output_prompts, grid_images, grid_specs, rows_qty, cols_qty
+
+class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
+    @classmethod
+    def INPUT_TYPES(self):
+        upscaler_inputs = McBoaty_Upscaler_v5.INPUT_TYPES()
+        refiner_inputs = McBoaty_Refiner_v5.INPUT_TYPES()
+        
+        # Merge and deduplicate inputs
+        combined_inputs = {**upscaler_inputs, **refiner_inputs}
+        combined_inputs['required'] = {**upscaler_inputs['required'], **refiner_inputs['required']}
+        combined_inputs['optional'] = {**upscaler_inputs.get('optional', {}), **refiner_inputs.get('optional', {})}
+        
+        return combined_inputs
+
+    RETURN_TYPES = (
+        "MC_BOATY_PIPE",
+        "MC_PROMPTY_PIPE_IN",
+        "IMAGE",
+        "IMAGE",
+        "STRING",
+        "IMAGE",
+        "STRING"
+    )
+    
+    RETURN_NAMES = (
+        "McBoaty Pipe",
+        "McPrompty Pipe",
+        "image",
+        "tiles",
+        "prompts",
+        "original_resized",
+        "info"
+    )
+    
+    OUTPUT_IS_LIST = (False,) * len(RETURN_TYPES)
+    
+    OUTPUT_NODE = True
+    CATEGORY = "MaraScott/upscaling"
+    DESCRIPTION = "An \"UPSCALER REFINER\" Node"
+    FUNCTION = "fn"
+
+    @classmethod
+    def fn(self, **kwargs):
+        start_time = time.time()
+
+        # Upscaling phase
+        upscaler_result = McBoaty_Upscaler_v5.fn(**kwargs)
+        upscaler_pipe, prompty_pipe, upscaler_info = upscaler_result
+
+        # Update kwargs with upscaler results for refiner
+        kwargs.update({
+            'pipe': upscaler_pipe,
+            'pipe_prompty': prompty_pipe
+        })
+
+        # Refining phase
+        refiner_result = McBoaty_Refiner_v5.fn(**kwargs)
+        refiner_pipe, refiner_prompty_pipe, output_image, output_tiles, grid_prompts, original_resized, refiner_info = refiner_result
+
+        end_time = time.time()
+        total_time = int(end_time - start_time)
+
+        # Combine info from both phases
+        combined_info = self._combine_info(upscaler_info, refiner_info, total_time)
+
+        return (
+            refiner_pipe,
+            refiner_prompty_pipe,
+            output_image,
+            output_tiles,
+            grid_prompts,
+            original_resized,
+            combined_info
+        )
+
+    @staticmethod
+    def _combine_info(upscaler_info, refiner_info, total_time):
+        # Implement logic to combine info from upscaler and refiner
+        combined_info = f"""
+Upscaler Info:
+{upscaler_info}
+
+Refiner Info:
+{refiner_info}
+
+Total Execution Time: {total_time} seconds
+"""
+        return combined_info
+
+    @classmethod
+    def init(self, **kwargs):
+        McBoaty_Upscaler_v5.init(**kwargs)
+        McBoaty_Refiner_v5.init(**kwargs)
