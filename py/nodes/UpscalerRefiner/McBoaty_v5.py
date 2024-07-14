@@ -974,7 +974,7 @@ class UpscalerRefiner_McBoaty_v5():
         )
         
         image = self.OUTPUTS.image
-        self.OUTPUTS.image = output_image
+        # self.OUTPUTS.image = output_image
 
         log("McBoaty (Upscaler/Refiner) is done with its magic")
         
