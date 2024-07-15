@@ -718,12 +718,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_bckcv_00029_.png&type=temp&subfolder=&rand=0.9174440819541141"
+            "url": "/view?filename=rgthree.compare._temp_flmid_00039_.png&type=temp&subfolder=&rand=0.3435772752152766"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_bckcv_00030_.png&type=temp&subfolder=&rand=0.43372153777623135"
+            "url": "/view?filename=rgthree.compare._temp_flmid_00040_.png&type=temp&subfolder=&rand=0.30735676867468364"
           }
         ]
       ]
@@ -1165,12 +1165,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_emiir_00033_.png&type=temp&subfolder=&rand=0.35478992189486935"
+            "url": "/view?filename=rgthree.compare._temp_spnex_00063_.png&type=temp&subfolder=&rand=0.07087332677792801"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_emiir_00034_.png&type=temp&subfolder=&rand=0.45308515927053805"
+            "url": "/view?filename=rgthree.compare._temp_spnex_00064_.png&type=temp&subfolder=&rand=0.9833900845004357"
           }
         ]
       ]
@@ -1344,149 +1344,6 @@
       "properties": {
         "Node name for S&R": "PreviewImage"
       }
-    },
-    {
-      "id": 356,
-      "type": "MaraScottMcBoatyTilePrompter_v5",
-      "pos": [
-        9960,
-        -640
-      ],
-      "size": {
-        "0": 319.20001220703125,
-        "1": 346
-      },
-      "flags": {},
-      "order": 45,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "pipe",
-          "type": "MC_PROMPTY_PIPE_IN",
-          "link": 927
-        }
-      ],
-      "outputs": [
-        {
-          "name": "McPrompty Pipe",
-          "type": "MC_PROMPTY_PIPE_OUT",
-          "links": [
-            946
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaraScottMcBoatyTilePrompter_v5",
-        "Filter by Indexes": "",
-        "Prompt": "",
-        "Denoise": "unchanged",
-        "Reset": false,
-        "02cad382bff54e1c8292346ec9eb5814": "a blue door leading to a room with a pink door "
-      },
-      "widgets_values": [
-        0,
-        "",
-        "",
-        "unchanged",
-        "a blue door leading to a room with a pink door "
-      ]
-    },
-    {
-      "id": 375,
-      "type": "MaraScottMcBoatyRefiner_v5",
-      "pos": [
-        10360,
-        -720
-      ],
-      "size": [
-        367.79998779296875,
-        750
-      ],
-      "flags": {},
-      "order": 48,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "pipe",
-          "type": "MC_BOATY_PIPE",
-          "link": 945
-        },
-        {
-          "name": "pipe_prompty",
-          "type": "MC_PROMPTY_PIPE_OUT",
-          "link": 946
-        }
-      ],
-      "outputs": [
-        {
-          "name": "McBoaty Pipe",
-          "type": "MC_BOATY_PIPE",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "McPrompty Pipe",
-          "type": "MC_PROMPTY_PIPE_IN",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "links": [
-            947
-          ],
-          "shape": 3,
-          "slot_index": 2
-        },
-        {
-          "name": "image (original)",
-          "type": "IMAGE",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "tiles",
-          "type": "IMAGE",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "prompts",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "info",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaraScottMcBoatyRefiner_v5"
-      },
-      "widgets_values": [
-        3,
-        true,
-        1,
-        "BasicScheduler",
-        "SD3",
-        "dpmpp_2m",
-        "sgm_uniform",
-        10,
-        2.5,
-        0.27,
-        "None",
-        0.6,
-        0.6,
-        0.4,
-        0,
-        1
-      ]
     },
     {
       "id": 30,
@@ -1665,148 +1522,6 @@
       ]
     },
     {
-      "id": 373,
-      "type": "MaraScottMcBoatyUpscalerRefiner_v5",
-      "pos": [
-        5140,
-        1720
-      ],
-      "size": [
-        319.20001220703125,
-        1014
-      ],
-      "flags": {},
-      "order": 27,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 930
-        },
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 931
-        },
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 932
-        },
-        {
-          "name": "vae",
-          "type": "VAE",
-          "link": 933
-        },
-        {
-          "name": "positive",
-          "type": "CONDITIONING",
-          "link": 934
-        },
-        {
-          "name": "negative",
-          "type": "CONDITIONING",
-          "link": 935
-        }
-      ],
-      "outputs": [
-        {
-          "name": "McBoaty Pipe",
-          "type": "MC_BOATY_PIPE",
-          "links": [
-            980,
-            990
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "McPrompty Pipe",
-          "type": "MC_PROMPTY_PIPE_IN",
-          "links": [
-            981,
-            991
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "links": [
-            966,
-            967,
-            982
-          ],
-          "shape": 3,
-          "slot_index": 2
-        },
-        {
-          "name": "image (orignal)",
-          "type": "IMAGE",
-          "links": [
-            968
-          ],
-          "shape": 3,
-          "slot_index": 3
-        },
-        {
-          "name": "tiles",
-          "type": "IMAGE",
-          "links": [
-            969
-          ],
-          "shape": 3,
-          "slot_index": 4
-        },
-        {
-          "name": "prompts",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "info",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaraScottMcBoatyUpscalerRefiner_v5"
-      },
-      "widgets_values": [
-        186715879337665,
-        "fixed",
-        "RealESRGAN_x2.pth",
-        "bicubic",
-        1024,
-        128,
-        true,
-        512,
-        "hm-mvgd-hm",
-        false,
-        "microsoft/Florence-2-large",
-        "llama3-70b-8192",
-        0,
-        true,
-        "BasicScheduler",
-        "SD3",
-        "dpmpp_2m",
-        "karras",
-        10,
-        2.5,
-        0.76,
-        "SD3\\InstantX-Controlnet-Canny\\diffusion_pytorch_model.safetensors",
-        0.6,
-        0.6,
-        0.4,
-        0,
-        1
-      ]
-    },
-    {
       "id": 391,
       "type": "PreviewImage",
       "pos": [
@@ -1879,12 +1594,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_cqyom_00033_.png&type=temp&subfolder=&rand=0.08501679454304933"
+            "url": "/view?filename=rgthree.compare._temp_tciod_00011_.png&type=temp&subfolder=&rand=0.6408057386231873"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_cqyom_00034_.png&type=temp&subfolder=&rand=0.8316126680863003"
+            "url": "/view?filename=rgthree.compare._temp_tciod_00012_.png&type=temp&subfolder=&rand=0.04484885180451714"
           }
         ]
       ]
@@ -1962,12 +1677,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_npfbm_00026_.png&type=temp&subfolder=&rand=0.2517556554309397"
+            "url": "/view?filename=rgthree.compare._temp_cxhxc_00011_.png&type=temp&subfolder=&rand=0.25644088926132924"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_npfbm_00027_.png&type=temp&subfolder=&rand=0.32170066554168053"
+            "url": "/view?filename=rgthree.compare._temp_cxhxc_00012_.png&type=temp&subfolder=&rand=0.7522182987423811"
           }
         ]
       ]
@@ -2025,115 +1740,6 @@
       }
     },
     {
-      "id": 377,
-      "type": "MaraScottMcBoatyRefiner_v5",
-      "pos": [
-        5150,
-        -600
-      ],
-      "size": [
-        367.79998779296875,
-        750
-      ],
-      "flags": {},
-      "order": 28,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "pipe",
-          "type": "MC_BOATY_PIPE",
-          "link": 956
-        },
-        {
-          "name": "pipe_prompty",
-          "type": "MC_PROMPTY_PIPE_OUT",
-          "link": 957
-        }
-      ],
-      "outputs": [
-        {
-          "name": "McBoaty Pipe",
-          "type": "MC_BOATY_PIPE",
-          "links": [
-            962
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "McPrompty Pipe",
-          "type": "MC_PROMPTY_PIPE_IN",
-          "links": [
-            963
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "links": [
-            958,
-            959,
-            964
-          ],
-          "shape": 3,
-          "slot_index": 2
-        },
-        {
-          "name": "image (original)",
-          "type": "IMAGE",
-          "links": [
-            960
-          ],
-          "shape": 3,
-          "slot_index": 3
-        },
-        {
-          "name": "tiles",
-          "type": "IMAGE",
-          "links": [
-            961
-          ],
-          "shape": 3,
-          "slot_index": 4
-        },
-        {
-          "name": "prompts",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "info",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaraScottMcBoatyRefiner_v5"
-      },
-      "widgets_values": [
-        0,
-        true,
-        1,
-        "BasicScheduler",
-        "SD3",
-        "dpmpp_2m",
-        "sgm_uniform",
-        10,
-        2.5,
-        0.27,
-        "None",
-        0.6,
-        0.6,
-        0.4,
-        0,
-        1
-      ]
-    },
-    {
       "id": 253,
       "type": "Image Comparer (rgthree)",
       "pos": {
@@ -2180,12 +1786,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_cqyom_00033_.png&type=temp&subfolder=&rand=0.08501679454304933"
+            "url": "/view?filename=rgthree.compare._temp_nsuas_00023_.png&type=temp&subfolder=&rand=0.658348237277794"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_cqyom_00034_.png&type=temp&subfolder=&rand=0.8316126680863003"
+            "url": "/view?filename=rgthree.compare._temp_nsuas_00024_.png&type=temp&subfolder=&rand=0.9431412328732176"
           }
         ]
       ]
@@ -2217,210 +1823,6 @@
       }
     },
     {
-      "id": 374,
-      "type": "MaraScottMcBoatyRefiner_v5",
-      "pos": [
-        10430,
-        1670
-      ],
-      "size": [
-        367.79998779296875,
-        750
-      ],
-      "flags": {},
-      "order": 26,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "pipe",
-          "type": "MC_BOATY_PIPE",
-          "link": 983
-        },
-        {
-          "name": "pipe_prompty",
-          "type": "MC_PROMPTY_PIPE_OUT",
-          "link": 939
-        }
-      ],
-      "outputs": [
-        {
-          "name": "McBoaty Pipe",
-          "type": "MC_BOATY_PIPE",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "McPrompty Pipe",
-          "type": "MC_PROMPTY_PIPE_IN",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "links": [
-            940,
-            941
-          ],
-          "shape": 3,
-          "slot_index": 2
-        },
-        {
-          "name": "image (original)",
-          "type": "IMAGE",
-          "links": [
-            942
-          ],
-          "shape": 3,
-          "slot_index": 3
-        },
-        {
-          "name": "tiles",
-          "type": "IMAGE",
-          "links": [
-            943
-          ],
-          "shape": 3,
-          "slot_index": 4
-        },
-        {
-          "name": "prompts",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "info",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaraScottMcBoatyRefiner_v5"
-      },
-      "widgets_values": [
-        3,
-        false,
-        1,
-        "BasicScheduler",
-        "SD3",
-        "dpmpp_2m",
-        "sgm_uniform",
-        10,
-        2.5,
-        0.27,
-        "None",
-        0.6,
-        0.6,
-        0.4,
-        0,
-        1
-      ]
-    },
-    {
-      "id": 395,
-      "type": "MaraScottMcBoatyRefiner_v5",
-      "pos": [
-        7050,
-        1640
-      ],
-      "size": {
-        "0": 367.79998779296875,
-        "1": 750
-      },
-      "flags": {},
-      "order": 38,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "pipe",
-          "type": "MC_BOATY_PIPE",
-          "link": 990
-        },
-        {
-          "name": "pipe_prompty",
-          "type": "MC_PROMPTY_PIPE_OUT",
-          "link": 989
-        }
-      ],
-      "outputs": [
-        {
-          "name": "McBoaty Pipe",
-          "type": "MC_BOATY_PIPE",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "McPrompty Pipe",
-          "type": "MC_PROMPTY_PIPE_IN",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "links": [
-            985,
-            987
-          ],
-          "shape": 3,
-          "slot_index": 2
-        },
-        {
-          "name": "image (original)",
-          "type": "IMAGE",
-          "links": [
-            988
-          ],
-          "shape": 3,
-          "slot_index": 3
-        },
-        {
-          "name": "tiles",
-          "type": "IMAGE",
-          "links": [
-            986
-          ],
-          "shape": 3,
-          "slot_index": 4
-        },
-        {
-          "name": "prompts",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "info",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaraScottMcBoatyRefiner_v5"
-      },
-      "widgets_values": [
-        3,
-        false,
-        1,
-        "BasicScheduler",
-        "SD3",
-        "dpmpp_2m",
-        "sgm_uniform",
-        10,
-        2.5,
-        0.27,
-        "None",
-        0.6,
-        0.6,
-        0.4,
-        0,
-        1
-      ]
-    },
-    {
       "id": 389,
       "type": "MaraScottAnyBus_v2",
       "pos": [
@@ -2432,7 +1834,6 @@
         "1": 206
       },
       "flags": {},
-      "order": 31,
       "order": 31,
       "mode": 0,
       "inputs": [
@@ -2514,7 +1915,7 @@
         "Profile": "Bus2",
         "prevProfileName": "Bus2",
         "Nb Inputs": 5,
-        "uuid": 333
+        "uuid": 389
       },
       "widgets_values": [
         "Bus2",
@@ -2557,7 +1958,6 @@
       ],
       "size": {
         "0": 396.3999938964844,
-        "0": 396.3999938964844,
         "1": 326
       },
       "flags": {},
@@ -2573,54 +1973,46 @@
           "name": "* 01 - model",
           "type": "MODEL",
           "link": null
-          "link": null
         },
         {
           "name": "* 02 - clip",
           "type": "CLIP",
-          "link": null
           "link": null
         },
         {
           "name": "* 03 - vae",
           "type": "VAE",
           "link": null
-          "link": null
         },
         {
           "name": "* 04 - conditioning",
           "type": "CONDITIONING",
-          "link": null
           "link": null
         },
         {
           "name": "* 05 - conditioning",
           "type": "CONDITIONING",
           "link": null
-          "link": null
         },
         {
           "name": "* 06 - image",
           "type": "IMAGE",
-          "link": null
           "link": null
         },
         {
           "name": "* 07 - prompt",
           "type": "STRING",
           "link": null
-          "link": null
         },
         {
           "name": "* 08 - prompt",
           "type": "STRING",
           "link": null
-          "link": null
         },
         {
           "name": "* 09 - image",
           "type": "IMAGE",
-          "link": 867
+          "link": null
         },
         {
           "name": "* 10",
@@ -2877,10 +2269,7 @@
         {
           "name": "* 09 - image",
           "type": "IMAGE",
-          "links": [
-            872
-          ],
-          "slot_index": 9
+          "links": null
         },
         {
           "name": "* 10",
@@ -2899,7 +2288,7 @@
         "Profile": "main",
         "prevProfileName": "main",
         "Nb Inputs": 11,
-        "uuid": 340
+        "uuid": 396
       },
       "widgets_values": [
         "main",
@@ -3022,7 +2411,7 @@
       "shape": 4
     },
     {
-      "id": 343,
+      "id": 335,
       "type": "MaraScottAnyBus_v2",
       "pos": [
         3573,
@@ -3039,7 +2428,7 @@
         {
           "name": "bus",
           "type": "BUS",
-          "link": 883
+          "link": 854
         },
         {
           "name": "* 01 - model",
@@ -3101,8 +2490,9 @@
         {
           "name": "bus",
           "type": "BUS",
-          "links": null,
-          "shape": 3
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
         },
         {
           "name": "* 01 - model",
@@ -3170,10 +2560,7 @@
         {
           "name": "* 09 - image",
           "type": "IMAGE",
-          "links": [
-            884
-          ],
-          "slot_index": 9
+          "links": null
         },
         {
           "name": "* 10",
@@ -3192,7 +2579,7 @@
         "Profile": "main",
         "prevProfileName": "main",
         "Nb Inputs": 11,
-        "uuid": 343
+        "uuid": 335
       },
       "widgets_values": [
         "main",
@@ -3308,59 +2695,6 @@
       "shape": 4
     },
     {
-      "id": 351,
-      "type": "MaraScottMcBoatyTilePrompter_v5",
-      "pos": [
-        10030,
-        1850
-      ],
-      "size": {
-        "0": 319.20001220703125,
-        "1": 346
-      },
-      "flags": {},
-      "order": 44,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "pipe",
-          "type": "MC_PROMPTY_PIPE_IN",
-          "link": 984
-        }
-      ],
-      "outputs": [
-        {
-          "name": "McPrompty Pipe",
-          "type": "MC_PROMPTY_PIPE_OUT",
-          "links": [
-            939
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaraScottMcBoatyTilePrompter_v5",
-        "Filter by Indexes": "",
-        "Prompt": "",
-        "Denoise": "unchanged",
-        "Reset": false,
-        "02cad382bff54e1c8292346ec9eb5814": "a blue door leading to a room with a pink door ",
-        "requeue": 6
-      },
-      "widgets_values": [
-        6,
-        "",
-        "",
-        "unchanged",
-        "a blue door leading to a room with a pink door ",
-        null,
-        null,
-        null,
-        false
-      ]
-    },
-    {
       "id": 390,
       "type": "MaraScottAnyBus_v2",
       "pos": [
@@ -3458,7 +2792,7 @@
         "Profile": "Bus2",
         "prevProfileName": "Bus2",
         "Nb Inputs": 5,
-        "uuid": 334
+        "uuid": 390
       },
       "widgets_values": [
         "Bus2",
@@ -3509,6 +2843,659 @@
       "widgets_values": [
         "_MaraScott_Balat.png",
         "image"
+      ]
+    },
+    {
+      "id": 395,
+      "type": "MaraScottMcBoatyRefiner_v5",
+      "pos": [
+        7050,
+        1640
+      ],
+      "size": {
+        "0": 367.79998779296875,
+        "1": 750
+      },
+      "flags": {},
+      "order": 38,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 990
+        },
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE_OUT",
+          "link": 989
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE_IN",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            985,
+            987
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "image (original)",
+          "type": "IMAGE",
+          "links": [
+            988
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": [
+            986
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "prompts",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyRefiner_v5"
+      },
+      "widgets_values": [
+        "3",
+        false,
+        1,
+        "BasicScheduler",
+        "SD3",
+        "dpmpp_2m",
+        "sgm_uniform",
+        10,
+        2.5,
+        0.27,
+        "None",
+        0.6,
+        0.6,
+        0.4,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 374,
+      "type": "MaraScottMcBoatyRefiner_v5",
+      "pos": [
+        10430,
+        1670
+      ],
+      "size": {
+        "0": 367.79998779296875,
+        "1": 750
+      },
+      "flags": {},
+      "order": 47,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 983
+        },
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE_OUT",
+          "link": 939
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE_IN",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            940,
+            941
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "image (original)",
+          "type": "IMAGE",
+          "links": [
+            942
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": [
+            943
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "prompts",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyRefiner_v5"
+      },
+      "widgets_values": [
+        "1-2",
+        false,
+        1,
+        "BasicScheduler",
+        "SD3",
+        "dpmpp_2m",
+        "sgm_uniform",
+        10,
+        2.5,
+        0.27,
+        "None",
+        0.6,
+        0.6,
+        0.4,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 351,
+      "type": "MaraScottMcBoatyTilePrompter_v5",
+      "pos": [
+        10030,
+        1850
+      ],
+      "size": {
+        "0": 319.20001220703125,
+        "1": 346
+      },
+      "flags": {},
+      "order": 44,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_PROMPTY_PIPE_IN",
+          "link": 984
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE_OUT",
+          "links": [
+            939
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyTilePrompter_v5",
+        "Filter by Indexes": "",
+        "Prompt": "",
+        "Denoise": "unchanged",
+        "Reset": false,
+        "02cad382bff54e1c8292346ec9eb5814": "a blue door leading to a room with a pink door ",
+        "requeue": 9
+      },
+      "widgets_values": [
+        9,
+        "",
+        "",
+        "unchanged",
+        "a blue door leading to a room with a pink door "
+      ]
+    },
+    {
+      "id": 377,
+      "type": "MaraScottMcBoatyRefiner_v5",
+      "pos": [
+        5150,
+        -600
+      ],
+      "size": {
+        "0": 367.79998779296875,
+        "1": 750
+      },
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 956
+        },
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE_OUT",
+          "link": 957
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            962
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE_IN",
+          "links": [
+            963
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            958,
+            959,
+            964
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "image (original)",
+          "type": "IMAGE",
+          "links": [
+            960
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": [
+            961
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "prompts",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyRefiner_v5"
+      },
+      "widgets_values": [
+        "",
+        true,
+        1,
+        "BasicScheduler",
+        "SD3",
+        "dpmpp_2m",
+        "sgm_uniform",
+        10,
+        2.5,
+        0.27,
+        "None",
+        0.6,
+        0.6,
+        0.4,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 373,
+      "type": "MaraScottMcBoatyUpscalerRefiner_v5",
+      "pos": [
+        5140,
+        1720
+      ],
+      "size": {
+        "0": 319.20001220703125,
+        "1": 1014
+      },
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 930
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 931
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 932
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 933
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 934
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 935
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            980,
+            990
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE_IN",
+          "links": [
+            981,
+            991
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            966,
+            967,
+            982
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "image (orignal)",
+          "type": "IMAGE",
+          "links": [
+            968
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": [
+            969
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "prompts",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyUpscalerRefiner_v5"
+      },
+      "widgets_values": [
+        186715879337665,
+        "fixed",
+        "RealESRGAN_x2.pth",
+        "bicubic",
+        1024,
+        128,
+        true,
+        512,
+        "hm-mvgd-hm",
+        false,
+        "microsoft/Florence-2-large",
+        "llama3-70b-8192",
+        "",
+        true,
+        "BasicScheduler",
+        "SD3",
+        "dpmpp_2m",
+        "karras",
+        10,
+        2.5,
+        0.76,
+        "SD3\\InstantX-Controlnet-Canny\\diffusion_pytorch_model.safetensors",
+        0.6,
+        0.6,
+        0.4,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 375,
+      "type": "MaraScottMcBoatyRefiner_v5",
+      "pos": [
+        10360,
+        -720
+      ],
+      "size": {
+        "0": 367.79998779296875,
+        "1": 750
+      },
+      "flags": {},
+      "order": 48,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 945
+        },
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE_OUT",
+          "link": 946
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE_IN",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            947
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "image (original)",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "prompts",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyRefiner_v5"
+      },
+      "widgets_values": [
+        "4,2-3,1",
+        true,
+        1,
+        "BasicScheduler",
+        "SD3",
+        "dpmpp_2m",
+        "sgm_uniform",
+        10,
+        2.5,
+        0.76,
+        "SD3\\InstantX-Controlnet-Canny\\diffusion_pytorch_model.safetensors",
+        0.6,
+        0.6,
+        0.4,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 356,
+      "type": "MaraScottMcBoatyTilePrompter_v5",
+      "pos": [
+        9960,
+        -640
+      ],
+      "size": {
+        "0": 319.20001220703125,
+        "1": 346
+      },
+      "flags": {},
+      "order": 46,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_PROMPTY_PIPE_IN",
+          "link": 927
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE_OUT",
+          "links": [
+            946
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyTilePrompter_v5",
+        "Filter by Indexes": "",
+        "Prompt": "",
+        "Denoise": "unchanged",
+        "Reset": false,
+        "02cad382bff54e1c8292346ec9eb5814": "door",
+        "requeue": 21
+      },
+      "widgets_values": [
+        21,
+        "",
+        "",
+        "unchanged",
+        "door",
+        null,
+        null,
+        null,
+        false
       ]
     }
   ],
