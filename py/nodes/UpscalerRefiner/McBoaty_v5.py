@@ -564,7 +564,19 @@ class McBoaty_Refiner_v5():
 """]
     
     @classmethod
-    def get_grid_output_latents(self, index, latent_image, total):
+    def get_grid_latents(self, index, upscaled_image_grid, total, iteration):
+        latent_image = None
+        if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
+            if self.KSAMPLER.tiled:
+                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled {iteration}")
+                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
+            else:
+                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding {iteration}")
+                latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]        
+        return latent_image
+
+    @classmethod
+    def get_grid_output_latents(self, index, latent_image, total, iteration):
         latent_output = None
         if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
 
@@ -609,24 +621,25 @@ class McBoaty_Refiner_v5():
         output_images = []
         total = len(self.OUTPUTS.grid_images)
         
+        # def wrapper_get_grid_latents(args):
+        #     return self.get_grid_latents(*args)
+        # with ThreadPoolExecutor(max_workers=4) as executor:
+        #     grid_images_args_list = [(index, upscaled_image_grid, total, iteration) for index, upscaled_image_grid in enumerate(self.OUTPUTS.grid_images)]
+        #     for latent_image in executor.map(wrapper_get_grid_latents, grid_images_args_list):
+        #         grid_latents.append(latent_image)
         for index, upscaled_image_grid in enumerate(self.OUTPUTS.grid_images):
-            latent_image = None
-            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
-                if self.KSAMPLER.tiled:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled {iteration}")
-                    latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
-                else:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding {iteration}")
-                    latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
+            latent_image = self.get_grid_latents(index, upscaled_image_grid, total, iteration)
             grid_latents.append(latent_image)
         
-        def wrapper_get_grid_output_latents(args):
-            return self.get_grid_output_latents(*args) 
-               
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            latent_output_args_list = [(index, latent_image, total) for index, latent_image in enumerate(grid_latents)]
-            for latent_output in executor.map(wrapper_get_grid_output_latents, latent_output_args_list):
-                grid_latent_outputs.append(latent_output)
+        # def wrapper_get_grid_output_latents(args):
+        #     return self.get_grid_output_latents(*args)
+        # with ThreadPoolExecutor(max_workers=4) as executor:
+        #     latent_output_args_list = [(index, latent_image, total, iteration) for index, latent_image in enumerate(grid_latents)]
+        #     for latent_output in executor.map(wrapper_get_grid_output_latents, latent_output_args_list):
+        #         grid_latent_outputs.append(latent_output)
+        for index, latent_image in enumerate(grid_latents):
+            latent_output = self.get_grid_output_latents(index, latent_image, total, iteration)
+            grid_latent_outputs.append(latent_output)
                 
         for index, latent_output in enumerate(grid_latent_outputs):            
             output = None
