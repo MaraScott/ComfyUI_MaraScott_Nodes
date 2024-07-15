@@ -12,7 +12,7 @@ from .py.nodes.Info.DisplayInfoNode_v1 import DisplayInfoNode_v1
 from .py.nodes.UpscalerRefiner.McBoaty_v2 import UpscalerRefiner_McBoaty_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
 from .py.nodes.UpscalerRefiner.McBoaty_v4 import McBoaty_Upscaler_v4, McBoaty_TilePrompter_v4, McBoaty_Refiner_v4
-from .py.nodes.UpscalerRefiner.McBoaty_v5 import UpscalerRefiner_McBoaty_v5, McBoaty_UpscalerRefiner_v5, McBoaty_Upscaler_v5, McBoaty_TilePrompter_v5, McBoaty_Refiner_v5
+from .py.nodes.UpscalerRefiner.McBoaty_v5 import McBoaty_UpscalerRefiner_v5, McBoaty_Upscaler_v5, McBoaty_TilePrompter_v5, McBoaty_Refiner_v5
 from .py.nodes.KSampler.InpaintingTileByMask_v1 import KSampler_setInpaintingTileByMask_v1, KSampler_pasteInpaintingTileByMask_v1
 from .py.nodes.Prompt.PromptFromImage_v1 import PromptFromImage_v1
 from .py.vendor.ComfyUI_JNodes.blob.main.py.prompting_nodes import TokenCounter as TokenCounter_v1
@@ -24,7 +24,6 @@ NODE_CLASS_MAPPINGS = {
 
     "MaraScottAnyBus_v2": AnyBus_v2,
     "MaraScottMcBoatyUpscalerRefiner_v5": McBoaty_UpscalerRefiner_v5,
-    "MaraScottMcBoatyUpscalerRefiner_v50": UpscalerRefiner_McBoaty_v5,
     "MaraScottMcBoatyUpscaler_v5": McBoaty_Upscaler_v5,
     "MaraScottMcBoatyTilePrompter_v5": McBoaty_TilePrompter_v5,
     "MaraScottMcBoatyRefiner_v5": McBoaty_Refiner_v5,
@@ -51,7 +50,6 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottDisplayInfo_v1": "\ud83d\udc30 Display Info - Text v1 /i",
     "MaraScottMcBoatyUpscalerRefiner_v5": "\ud83d\udc30 Large Refiner - McBoaty [1/3] v5 /u",
-    "MaraScottMcBoatyUpscalerRefiner_v50": "\u274C Large Refiner - McBoaty [1/3] v5 /u",
     "MaraScottMcBoatyUpscaler_v5": "\ud83d\udc30 Upscaler - McBoaty [1/3] v5 /u",
     "MaraScottMcBoatyTilePrompter_v5": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v5 /u",
     "MaraScottMcBoatyRefiner_v5": "\ud83d\udc30 Refiner - McBoaty [3/3] v5 /u",

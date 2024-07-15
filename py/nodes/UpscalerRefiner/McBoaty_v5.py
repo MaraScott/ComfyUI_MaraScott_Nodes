@@ -352,8 +352,8 @@ class McBoaty_Refiner_v5():
         "MC_PROMPTY_PIPE_IN", 
         "IMAGE", 
         "IMAGE", 
-        "STRING",
         "IMAGE",
+        "STRING",
         "STRING"
     )
     
@@ -361,21 +361,13 @@ class McBoaty_Refiner_v5():
         "McBoaty Pipe", 
         "McPrompty Pipe", 
         "image", 
+        "image (original)", 
         "tiles", 
         "prompts", 
-        "original_resized", 
         "info", 
     )
     
-    OUTPUT_IS_LIST = (
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-    )
+    OUTPUT_IS_LIST = (False,) * len(RETURN_TYPES)
     
     
     OUTPUT_NODE = True
@@ -421,9 +413,9 @@ class McBoaty_Refiner_v5():
                 output_tiles,
             ),            
             OUTPUTS.output_image, 
+            OUTPUTS.image, 
             OUTPUTS.output_tiles, 
             PARAMS.grid_prompts, 
-            OUTPUTS.image, 
             output_info, 
         )
         
@@ -467,18 +459,18 @@ class McBoaty_Refiner_v5():
             self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)
             
         grid_prompts, grid_denoises = kwargs.get('pipe_prompty', (None, None))
+        
+        if grid_prompts is None:
+            grid_prompts = (None,) * len(self.OUTPUTS.grid_prompts)
+            grid_denoises = (None,) * len(self.OUTPUTS.grid_prompts)
             
-        if len(grid_prompts) != len(self.OUTPUTS.grid_prompts):
-            grid_prompts = [gp if gp is not None else default_gp for gp, default_gp in zip(grid_prompts, self.OUTPUTS.grid_prompts)]
-        grid_prompts = list(grid_prompts)
+        grid_prompts = list([gp if gp is not None else default_gp for gp, default_gp in zip(grid_prompts, self.OUTPUTS.grid_prompts)])
         for i, prompt in enumerate(grid_prompts):
             if prompt is None:
                 grid_prompts[i] = self.OUTPUTS.grid_prompts[i]
         self.OUTPUTS.grid_prompts = grid_prompts
 
-        if len(grid_denoises) != len(self.OUTPUTS.grid_prompts):
-            grid_denoises = [gp if gp is not None else default_gp for gp, default_gp in zip(grid_denoises, (None,) * len(self.OUTPUTS.grid_prompts))]
-        grid_denoises = list(grid_denoises)
+        grid_denoises = list([gp if gp is not None else default_gp for gp, default_gp in zip(grid_denoises, ("",) * len(self.OUTPUTS.grid_prompts))])
         for i, denoise in enumerate(grid_denoises):
             if denoise == "":
                 grid_denoises[i] = self.KSAMPLER.denoise
@@ -812,414 +804,6 @@ async def tile_prompt(request):
 
     return web.json_response(f"here is the prompt \n{image_path}")
 
-class UpscalerRefiner_McBoaty_v5():
-
-    UPSCALE_METHODS = [
-        "area", 
-        "bicubic", 
-        "bilinear", 
-        "bislerp",
-        "lanczos",
-        "nearest-exact"
-    ]
-        
-    COLOR_MATCH_METHODS = [   
-        'none',
-        'mkl',
-        'hm', 
-        'reinhard', 
-        'mvgd', 
-        'hm-mvgd-hm', 
-        'hm-mkl-hm',
-    ]
-    
-    SIGMAS_TYPES = [
-        'BasicScheduler', 
-        'SDTurboScheduler', 
-        'AlignYourStepsScheduler'
-    ]    
-    AYS_MODEL_TYPE_SIZES = {
-        'SD1': 512,
-        'SDXL': 1024,
-        'SD3': 1024,
-        'SVD': 1024,
-    }
-    AYS_MODEL_TYPES = list(AYS_MODEL_TYPE_SIZES.keys())
-
-    CONTROLNETS = folder_paths.get_filename_list("controlnet")
-    CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
-    
-    INPUTS = {}
-    OUTPUTS = {}
-    PARAMS = {}
-    KSAMPLERS = {}
-    LLM = {}
-    
-    @classmethod
-    def INPUT_TYPES(self):
-        return {
-            "hidden": {
-                "id":"UNIQUE_ID",
-            },
-            "required":{
-                "image": ("IMAGE", {"label": "Image" }),
-
-                "model": ("MODEL", { "label": "Model" }),
-                "clip": ("CLIP", { "label": "Clip" }),
-                "vae": ("VAE", { "label": "VAE" }),
-                "positive": ("CONDITIONING", { "label": "Positive" }),
-                "negative": ("CONDITIONING", { "label": "Negative" }),
-                "seed": ("INT", { "label": "Seed", "default": 4, "min": 0, "max": 0xffffffffffffffff}),
-
-                "upscale_model": (folder_paths.get_filename_list("upscale_models"), { "label": "Upscale Model" }),
-                "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
-                "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
-                "output_upscale_method": (self.UPSCALE_METHODS, { "label": "Custom Output Upscale Method", "default": "bicubic"}),
-                "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
-                "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
-                "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
-                "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
-                "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
-                "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
-                "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
-                "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
-                "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
-                "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
-                "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
-                "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
-                "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/Florence-2-large" }),
-                "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
-                "control_net_name": (self.CONTROLNET_CANNY_ONLY , { "label": "ControlNet (Canny only)", "default": "None" }),
-                "low_threshold": ("FLOAT", {"label": "Low Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
-                "high_threshold": ("FLOAT", {"label": "High Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
-                "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.4, "min": 0.0, "max": 10.0, "step": 0.01}),
-                "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
-                "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001})                
-
-            },
-            "optional": {
-            }
-        }
-
-    RETURN_TYPES = (
-        "MC_BOATY_PIPE", 
-        "MC_PROMPTY_PIPE_IN",         
-        "IMAGE", 
-        "IMAGE", 
-        "IMAGE",
-        "STRING"
-    )
-    
-    RETURN_NAMES = (
-        "McBoaty Pipe", 
-        "McPrompty Pipe",         
-        "image", 
-        "tiles", 
-        "original_resized", 
-        "info", 
-    )
-    
-    OUTPUT_IS_LIST = (
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-    )    
-    
-    OUTPUT_NODE = False
-    CATEGORY = "MaraScott/upscaling"
-    DESCRIPTION = "An \"UPSCALER/REFINER\" Node"
-    FUNCTION = "fn"
-
-    @classmethod    
-    def fn(self, **kwargs):
-
-        start_time = time.time()
-        
-        self.init(**kwargs)
-        
-        if self.INPUTS.image is None:
-            raise ValueError(f"MaraScottUpscalerRefinerNode id {self.INFO.id}: No image provided")
-
-        if not isinstance(self.INPUTS.image, torch.Tensor):
-            raise ValueError(f"MaraScottUpscalerRefinerNode id {self.INFO.id}: Image provided is not a Tensor")
-        
-        log("McBoaty (Upscaler/Refiner) is starting to do its magic")
-        
-        self.OUTPUTS.image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
-
-        current_image = self.OUTPUTS.image
-        for index in range(self.PARAMS.max_iterations):
-            output_image, output_tiles, self.OUTPUTS.grid_prompts, self.OUTPUTS.grid_images, self.PARAMS.grid_specs, self.PARAMS.rows_qty, self.PARAMS.cols_qty = self.upscale_refine(current_image, f"{index + 1}/{self.PARAMS.max_iterations}")
-            if not self.PARAMS.upscale_size_type:
-                output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, int(image_width * self.PARAMS.upscale_size), int(image_height * self.PARAMS.upscale_size), False)[0]
-            current_image = output_image
-
-        output_image_width = output_image.shape[2]
-        output_image_height = output_image.shape[1]
-
-        end_time = time.time()
-
-        output_info = self._get_info(
-            image_width, 
-            image_height, 
-            image_divisible_by_8, 
-            output_image_width, 
-            output_image_height,
-            self.OUTPUTS.grid_prompts,
-            int(end_time - start_time)
-        )
-        
-        image = self.OUTPUTS.image
-        # self.OUTPUTS.image = output_image
-
-        log("McBoaty (Upscaler/Refiner) is done with its magic")
-        
-        
-        return (
-            (
-                self.INPUTS,
-                self.PARAMS,
-                self.KSAMPLER,
-                self.OUTPUTS,
-            ),
-            (
-                self.OUTPUTS.grid_prompts,
-                output_tiles,
-            ),                        
-            output_image,
-            output_tiles,
-            image,
-            output_info
-        )
-        
-    @classmethod
-    def init(self, **kwargs):
-        for controlnet_name in self.CONTROLNETS:
-            if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower()):
-                log(controlnet_name, None, None, 'controlnet_name') 
-        # Initialize the bus tuple with None values for each parameter
-        self.INFO = SimpleNamespace(
-            id = kwargs.get('id', None),
-        )
-
-        self.INPUTS = SimpleNamespace(
-            image = kwargs.get('image', None),
-        )
-        self.PARAMS = SimpleNamespace(
-            upscale_size_type = kwargs.get('output_size_type', None),
-            upscale_size = kwargs.get('output_size', None),
-            upscale_model_name = kwargs.get('upscale_model', None),
-            upscale_method = kwargs.get('output_upscale_method', "lanczos"),
-            feather_mask = kwargs.get('feather_mask', None),
-            color_match_method = kwargs.get('color_match_method', 'none'),
-            max_iterations = kwargs.get('running_count', 1),
-            tile_prompting_active = kwargs.get('tile_prompting_active', False),
-        )
-        self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
-
-        self.KSAMPLER = SimpleNamespace(
-            tiled = kwargs.get('vae_encode', None),
-            tile_size = kwargs.get('tile_size', None),
-            tile_size_vae = kwargs.get('tile_size_vae', None),
-            model = kwargs.get('model', None),
-            clip = kwargs.get('clip', None),
-            vae = kwargs.get('vae', None),
-            noise_seed = kwargs.get('seed', None),
-            sampler_name = kwargs.get('sampler_name', None),
-            scheduler = kwargs.get('basic_scheduler', None),
-            positive = kwargs.get('positive', None),
-            negative = kwargs.get('negative', None),
-            add_noise = True,
-            sigmas_type = kwargs.get('sigmas_type', None),
-            ays_model_type = kwargs.get('ays_model_type', None),
-            steps = kwargs.get('steps', None),
-            cfg = kwargs.get('cfg', None),
-            denoise = kwargs.get('denoise', None),
-        )
-        
-        self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
-        # isinstance(self.KSAMPLER.model, comfy.model_base.SDXL)
-        self.KSAMPLER.tile_size_sampler = self.AYS_MODEL_TYPE_SIZES[self.KSAMPLER.ays_model_type]
-        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
-        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
-
-        self.CONTROLNET = SimpleNamespace(
-            name = kwargs.get('control_net_name', 'None'),
-            path = None,
-            controlnet = None,
-            low_threshold = kwargs.get('low_threshold', None),
-            high_threshold = kwargs.get('high_threshold', None),
-            strength = kwargs.get('strength', None),
-            start_percent = kwargs.get('start_percent', None),
-            end_percent = kwargs.get('end_percent', None),
-        )
-        if self.CONTROLNET.name != "None":
-            self.CONTROLNET.path = folder_paths.get_full_path("controlnet", self.CONTROLNET.name)
-            self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)
-
-
-        self.LLM = SimpleNamespace(
-            vision_model = kwargs.get('vision_llm_model', None),
-            model = kwargs.get('llm_model', None),
-        )
-
-        # TODO : make the feather_mask proportional to tile size ?
-        # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
-
-        self.OUTPUTS = SimpleNamespace(
-            output_info = ["No info"],        
-        )
-    
-        
-    @classmethod
-    def _get_info(self, image_width, image_height, image_divisible_by_8, output_image_width, output_image_height, output_prompts, execution_duration):
-        formatted_prompts = "\n".join(f"        [{index+1}] {prompt}" for index, prompt in enumerate(output_prompts))
-        
-        return [f"""
-
-    IMAGE (INPUT)
-        width   :   {image_width}
-        height  :   {image_height}
-        image divisible by 8 : {image_divisible_by_8}
-
-    ------------------------------
-
-    IMAGE (OUTPUT)
-        width   :   {output_image_width}
-        height  :   {output_image_height}
-
-    ------------------------------
-    
-    TILES PROMPTS
-{formatted_prompts}    
-        
-    ------------------------------
-
-    EXECUTION
-        DURATION : {execution_duration} seconds
-
-    NODE INFO
-        version : {VERSION}
-
-"""]        
-    
-    @classmethod    
-    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, ays_model_type):
-        if sigmas_type == "SDTurboScheduler":
-            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
-            sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
-        elif sigmas_type == "AlignYourStepsScheduler":
-            SigmaScheduler = AlignYourStepsScheduler
-            sigmas = SigmaScheduler().get_sigmas(ays_model_type, steps, denoise)[0]
-        else: # BasicScheduler
-            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
-            sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
-        
-        return sigmas    
-    
-    @classmethod
-    def upscale_refine(self, image, iteration):
-        
-        feather_mask = self.PARAMS.feather_mask
-        
-        rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model.scale) / self.KSAMPLER.tile_size
-        cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model.scale) / self.KSAMPLER.tile_size
-        rows_qty = math.ceil(rows_qty_float)
-        cols_qty = math.ceil(cols_qty_float)
-
-        tiles_qty = rows_qty * cols_qty        
-        if tiles_qty > 64 :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 64 ({tiles_qty} for {cols_qty} cols and {rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"McBoaty_Upscaler_v4 - Node id {self.INFO.id}")
-            raise ValueError(msg)
-        
-        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
-
-        # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
-        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, rows_qty, cols_qty, feather_mask)[0]
-        grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
-        
-        grid_prompts = ["No tile prompting"]
-        grid_latents = []
-        grid_latent_outputs = []
-        output_images = []
-        total = len(grid_images)
-        
-        grid_prompts = []
-        llm = MS_Llm(self.LLM.vision_model, self.LLM.model)
-        prompt_context = llm.vision_llm.generate_prompt(image)
-
-        for index, grid_image in enumerate(grid_images):
-            prompt_tile = prompt_context
-            if self.PARAMS.tile_prompting_active:
-                log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Prompting {iteration}")
-                prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
-            log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
-            grid_prompts.append(prompt_tile)
-                
-        for index, upscaled_image_grid in enumerate(grid_images):            
-            if self.KSAMPLER.tiled:
-                log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
-                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
-            else:
-                log(f"tile {index + 1}/{total}", None, None, f"VAEEncoding {iteration}")
-                latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
-            grid_latents.append(latent_image)
-        
-        for index, latent_image in enumerate(grid_latents):
-            positive = self.KSAMPLER.positive
-            negative = self.KSAMPLER.negative
-            if self.PARAMS.tile_prompting_active:
-                log(f"tile {index + 1}/{total} : {grid_prompts[index]}", None, None, f"ClipTextEncoding {iteration}")
-                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, grid_prompts[index])[0]
-                
-            if self.CONTROLNET.controlnet is not None:
-                log(f"tile {index + 1}/{total}", None, None, f"Canny {iteration}")
-                canny_image = Canny().detect_edge(grid_images[index], self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
-                log(f"tile {index + 1}/{total}", None, None, f"ControlNetApply {iteration}")
-                positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, canny_image, self.CONTROLNET.strength, self.CONTROLNET.start_percent, self.CONTROLNET.end_percent, self.KSAMPLER.vae )
-                
-            log(f"tile {index + 1}/{total}", None, None, f"Refining {iteration}")
-            latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
-                self.KSAMPLER.model, 
-                self.KSAMPLER.add_noise, 
-                self.KSAMPLER.noise_seed, 
-                self.KSAMPLER.cfg, 
-                positive, 
-                negative,
-                self.KSAMPLER.sampler, 
-                self.KSAMPLER.sigmas, 
-                latent_image
-            )[0]
-            grid_latent_outputs.append(latent_output)
-
-        for index, latent_output in enumerate(grid_latent_outputs):            
-            if self.KSAMPLER.tiled:
-                log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
-                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae)[0].unsqueeze(0))[0]
-            else:
-                log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
-                output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]
-            
-            # output = nodes.ImageScaleBy().upscale(output, self.PARAMS.upscale_method, (1/(output.shape[2] / self.KSAMPLER.tile_size_sampler)))[0]
-            output_images.append(output)
-
-        feather_mask = self.PARAMS.feather_mask
-        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, grid_specs, feather_mask, self.PARAMS.upscale_model.scale, rows_qty, cols_qty, grid_prompts)
-
-        if self.PARAMS.color_match_method != 'none':
-            output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
-
-        tiles_order.sort(key=lambda x: x[0])
-        output_tiles = tuple(output for _, output, _ in tiles_order)
-        output_tiles = torch.cat(output_tiles)
-        output_prompts = tuple(prompt for _, _, prompt in tiles_order)
-
-        return output_image, output_tiles, output_prompts, grid_images, grid_specs, rows_qty, cols_qty
-
 class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
     @classmethod
     def INPUT_TYPES(self):
@@ -1230,6 +814,12 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
         combined_inputs = {**upscaler_inputs, **refiner_inputs}
         combined_inputs['required'] = {**upscaler_inputs['required'], **refiner_inputs['required']}
         combined_inputs['optional'] = {**upscaler_inputs.get('optional', {}), **refiner_inputs.get('optional', {})}
+        combined_inputs['hidden'] = {**upscaler_inputs.get('hidden', {}), **refiner_inputs.get('hidden', {})}
+        
+        combined_inputs['required'].pop('pipe', None)
+        combined_inputs['optional'].pop('pipe_prompty', None)
+        
+        combined_inputs['required'].pop('tile_to_process', None)
         
         return combined_inputs
 
@@ -1238,8 +828,8 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
         "MC_PROMPTY_PIPE_IN",
         "IMAGE",
         "IMAGE",
-        "STRING",
         "IMAGE",
+        "STRING",
         "STRING"
     )
     
@@ -1247,9 +837,9 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
         "McBoaty Pipe",
         "McPrompty Pipe",
         "image",
+        "image (orignal)",
         "tiles",
         "prompts",
-        "original_resized",
         "info"
     )
     
@@ -1266,17 +856,16 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
 
         # Upscaling phase
         upscaler_result = McBoaty_Upscaler_v5.fn(**kwargs)
-        upscaler_pipe, prompty_pipe, upscaler_info = upscaler_result
+        upscaler_pipe, _, upscaler_info = upscaler_result
 
         # Update kwargs with upscaler results for refiner
         kwargs.update({
             'pipe': upscaler_pipe,
-            'pipe_prompty': prompty_pipe
         })
 
         # Refining phase
         refiner_result = McBoaty_Refiner_v5.fn(**kwargs)
-        refiner_pipe, refiner_prompty_pipe, output_image, output_tiles, grid_prompts, original_resized, refiner_info = refiner_result
+        refiner_pipe, refiner_prompty_pipe, output_image, original_resized, output_tiles, grid_prompts, refiner_info = refiner_result
 
         end_time = time.time()
         total_time = int(end_time - start_time)
@@ -1288,9 +877,9 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
             refiner_pipe,
             refiner_prompty_pipe,
             output_image,
+            original_resized,
             output_tiles,
             grid_prompts,
-            original_resized,
             combined_info
         )
 
