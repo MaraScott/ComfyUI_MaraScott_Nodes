@@ -136,7 +136,7 @@ class McBoaty_Upscaler_v5():
         if not isinstance(self.INPUTS.image, torch.Tensor):
             raise ValueError(f"MaraScottUpscalerRefinerNode id {self.INFO.id}: Image provided is not a Tensor")
         
-        log("McBoaty (Upscaler) is starting to do its magic")
+        log("McBoaty (Upscaler) is starting to do its magic", None, None, f"Node {self.INFO.id}")
         
         self.OUTPUTS.image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
 
@@ -152,7 +152,7 @@ class McBoaty_Upscaler_v5():
             int(end_time - start_time)
         )
         
-        log("McBoaty (Upscaler) is done with its magic")
+        log("McBoaty (Upscaler) is done with its magic", None, None, f"Node {self.INFO.id}")
 
         output_tiles = torch.cat(self.OUTPUTS.grid_images)
 
@@ -272,7 +272,7 @@ class McBoaty_Upscaler_v5():
 
         tiles_qty = rows_qty * cols_qty        
         if tiles_qty > 64 :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 64 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"McBoaty_Upscaler_v5 - Node id {self.INFO.id}")
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 64 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - McBoaty_Upscaler_v5")
             raise ValueError(msg)
 
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
@@ -292,9 +292,9 @@ class McBoaty_Upscaler_v5():
         for index, grid_image in enumerate(grid_images):
             prompt_tile = prompt_context
             if self.PARAMS.tile_prompting_active:
-                log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Prompting {iteration}")
+                log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Node {self.INFO.id} - Prompting {iteration}")
                 prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
-            log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Prompting {iteration}")
+            log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Node {self.INFO.id} - Prompting {iteration}")
             grid_prompts.append(prompt_tile)
                             
         return grid_specs, grid_images, grid_prompts
@@ -325,7 +325,8 @@ class McBoaty_Refiner_v5():
             },
             "required":{
                 "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
-                "tile_to_process": (list(range(65)), { "label": "Tile to process", "default": 0, "min": 0, "max": 64}),
+                # "tile_to_process": (list(range(65)), { "label": "Tile to process", "default": 0, "min": 0, "max": 64}),
+                "tiles_to_process": ("STRING", { "label": "Tile to process", "default": ''}),
                 "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
                 "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
                 "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
@@ -382,7 +383,7 @@ class McBoaty_Refiner_v5():
         
         self.init(**kwargs)
 
-        log("McBoaty (Refiner) is starting to do its magic")
+        log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {self.INFO.id}")
         
         INPUTS = self.INPUTS
         PARAMS = self.PARAMS
@@ -399,7 +400,7 @@ class McBoaty_Refiner_v5():
         
         output_tiles = torch.cat(self.OUTPUTS.grid_images)
 
-        log("McBoaty (Refiner) is done with its magic")
+        log("McBoaty (Refiner) is done with its magic", None, None, f"Node {self.INFO.id}")
         
         return (
             (
@@ -421,6 +422,11 @@ class McBoaty_Refiner_v5():
         
     @classmethod
     def init(self, **kwargs):
+        
+        self.INFO = SimpleNamespace(
+            id = kwargs.get('id', None),
+        )
+        
         attribute_names = ('INPUTS', 'PARAMS', 'KSAMPLER', 'OUTPUTS') 
         pipe = kwargs.get('pipe', (None,) * len(attribute_names))
 
@@ -429,8 +435,9 @@ class McBoaty_Refiner_v5():
 
         self.PARAMS.upscale_size_type = kwargs.get('output_size_type', None)
         self.PARAMS.upscale_size = kwargs.get('output_size', None)
-        self.PARAMS.tile_to_process = kwargs.get('tile_to_process', 0)
-
+        _tiles_to_process = kwargs.get('tiles_to_process', '')
+        self.PARAMS.tiles_to_process = self.set_tiles_to_process(_tiles_to_process)
+        
         self.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
         self.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
         self.KSAMPLER.sigmas_type = kwargs.get('sigmas_type', None)
@@ -494,6 +501,54 @@ class McBoaty_Refiner_v5():
     
             
     @classmethod
+    def set_tiles_to_process(self, tiles_to_process=''):
+
+        max_tiles = len(self.OUTPUTS.grid_tiles_to_process)
+        max = max_tiles if max_tiles > 0 else 64
+        
+        def is_valid_index(index, max = 64):
+            return 1 <= index <= max
+        def to_computer_index(human_index):
+            return human_index - 1
+
+        _tiles_to_process = []
+        
+        if tiles_to_process == '':
+            return _tiles_to_process
+
+        indexes = tiles_to_process.split(',')
+        
+        for index in indexes:
+            index = index.strip()
+            if '-' in index:
+                # Range of indexes
+                start, end = map(int, index.split('-'))
+                if is_valid_index(start, max) and is_valid_index(end, max):
+                    _tiles_to_process.extend(range(to_computer_index(start), to_computer_index(end) + 1))
+                else:
+                    _tiles_to_process.append(-1)
+                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
+            else:
+                # Single index
+                try:
+                    index = int(index)
+                    if is_valid_index(index, max):
+                        _tiles_to_process.append(to_computer_index(index))
+                    else:
+                        _tiles_to_process.append(-1)
+                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
+                except ValueError:
+                    # Ignore non-integer values
+                    pass
+
+        # Remove duplicates and sort
+        _tiles_to_process = sorted(set(_tiles_to_process))
+        if -1 in _tiles_to_process:
+            _tiles_to_process = [-1]
+
+        return _tiles_to_process
+            
+    @classmethod
     def _get_info(self, execution_duration):
         
         return [f"""
@@ -514,22 +569,20 @@ class McBoaty_Refiner_v5():
         output_images = []
         total = len(self.OUTPUTS.grid_images)
         
-        tile_to_process_index = self.PARAMS.tile_to_process - 1
-        
         for index, upscaled_image_grid in enumerate(self.OUTPUTS.grid_images):
             latent_image = None
-            if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
+            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
                 if self.KSAMPLER.tiled:
-                    log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled {iteration}")
                     latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
                 else:
-                    log(f"tile {index + 1}/{total}", None, None, f"VAEEncoding {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding {iteration}")
                     latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
             grid_latents.append(latent_image)
         
         for index, latent_image in enumerate(grid_latents):
             latent_output = None
-            if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
+            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
 
                 positive = self.KSAMPLER.positive
                 negative = self.KSAMPLER.negative
@@ -541,15 +594,15 @@ class McBoaty_Refiner_v5():
                 else:
                     denoise = self.KSAMPLER.denoise
                     
-                log(f"tile {index + 1}/{total} : {denoise} / {self.OUTPUTS.grid_prompts[index]}", None, None, f"Denoise/ClipTextEncoding {iteration}")
+                log(f"tile {index + 1}/{total} : {denoise} / {self.OUTPUTS.grid_prompts[index]}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding {iteration}")
                 positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
                 if self.CONTROLNET.controlnet is not None:
-                    log(f"tile {index + 1}/{total}", None, None, f"Canny {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny {iteration}")
                     canny_image = Canny().detect_edge(self.OUTPUTS.grid_images[index], self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
-                    log(f"tile {index + 1}/{total}", None, None, f"ControlNetApply {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply {iteration}")
                     positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, canny_image, self.CONTROLNET.strength, self.CONTROLNET.start_percent, self.CONTROLNET.end_percent, self.KSAMPLER.vae )
                     
-                log(f"tile {index + 1}/{total}", None, None, f"Refining {iteration}")
+                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining {iteration}")
                 latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                     self.KSAMPLER.model, 
                     self.KSAMPLER.add_noise, 
@@ -565,19 +618,22 @@ class McBoaty_Refiner_v5():
 
         for index, latent_output in enumerate(grid_latent_outputs):            
             output = None
-            if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
+            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
                 if self.KSAMPLER.tiled:
-                    log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecodingTiled {iteration}")
                     output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae)[0].unsqueeze(0))[0]
                 else:
-                    log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding {iteration}")
                     output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]            
             output_images.append(output)
 
-        if self.PARAMS.tile_to_process > 0:
-            grid_tiles_to_process = list(self.OUTPUTS.grid_tiles_to_process)
-            grid_tiles_to_process[tile_to_process_index] = output_images[tile_to_process_index]
-            output_images = tuple(grid_tiles_to_process)
+        if len(self.PARAMS.tiles_to_process) > 0:
+            _grid_tiles_to_process = list(self.OUTPUTS.grid_tiles_to_process)
+            for index, output_image in enumerate(output_images):
+                if output_image is None:
+                    output_images[index] = _grid_tiles_to_process[index]
+                    
+        output_images = tuple(output_images)
 
         feather_mask = self.PARAMS.feather_mask
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
@@ -632,46 +688,44 @@ class McBoaty_TilePrompter_v5():
 
     @classmethod    
     def fn(self, **kwargs):
-        
-        
-        self.id = kwargs.get('id', 0)
+                        
         input_prompts, input_tiles = kwargs.get('pipe', (None, None))
         input_denoises = ('', ) * len(input_prompts)
 
-        self.init(self.id)
+        self.init(**kwargs)
         
-        log("McBoaty (PromptEditor) is starting to do its magic")
+        log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {self.INFO.id}")
         
-        _input_prompts = MS_Cache.get(self.cache_prompt, input_prompts)
-        _input_prompts_edited = MS_Cache.get(self.cache_prompt_edited, input_prompts)
-        _input_denoises = MS_Cache.get(self.cache_denoise, input_denoises)
-        _input_denoises_edited = MS_Cache.get(self.cache_denoise_edited, input_denoises)
+        _input_prompts = MS_Cache.get(self.CACHE.prompt, input_prompts)
+        _input_prompts_edited = MS_Cache.get(self.CACHE.prompt_edited, input_prompts)
+        _input_denoises = MS_Cache.get(self.CACHE.denoise, input_denoises)
+        _input_denoises_edited = MS_Cache.get(self.CACHE.denoise_edited, input_denoises)
         
         refresh = False
         
-        if not MS_Cache.isset(self.cache_denoise):
+        if not MS_Cache.isset(self.CACHE.denoise):
             _input_denoises = input_denoises
-            MS_Cache.set(self.cache_denoise, _input_denoises)
-        if not MS_Cache.isset(self.cache_prompt) or _input_prompts != input_prompts:
+            MS_Cache.set(self.CACHE.denoise, _input_denoises)
+        if not MS_Cache.isset(self.CACHE.prompt) or _input_prompts != input_prompts:
             _input_prompts = input_prompts
-            MS_Cache.set(self.cache_prompt, _input_prompts)
+            MS_Cache.set(self.CACHE.prompt, _input_prompts)
             _input_denoises = input_denoises
-            MS_Cache.set(self.cache_denoise, input_denoises)
+            MS_Cache.set(self.CACHE.denoise, input_denoises)
             refresh = True
 
-        if not MS_Cache.isset(self.cache_denoise_edited) or refresh:
+        if not MS_Cache.isset(self.CACHE.denoise_edited) or refresh:
             _input_denoises_edited = input_denoises
-            MS_Cache.set(self.cache_denoise_edited, _input_denoises_edited)
-        if not MS_Cache.isset(self.cache_prompt_edited) or refresh:
+            MS_Cache.set(self.CACHE.denoise_edited, _input_denoises_edited)
+        if not MS_Cache.isset(self.CACHE.prompt_edited) or refresh:
             _input_prompts_edited = input_prompts
-            MS_Cache.set(self.cache_prompt_edited, _input_prompts_edited)
+            MS_Cache.set(self.CACHE.prompt_edited, _input_prompts_edited)
             _input_denoises_edited = input_denoises
-            MS_Cache.set(self.cache_denoise_edited, _input_denoises_edited)
+            MS_Cache.set(self.CACHE.denoise_edited, _input_denoises_edited)
         elif len(_input_prompts_edited) != len(_input_prompts):
             _input_prompts_edited = [gp if gp is not None else default_gp for gp, default_gp in zip(_input_prompts_edited, input_prompts)]
-            MS_Cache.set(self.cache_prompt_edited, _input_prompts_edited)
+            MS_Cache.set(self.CACHE.prompt_edited, _input_prompts_edited)
             _input_denoises_edited = [gp if gp is not None else default_gp for gp, default_gp in zip(_input_denoises_edited, input_denoises)]
-            MS_Cache.set(self.cache_denoise_edited, _input_denoises_edited)
+            MS_Cache.set(self.CACHE.denoise_edited, _input_denoises_edited)
 
         if _input_denoises_edited != _input_denoises:
             input_denoises = _input_denoises_edited
@@ -686,15 +740,15 @@ class McBoaty_TilePrompter_v5():
         output_denoises = output_denoises_js
 
         results = list()
-        filename_prefix = "McBoaty" + "_temp_" + "tilePrompter" + "_id_" + self.id
+        filename_prefix = "McBoaty" + "_temp_" + "tilePrompter" + "_id_" + self.INFO.id
         search_pattern = os.path.join(__MARASCOTT_TEMP__, filename_prefix + '*')
         files_to_delete = glob.glob(search_pattern)
         for file_path in files_to_delete:
             try:
                 os.remove(file_path)
-                # log(f"Deleted: {file_path}", None, None, "SUCCESS")
+                # log(f"Deleted: {file_path}", None, None, f"Node {self.INFO.id} - SUCCESS")
             except Exception as e:
-                log(f"Error deleting {file_path}: {e}", None, None, "ERROR")        
+                log(f"Error deleting {file_path}: {e}", None, None, "Node {self.INFO.id} - ERROR")        
             
         for index, tile in enumerate(input_tiles):
             full_output_folder, filename, counter, subfolder, subfolder_filename_prefix = folder_paths.get_save_image_path(f"MaraScott/{filename_prefix}", self.output_dir, tile.shape[1], tile.shape[0])
@@ -714,7 +768,7 @@ class McBoaty_TilePrompter_v5():
             })
             counter += 1
 
-        log("McBoaty (PromptEditor) is done with its magic")
+        log("McBoaty (PromptEditor) is done with its magic", None, None, f"Node {self.INFO.id}")
                     
         return {"ui": {
             "prompts_out": output_prompts_js, 
@@ -725,11 +779,19 @@ class McBoaty_TilePrompter_v5():
         }, "result": ((output_prompts, output_denoises),)}
 
     @classmethod
-    def init(self, id = 0):
-        self.cache_prompt = f'input_prompts_{id}'
-        self.cache_prompt_edited = f'{self.cache_prompt}_edited'
-        self.cache_denoise = f'input_denoises_{id}'
-        self.cache_denoise_edited = f'{self.cache_denoise}_edited'
+    def init(self, **kwargs):
+        self.INFO = SimpleNamespace(
+            id = kwargs.get('id', 0),
+        )
+        self.CACHE = SimpleNamespace(
+            prompt = f'input_prompts_{self.INFO.id}',
+            prompt_edited = None,
+            denoise = f'input_denoises_{self.INFO.id}',
+            denoise_edited = None,
+        )
+        self.CACHE.prompt_edited = f'{self.CACHE.prompt}_edited'
+        self.CACHE.denoise_edited = f'{self.CACHE.denoise}_edited'
+        
         self.output_dir = folder_paths.get_temp_directory()
         
 @PromptServer.instance.routes.get("/MaraScott/McBoaty/v5/get_input_prompts")
@@ -814,7 +876,7 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
         combined_inputs = {**upscaler_inputs, **refiner_inputs}
         combined_inputs['required'] = {**upscaler_inputs['required'], **refiner_inputs['required']}
         combined_inputs['optional'] = {**upscaler_inputs.get('optional', {}), **refiner_inputs.get('optional', {})}
-        combined_inputs['hidden'] = {**upscaler_inputs.get('hidden', {}), **refiner_inputs.get('hidden', {})}
+        combined_inputs['hidden'] = {"id":"UNIQUE_ID",}
         
         combined_inputs['required'].pop('pipe', None)
         combined_inputs['optional'].pop('pipe_prompty', None)
@@ -853,7 +915,7 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
     @classmethod
     def fn(self, **kwargs):
         start_time = time.time()
-
+        
         # Upscaling phase
         upscaler_result = McBoaty_Upscaler_v5.fn(**kwargs)
         upscaler_pipe, _, upscaler_info = upscaler_result
