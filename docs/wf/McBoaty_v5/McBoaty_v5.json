@@ -1357,7 +1357,7 @@
         "1": 346
       },
       "flags": {},
-      "order": 46,
+      "order": 45,
       "mode": 0,
       "inputs": [
         {
@@ -1390,11 +1390,7 @@
         "",
         "",
         "unchanged",
-        "a blue door leading to a room with a pink door ",
-        null,
-        null,
-        null,
-        false
+        "a blue door leading to a room with a pink door "
       ]
     },
     {
@@ -2232,7 +2228,7 @@
         750
       ],
       "flags": {},
-      "order": 47,
+      "order": 26,
       "mode": 0,
       "inputs": [
         {
@@ -2437,6 +2433,7 @@
       },
       "flags": {},
       "order": 31,
+      "order": 31,
       "mode": 0,
       "inputs": [
         {
@@ -2560,6 +2557,7 @@
       ],
       "size": {
         "0": 396.3999938964844,
+        "0": 396.3999938964844,
         "1": 326
       },
       "flags": {},
@@ -2575,46 +2573,54 @@
           "name": "* 01 - model",
           "type": "MODEL",
           "link": null
+          "link": null
         },
         {
           "name": "* 02 - clip",
           "type": "CLIP",
+          "link": null
           "link": null
         },
         {
           "name": "* 03 - vae",
           "type": "VAE",
           "link": null
+          "link": null
         },
         {
           "name": "* 04 - conditioning",
           "type": "CONDITIONING",
+          "link": null
           "link": null
         },
         {
           "name": "* 05 - conditioning",
           "type": "CONDITIONING",
           "link": null
+          "link": null
         },
         {
           "name": "* 06 - image",
           "type": "IMAGE",
+          "link": null
           "link": null
         },
         {
           "name": "* 07 - prompt",
           "type": "STRING",
           "link": null
+          "link": null
         },
         {
           "name": "* 08 - prompt",
           "type": "STRING",
           "link": null
+          "link": null
         },
         {
           "name": "* 09 - image",
           "type": "IMAGE",
-          "link": null
+          "link": 867
         },
         {
           "name": "* 10",
@@ -2871,7 +2877,10 @@
         {
           "name": "* 09 - image",
           "type": "IMAGE",
-          "links": null
+          "links": [
+            872
+          ],
+          "slot_index": 9
         },
         {
           "name": "* 10",
@@ -2890,7 +2899,7 @@
         "Profile": "main",
         "prevProfileName": "main",
         "Nb Inputs": 11,
-        "uuid": 337
+        "uuid": 340
       },
       "widgets_values": [
         "main",
@@ -3013,7 +3022,7 @@
       "shape": 4
     },
     {
-      "id": 335,
+      "id": 343,
       "type": "MaraScottAnyBus_v2",
       "pos": [
         3573,
@@ -3030,7 +3039,7 @@
         {
           "name": "bus",
           "type": "BUS",
-          "link": 854
+          "link": 883
         },
         {
           "name": "* 01 - model",
@@ -3092,9 +3101,8 @@
         {
           "name": "bus",
           "type": "BUS",
-          "links": [],
-          "shape": 3,
-          "slot_index": 0
+          "links": null,
+          "shape": 3
         },
         {
           "name": "* 01 - model",
@@ -3162,7 +3170,10 @@
         {
           "name": "* 09 - image",
           "type": "IMAGE",
-          "links": null
+          "links": [
+            884
+          ],
+          "slot_index": 9
         },
         {
           "name": "* 10",
@@ -3181,7 +3192,7 @@
         "Profile": "main",
         "prevProfileName": "main",
         "Nb Inputs": 11,
-        "uuid": 335
+        "uuid": 343
       },
       "widgets_values": [
         "main",
