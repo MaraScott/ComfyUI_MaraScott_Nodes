@@ -26,6 +26,8 @@ import folder_paths
 from PIL import Image
 import numpy as np
 
+from concurrent.futures import ThreadPoolExecutor
+
 from .... import root_dir, __MARASCOTT_TEMP__
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
@@ -554,7 +556,45 @@ class McBoaty_Refiner_v5():
     NODE INFO
         version : {VERSION}
 
-"""]        
+"""]
+    
+    @classmethod
+    def get_grid_output_latents(self, index, latent_image, total):
+        latent_output = None
+        if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
+
+            positive = self.KSAMPLER.positive
+            negative = self.KSAMPLER.negative
+
+            sigmas = self.KSAMPLER.sigmas
+            if self.OUTPUTS.grid_denoises[index] != self.KSAMPLER.denoise:
+                denoise = self.OUTPUTS.grid_denoises[index]
+                sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.OUTPUTS.grid_denoises[index], self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
+            else:
+                denoise = self.KSAMPLER.denoise
+                
+            log(f"tile {index + 1}/{total} : {denoise} / {self.OUTPUTS.grid_prompts[index]}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding {iteration}")
+            positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
+            if self.CONTROLNET.controlnet is not None:
+                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny {iteration}")
+                canny_image = Canny().detect_edge(self.OUTPUTS.grid_images[index], self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
+                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply {iteration}")
+                positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, canny_image, self.CONTROLNET.strength, self.CONTROLNET.start_percent, self.CONTROLNET.end_percent, self.KSAMPLER.vae )
+                
+            log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining {iteration}")
+            latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
+                self.KSAMPLER.model, 
+                self.KSAMPLER.add_noise, 
+                self.KSAMPLER.noise_seed, 
+                self.KSAMPLER.cfg, 
+                positive, 
+                negative, 
+                self.KSAMPLER.sampler, 
+                sigmas, 
+                latent_image
+            )[0]
+        return latent_output
+    
         
     @classmethod
     def refine(self, image, iteration):
@@ -575,42 +615,14 @@ class McBoaty_Refiner_v5():
                     latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
             grid_latents.append(latent_image)
         
-        for index, latent_image in enumerate(grid_latents):
-            latent_output = None
-            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
-
-                positive = self.KSAMPLER.positive
-                negative = self.KSAMPLER.negative
-
-                sigmas = self.KSAMPLER.sigmas
-                if self.OUTPUTS.grid_denoises[index] != self.KSAMPLER.denoise:
-                    denoise = self.OUTPUTS.grid_denoises[index]
-                    sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.OUTPUTS.grid_denoises[index], self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
-                else:
-                    denoise = self.KSAMPLER.denoise
-                    
-                log(f"tile {index + 1}/{total} : {denoise} / {self.OUTPUTS.grid_prompts[index]}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding {iteration}")
-                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
-                if self.CONTROLNET.controlnet is not None:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny {iteration}")
-                    canny_image = Canny().detect_edge(self.OUTPUTS.grid_images[index], self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply {iteration}")
-                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, canny_image, self.CONTROLNET.strength, self.CONTROLNET.start_percent, self.CONTROLNET.end_percent, self.KSAMPLER.vae )
-                    
-                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining {iteration}")
-                latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
-                    self.KSAMPLER.model, 
-                    self.KSAMPLER.add_noise, 
-                    self.KSAMPLER.noise_seed, 
-                    self.KSAMPLER.cfg, 
-                    positive, 
-                    negative, 
-                    self.KSAMPLER.sampler, 
-                    sigmas, 
-                    latent_image
-                )[0]
-            grid_latent_outputs.append(latent_output)
-
+        def wrapper_get_grid_output_latents(args):
+            return self.get_grid_output_latents(*args) 
+               
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            latent_output_args_list = [(index, latent_image, total) for index, latent_image in enumerate(grid_latents)]
+            for latent_output in executor.map(wrapper_get_grid_output_latents, latent_output_args_list):
+                grid_latent_outputs.append(latent_output)
+                
         for index, latent_output in enumerate(grid_latent_outputs):            
             output = None
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
