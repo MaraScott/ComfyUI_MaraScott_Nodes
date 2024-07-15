@@ -525,7 +525,7 @@ class McBoaty_Refiner_v5():
                 if is_valid_index(start, max) and is_valid_index(end, max):
                     _tiles_to_process.extend(range(to_computer_index(start), to_computer_index(end) + 1))
                 else:
-                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS[], f"Node {self.INFO.id}")
+                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
             else:
                 # Single index
                 try:
@@ -533,7 +533,7 @@ class McBoaty_Refiner_v5():
                     if is_valid_index(index, max):
                         _tiles_to_process.append(to_computer_index(index))
                     else:
-                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS[], f"Node {self.INFO.id}")
+                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
                 except ValueError:
                     # Ignore non-integer values
                     pass
@@ -876,7 +876,7 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
         combined_inputs['required'].pop('pipe', None)
         combined_inputs['optional'].pop('pipe_prompty', None)
         
-        combined_inputs['required'].pop('tile_to_process', None)
+        combined_inputs['required'].pop('tiles_to_process', None)
         
         return combined_inputs
 
