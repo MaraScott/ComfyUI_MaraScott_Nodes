@@ -520,7 +520,7 @@ app.registerExtension({
 
         mcBoaty_v5.addStatusTagHandler(nodeType);
 
-		if (nodeData.name === "McBoaty_TilePrompter_v5") {
+		if (nodeData.name === "MaraScottMcBoatyTilePrompter_v5") {
 
             const onExecuted = nodeType.prototype.onExecuted;
 			nodeType.prototype.onExecuted = function (message) {
