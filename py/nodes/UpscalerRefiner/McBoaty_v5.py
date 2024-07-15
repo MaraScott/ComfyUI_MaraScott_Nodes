@@ -627,6 +627,10 @@ class McBoaty_Refiner_v5():
                     output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]            
             output_images.append(output)
 
+        if len(self.PARAMS.tiles_to_process) > 0 and len(self.OUTPUTS.grid_tiles_to_process) == 0:
+            log("!!! WARNING !!! you are processing specific tiles without a fully refined image, we suggest to pass through a full refiner first", None, COLORS['YELLOW'], f"Node {self.INFO.id} {iteration}")
+            self.OUTPUTS.grid_tiles_to_process = self.OUTPUTS.grid_images
+
         if len(self.PARAMS.tiles_to_process) > 0:
             _grid_tiles_to_process = list(self.OUTPUTS.grid_tiles_to_process)
             for index, output_image in enumerate(output_images):
