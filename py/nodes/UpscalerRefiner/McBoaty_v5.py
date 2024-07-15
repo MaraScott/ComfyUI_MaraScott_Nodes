@@ -510,10 +510,10 @@ class McBoaty_Refiner_v5():
         def to_computer_index(human_index):
             return human_index - 1
 
-        _tiles_to_process = None
+        _tiles_to_process = []
         
         if tiles_to_process == '':
-            return []
+            return _tiles_to_process
 
         indexes = tiles_to_process.split(',')
         
@@ -525,6 +525,7 @@ class McBoaty_Refiner_v5():
                 if is_valid_index(start, max) and is_valid_index(end, max):
                     _tiles_to_process.extend(range(to_computer_index(start), to_computer_index(end) + 1))
                 else:
+                    _tiles_to_process.append(-1)
                     log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
             else:
                 # Single index
@@ -533,13 +534,17 @@ class McBoaty_Refiner_v5():
                     if is_valid_index(index, max):
                         _tiles_to_process.append(to_computer_index(index))
                     else:
+                        _tiles_to_process.append(-1)
                         log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
                 except ValueError:
+                    _tiles_to_process.append(-1)
                     # Ignore non-integer values
                     pass
 
         # Remove duplicates and sort
         _tiles_to_process = sorted(set(_tiles_to_process))
+        if -1 in _tiles_to_process:
+            _tiles_to_process = [-1]
 
         return _tiles_to_process
             
