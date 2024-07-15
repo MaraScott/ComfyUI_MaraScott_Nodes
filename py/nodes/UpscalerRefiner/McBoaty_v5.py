@@ -325,7 +325,7 @@ class McBoaty_Refiner_v5():
             },
             "required":{
                 "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
-                # "tile_to_process": (list(range(65)), { "label": "Tile to process", "default": 0, "min": 0, "max": 64}),
+                "tiles_to_process": ("STRING", { "label": "Tile to process", "default": ''}),
                 "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
                 "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
                 "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
@@ -510,10 +510,10 @@ class McBoaty_Refiner_v5():
         def to_computer_index(human_index):
             return human_index - 1
 
-        _tiles_to_process = []
+        _tiles_to_process = None
         
         if tiles_to_process == '':
-            return _tiles_to_process
+            return []
 
         indexes = tiles_to_process.split(',')
         
@@ -525,8 +525,7 @@ class McBoaty_Refiner_v5():
                 if is_valid_index(start, max) and is_valid_index(end, max):
                     _tiles_to_process.extend(range(to_computer_index(start), to_computer_index(end) + 1))
                 else:
-                    _tiles_to_process.append(-1)
-                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
+                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS[], f"Node {self.INFO.id}")
             else:
                 # Single index
                 try:
@@ -534,16 +533,13 @@ class McBoaty_Refiner_v5():
                     if is_valid_index(index, max):
                         _tiles_to_process.append(to_computer_index(index))
                     else:
-                        _tiles_to_process.append(-1)
-                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
+                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS[], f"Node {self.INFO.id}")
                 except ValueError:
                     # Ignore non-integer values
                     pass
 
         # Remove duplicates and sort
         _tiles_to_process = sorted(set(_tiles_to_process))
-        if -1 in _tiles_to_process:
-            _tiles_to_process = [-1]
 
         return _tiles_to_process
             
