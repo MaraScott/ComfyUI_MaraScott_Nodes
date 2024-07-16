@@ -135,6 +135,21 @@ McInpainty Node is a set of 2 nodes
 
 ![img](./docs/img/McInpainty_v2_set.jpeg)
 
+## Benchmark
+
+### Upscaler
+
+[Img Slider for result comparaison](https://imgsli.com/Mjc5NDg3/0/1)
+
+|             Custom_node | Type     | workflow                                                   | Execution Time from server start to end of queue | OS Name                   | Processor                            | Installed Physical Memory (RAM) GBGP | GPU Name                                      | output                                                    |
+| ----------------------: | -------- | ---------------------------------------------------------- | ------------------------------------------------ | ------------------------- | ------------------------------------ | ------------------------------------ | --------------------------------------------- | --------------------------------------------------------- |
+| McBoaty LargeRefiner v5 | Upscaler | .\docs\benchmark\Competitor\McBoaty\benchmark_McBoaty.json | 98.37                                            | Microsoft Windows 10 Home | Intel(R) Xeon(R) W-3235 CPU @ 3.30GH | 41                                   | Red Hat QXL controller NVIDIA Quadro RTX 6000 | ![McBoaty](./docs/benchmark/Competitor/McBoaty/McBoaty.png) |
+|                   Supir | Upscaler | .\docs\benchmark\Competitor\SUPIR\benchmark_SUPIR.json     | 70.48                                            | Microsoft Windows 10 Home | Intel(R) Xeon(R) W-3235 CPU @ 3.30GH | 41                                   | Red Hat QXL controller NVIDIA Quadro RTX 6000 | ![SUPIR](./docs/benchmark/Competitor/SUPIR/SUPIR.png)       |
+|      UltimateSDUpscaler | Upscaler | .\docs\benchmark\Competitor\USDU\benchmark_USDU.json       | 47.34                                            | Microsoft Windows 10 Home | Intel(R) Xeon(R) W-3235 CPU @ 3.30GH | 41                                   | Red Hat QXL controller NVIDIA Quadro RTX 6000 | ![USDU](./docs/benchmark/Competitor/USDU/USDU.png)          |
+
+**Visit this link to see [an Image Slider comparing the 3 results against the orignal](https://imgsli.com/Mjc5NDg3/0/1)**
+
+
 ## Special thanks
 
 I would like to thank my [AI Classroom Discord](discord.gg/t28yZEewrp) buddies with a shoutout to:
