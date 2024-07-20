@@ -174,6 +174,11 @@ I would like to thank my [AI Classroom Discord](discord.gg/t28yZEewrp) buddies w
 - DrLtData with his [ImpactPack](https://github.com/ltdrdata/ComfyUI-Impact-Pack),
 - Kijai with his [ColorMatch node](https://github.com/kijai/ComfyUI-KJNodes/blob/main/nodes/image_nodes.py)
 
+
+![WorkFlow for McBoaty_V5](./docs/wf/McBoaty_v5/McBoaty_v5.png)
+
+![Base Image for Comparaison](./docs/benchmark/Competitor/input/template.png "FromKyotoToIstanbul")
+
 ### McInpainty
 
 - Chflame163 with his [LayerStyle](https://github.com/chflame163/ComfyUI_LayerStyle) Nodes
