@@ -1,6 +1,6 @@
 {
-  "last_node_id": 486,
-  "last_link_id": 1194,
+  "last_node_id": 494,
+  "last_link_id": 1249,
   "nodes": [
     {
       "id": 306,
@@ -22,7 +22,7 @@
         30
       ],
       "flags": {},
-      "order": 10,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -78,7 +78,7 @@
         30
       ],
       "flags": {},
-      "order": 17,
+      "order": 20,
       "mode": 0,
       "inputs": [
         {
@@ -149,7 +149,7 @@
         "1": 220
       },
       "flags": {},
-      "order": 11,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -271,7 +271,7 @@
         30
       ],
       "flags": {},
-      "order": 19,
+      "order": 22,
       "mode": 0,
       "inputs": [
         {
@@ -327,7 +327,7 @@
         30
       ],
       "flags": {},
-      "order": 18,
+      "order": 21,
       "mode": 0,
       "inputs": [
         {
@@ -375,7 +375,7 @@
         "1": 202
       },
       "flags": {},
-      "order": 15,
+      "order": 18,
       "mode": 0,
       "inputs": [
         {
@@ -469,7 +469,7 @@
         "1": 202
       },
       "flags": {},
-      "order": 16,
+      "order": 19,
       "mode": 0,
       "inputs": [
         {
@@ -571,7 +571,7 @@
         30
       ],
       "flags": {},
-      "order": 12,
+      "order": 15,
       "mode": 0,
       "inputs": [
         {
@@ -627,7 +627,7 @@
         30
       ],
       "flags": {},
-      "order": 13,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
@@ -664,6 +664,97 @@
       }
     },
     {
+      "id": 4,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        -2880,
+        220
+      ],
+      "size": {
+        "0": 320,
+        "1": 100
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1101
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            1028,
+            1036,
+            1102
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            1103
+          ],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "Juggernaut_X_RunDiffusion.safetensors"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "LoadImage",
+      "pos": [
+        -3400,
+        -50
+      ],
+      "size": {
+        "0": 320,
+        "1": 314
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "label": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            97
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "label": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "template-canny.png",
+        "image"
+      ]
+    },
+    {
       "id": 302,
       "type": "Reroute (rgthree)",
       "pos": {
@@ -683,7 +774,7 @@
         30
       ],
       "flags": {},
-      "order": 14,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -728,10 +819,10 @@
       ],
       "size": {
         "0": 329.20001220703125,
-        "1": 286
+        "1": 306
       },
       "flags": {},
-      "order": 20,
+      "order": 23,
       "mode": 0,
       "inputs": [
         {
@@ -780,8 +871,13 @@
           "link": 853
         },
         {
-          "name": "* 09 - image",
-          "type": "IMAGE",
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
           "link": null
         }
       ],
@@ -841,8 +937,13 @@
           "links": null
         },
         {
-          "name": "* 09 - image",
-          "type": "IMAGE",
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
           "links": null
         }
       ],
@@ -851,12 +952,12 @@
         "Node name for S&R": "MaraScottAnyBus_v2",
         "Profile": "main",
         "prevProfileName": "main",
-        "Nb Inputs": 9,
+        "Nb Inputs": 10,
         "uuid": 336
       },
       "widgets_values": [
         "main",
-        9,
+        10,
         null
       ],
       "color": "#232",
@@ -864,84 +965,89 @@
       "shape": 4
     },
     {
-      "id": 452,
-      "type": "EmptyLatentImage",
+      "id": 446,
+      "type": "KSamplerAdvanced",
       "pos": [
-        1200,
-        920
+        1040,
+        420
       ],
       "size": {
         "0": 315,
-        "1": 106
+        "1": 546
       },
       "flags": {},
-      "order": 2,
+      "order": 26,
       "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1195
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 1126
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 1127
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 1119
+        },
+        {
+          "name": "end_at_step",
+          "type": "INT",
+          "link": 1168,
+          "widget": {
+            "name": "end_at_step"
+          }
+        }
+      ],
       "outputs": [
         {
           "name": "LATENT",
           "type": "LATENT",
           "links": [
-            1119
+            1241
           ],
           "shape": 3,
           "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "EmptyLatentImage"
+        "Node name for S&R": "KSamplerAdvanced"
       },
       "widgets_values": [
-        1024,
-        1024,
-        1
-      ]
-    },
-    {
-      "id": 456,
-      "type": "ControlNetLoader",
-      "pos": [
-        420,
-        720
-      ],
-      "size": {
-        "0": 566.8556518554688,
-        "1": 62.433143615722656
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CONTROL_NET",
-          "type": "CONTROL_NET",
-          "links": [
-            1128
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "ControlNetLoader"
-      },
-      "widgets_values": [
-        "SDXL\\controlnet-union-sdxl-1.0\\diffusion_pytorch_model.safetensors"
+        "enable",
+        693916136986928,
+        "randomize",
+        30,
+        4.5,
+        "dpmpp_2m",
+        "karras",
+        0,
+        27,
+        "enable"
       ]
     },
     {
       "id": 335,
       "type": "MaraScottAnyBus_v2",
       "pos": [
-        -2,
+        -96,
         64
       ],
       "size": {
         "0": 329.20001220703125,
-        "1": 286
+        "1": 306
       },
       "flags": {},
-      "order": 21,
+      "order": 24,
       "mode": 0,
       "inputs": [
         {
@@ -990,8 +1096,13 @@
           "link": null
         },
         {
-          "name": "* 09 - image",
-          "type": "IMAGE",
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
           "link": null
         }
       ],
@@ -1009,7 +1120,7 @@
           "name": "* 01 - model",
           "type": "MODEL",
           "links": [
-            1136
+            1195
           ],
           "shape": 3,
           "slot_index": 1
@@ -1050,7 +1161,7 @@
           "name": "* 06 - image",
           "type": "IMAGE",
           "links": [
-            1137
+            1196
           ],
           "slot_index": 6
         },
@@ -1065,8 +1176,13 @@
           "links": null
         },
         {
-          "name": "* 09 - image",
-          "type": "IMAGE",
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
           "links": null
         }
       ],
@@ -1075,12 +1191,12 @@
         "Node name for S&R": "MaraScottAnyBus_v2",
         "Profile": "main",
         "prevProfileName": "main",
-        "Nb Inputs": 9,
+        "Nb Inputs": 10,
         "uuid": 335
       },
       "widgets_values": [
         "main",
-        9,
+        10,
         null
       ],
       "color": "#232",
@@ -1088,259 +1204,24 @@
       "shape": 4
     },
     {
-      "id": 10,
-      "type": "LoadImage",
+      "id": 489,
+      "type": "MaraScottAnyBus_v2",
       "pos": [
-        -3400,
-        -50
+        4680,
+        30
       ],
       "size": {
-        "0": 320,
-        "1": 314
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "label": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            97
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "label": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3,
-          "slot_index": 1
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "template.png",
-        "image"
-      ]
-    },
-    {
-      "id": 4,
-      "type": "CheckpointLoaderSimple",
-      "pos": [
-        -2880,
-        220
-      ],
-      "size": {
-        "0": 320,
-        "1": 100
-      },
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            1101
-          ],
-          "slot_index": 0
-        },
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            1028,
-            1036,
-            1102
-          ],
-          "slot_index": 1
-        },
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": [
-            1103
-          ],
-          "slot_index": 2
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CheckpointLoaderSimple"
-      },
-      "widgets_values": [
-        "Juggernaut_X_RunDiffusion.safetensors"
-      ]
-    },
-    {
-      "id": 454,
-      "type": "ControlNetApplyAdvanced",
-      "pos": [
-        1130,
-        670
-      ],
-      "size": {
-        "0": 315,
-        "1": 166
-      },
-      "flags": {},
-      "order": 23,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "positive",
-          "type": "CONDITIONING",
-          "link": 1124
-        },
-        {
-          "name": "negative",
-          "type": "CONDITIONING",
-          "link": 1125
-        },
-        {
-          "name": "control_net",
-          "type": "CONTROL_NET",
-          "link": 1128,
-          "slot_index": 2
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 1183
-        }
-      ],
-      "outputs": [
-        {
-          "name": "positive",
-          "type": "CONDITIONING",
-          "links": [
-            1126
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "negative",
-          "type": "CONDITIONING",
-          "links": [
-            1127
-          ],
-          "shape": 3,
-          "slot_index": 1
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "ControlNetApplyAdvanced"
-      },
-      "widgets_values": [
-        1,
-        0,
-        1
-      ]
-    },
-    {
-      "id": 461,
-      "type": "AV_IPAdapter",
-      "pos": [
-        1003,
-        186
-      ],
-      "size": {
-        "0": 342.5999755859375,
+        "0": 329.20001220703125,
         "1": 306
       },
       "flags": {},
-      "order": 24,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 1136
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 1137
-        },
-        {
-          "name": "ip_adapter_opt",
-          "type": "IPADAPTER",
-          "link": null
-        },
-        {
-          "name": "clip_vision_opt",
-          "type": "CLIP_VISION",
-          "link": null
-        },
-        {
-          "name": "attn_mask",
-          "type": "MASK",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "links": [
-            1138
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "pipeline",
-          "type": "IPADAPTER",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "clip_vision",
-          "type": "CLIP_VISION",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "AV_IPAdapter"
-      },
-      "widgets_values": [
-        "ip-adapter-plus_sdxl_vit-h.safetensors",
-        "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors",
-        0.36,
-        0,
-        0,
-        1,
-        "style transfer (SDXL only)",
-        true
-      ]
-    },
-    {
-      "id": 466,
-      "type": "MaraScottAnyBus_v2",
-      "pos": [
-        2901,
-        79
-      ],
-      "size": {
-        "0": 330,
-        "1": 290
-      },
-      "flags": {},
-      "order": 22,
+      "order": 32,
       "mode": 0,
       "inputs": [
         {
           "name": "bus",
           "type": "BUS",
-          "link": 1146
+          "link": 1224
         },
         {
           "name": "* 01 - model",
@@ -1383,8 +1264,13 @@
           "link": null
         },
         {
-          "name": "* 09 - image",
-          "type": "IMAGE",
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
           "link": null
         }
       ],
@@ -1399,35 +1285,45 @@
         {
           "name": "* 01 - model",
           "type": "MODEL",
-          "links": [],
+          "links": [
+            1225
+          ],
           "shape": 3,
           "slot_index": 1
         },
         {
           "name": "* 02 - clip",
           "type": "CLIP",
-          "links": [],
+          "links": [
+            1226
+          ],
           "shape": 3,
           "slot_index": 2
         },
         {
           "name": "* 03 - vae",
           "type": "VAE",
-          "links": [],
+          "links": [
+            1227
+          ],
           "shape": 3,
           "slot_index": 3
         },
         {
           "name": "* 04 - conditioning",
           "type": "CONDITIONING",
-          "links": [],
+          "links": [
+            1228
+          ],
           "shape": 3,
           "slot_index": 4
         },
         {
           "name": "* 05 - conditioning",
           "type": "CONDITIONING",
-          "links": [],
+          "links": [
+            1229
+          ],
           "shape": 3,
           "slot_index": 5
         },
@@ -1440,36 +1336,37 @@
         {
           "name": "* 07 - prompt",
           "type": "STRING",
-          "links": [
-            1147
-          ],
+          "links": [],
           "slot_index": 7
         },
         {
           "name": "* 08 - prompt",
           "type": "STRING",
-          "links": [
-            1148
-          ],
+          "links": [],
           "slot_index": 8
         },
         {
-          "name": "* 09 - image",
-          "type": "IMAGE",
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
           "links": null
         }
       ],
-      "title": "AnyBus - main",
+      "title": "AnyBus - refiner",
       "properties": {
         "Node name for S&R": "MaraScottAnyBus_v2",
-        "Profile": "main",
-        "prevProfileName": "main",
-        "Nb Inputs": 9,
-        "uuid": 466
+        "Profile": "refiner",
+        "prevProfileName": "refiner",
+        "Nb Inputs": 10,
+        "uuid": 489
       },
       "widgets_values": [
-        "main",
-        9,
+        "refiner",
+        10,
         null
       ],
       "color": "#232",
@@ -1477,471 +1374,44 @@
       "shape": 4
     },
     {
-      "id": 462,
-      "type": "CheckpointLoaderSimple",
-      "pos": [
-        2904,
-        462
-      ],
-      "size": {
-        "0": 315,
-        "1": 98
-      },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            1143,
-            1185
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            1149,
-            1150,
-            1186
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": [
-            1157,
-            1187
-          ],
-          "shape": 3,
-          "slot_index": 2
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CheckpointLoaderSimple"
-      },
-      "widgets_values": [
-        "sd_xl_refiner_1.0.safetensors"
-      ]
-    },
-    {
-      "id": 476,
-      "type": "int _O",
-      "pos": [
-        1730,
-        537
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "INT",
-          "type": "INT",
-          "links": [
-            1167,
-            1168
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "int _O"
-      },
-      "widgets_values": [
-        24
-      ]
-    },
-    {
-      "id": 465,
-      "type": "CLIPTextEncodeSDXLRefiner",
-      "pos": [
-        3600,
-        920
-      ],
-      "size": {
-        "0": 400,
-        "1": 200
-      },
-      "flags": {},
-      "order": 25,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 1149
-        },
-        {
-          "name": "text",
-          "type": "STRING",
-          "link": 1147,
-          "widget": {
-            "name": "text"
-          }
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "links": [
-            1151,
-            1189
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPTextEncodeSDXLRefiner"
-      },
-      "widgets_values": [
-        6,
-        1024,
-        1024,
-        ""
-      ]
-    },
-    {
-      "id": 467,
-      "type": "CLIPTextEncodeSDXLRefiner",
-      "pos": [
-        3570,
-        1210
-      ],
-      "size": {
-        "0": 400,
-        "1": 200
-      },
-      "flags": {},
-      "order": 26,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 1150
-        },
-        {
-          "name": "text",
-          "type": "STRING",
-          "link": 1148,
-          "widget": {
-            "name": "text"
-          }
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "links": [
-            1152,
-            1190
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPTextEncodeSDXLRefiner"
-      },
-      "widgets_values": [
-        6,
-        1024,
-        1024,
-        ""
-      ]
-    },
-    {
-      "id": 484,
-      "type": "PreviewImage",
-      "pos": [
-        7336.627631442374,
-        499.0617798474253
-      ],
-      "size": {
-        "0": 210,
-        "1": 246
-      },
-      "flags": {},
-      "order": 32,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 1194
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
-    },
-    {
-      "id": 485,
-      "type": "Image Comparer (rgthree)",
-      "pos": {
-        "0": 6503.62744140625,
-        "1": 505.061767578125,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 0,
-        "6": 0,
-        "7": 0,
-        "8": 0,
-        "9": 0
-      },
-      "size": {
-        "0": 758.9908447265625,
-        "1": 659.4465942382812
-      },
-      "flags": {},
-      "order": 31,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "image_a",
-          "type": "IMAGE",
-          "link": 1192,
-          "dir": 3
-        },
-        {
-          "name": "image_b",
-          "type": "IMAGE",
-          "link": 1193,
-          "dir": 3
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "comparer_mode": "Slide"
-      },
-      "widgets_values": [
-        [
-          {
-            "name": "A",
-            "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_tkxrm_00001_.png&type=temp&subfolder=&rand=0.6440800801610451"
-          },
-          {
-            "name": "B",
-            "selected": true,
-            "url": "/view?filename=rgthree.compare._temp_tkxrm_00002_.png&type=temp&subfolder=&rand=0.35476480658136"
-          }
-        ]
-      ]
-    },
-    {
-      "id": 470,
-      "type": "VAEDecodeTiled",
-      "pos": [
-        4641,
-        486
-      ],
-      "size": {
-        "0": 315,
-        "1": 78
-      },
-      "flags": {},
-      "order": 29,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "samples",
-          "type": "LATENT",
-          "link": 1155
-        },
-        {
-          "name": "vae",
-          "type": "VAE",
-          "link": 1157
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            1191,
-            1193
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "VAEDecodeTiled"
-      },
-      "widgets_values": [
-        512
-      ]
-    },
-    {
-      "id": 459,
-      "type": "LoadImage",
-      "pos": [
-        685,
-        930
-      ],
-      "size": {
-        "0": 320,
-        "1": 314
-      },
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "label": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            1183
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "label": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3,
-          "slot_index": 1
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "template-canny.png",
-        "image"
-      ]
-    },
-    {
-      "id": 446,
-      "type": "KSamplerAdvanced",
-      "pos": [
-        1706,
-        657
-      ],
-      "size": {
-        "0": 315,
-        "1": 546
-      },
-      "flags": {},
-      "order": 27,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 1138
-        },
-        {
-          "name": "positive",
-          "type": "CONDITIONING",
-          "link": 1126
-        },
-        {
-          "name": "negative",
-          "type": "CONDITIONING",
-          "link": 1127
-        },
-        {
-          "name": "latent_image",
-          "type": "LATENT",
-          "link": 1119
-        },
-        {
-          "name": "end_at_step",
-          "type": "INT",
-          "link": 1168,
-          "widget": {
-            "name": "end_at_step"
-          }
-        }
-      ],
-      "outputs": [
-        {
-          "name": "LATENT",
-          "type": "LATENT",
-          "links": [
-            1163
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "KSamplerAdvanced"
-      },
-      "widgets_values": [
-        "enable",
-        71839252339413,
-        "randomize",
-        30,
-        4.5,
-        "dpmpp_2m",
-        "sgm_uniform",
-        0,
-        27,
-        "enable"
-      ]
-    },
-    {
       "id": 463,
       "type": "KSamplerAdvanced",
       "pos": [
-        4273,
-        639
+        4100,
+        550
       ],
       "size": {
         "0": 320,
         "1": 550
       },
       "flags": {},
-      "order": 28,
+      "order": 33,
       "mode": 0,
       "inputs": [
         {
           "name": "model",
           "type": "MODEL",
-          "link": 1143
+          "link": 1249
         },
         {
           "name": "positive",
           "type": "CONDITIONING",
-          "link": 1151
+          "link": 1238
         },
         {
           "name": "negative",
           "type": "CONDITIONING",
-          "link": 1152
+          "link": 1239
         },
         {
           "name": "latent_image",
           "type": "LATENT",
-          "link": 1163
+          "link": 1245
         },
         {
           "name": "start_at_step",
           "type": "INT",
-          "link": 1167,
+          "link": 1248,
           "widget": {
             "name": "start_at_step"
           }
@@ -1962,30 +1432,130 @@
       },
       "widgets_values": [
         "disable",
-        85803285541837,
+        536697032572594,
         "randomize",
         30,
         4.5,
         "dpmpp_2m",
-        "sgm_uniform",
+        "karras",
         26,
         30,
         "disable"
       ]
     },
     {
+      "id": 467,
+      "type": "CLIPTextEncodeSDXLRefiner",
+      "pos": [
+        3040,
+        650
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 30,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 1220
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 1222,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            1218
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncodeSDXLRefiner"
+      },
+      "widgets_values": [
+        6,
+        1024,
+        1125,
+        ""
+      ]
+    },
+    {
+      "id": 465,
+      "type": "CLIPTextEncodeSDXLRefiner",
+      "pos": [
+        3040,
+        360
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 29,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 1219
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 1221,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            1217
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncodeSDXLRefiner"
+      },
+      "widgets_values": [
+        6,
+        1024,
+        1024,
+        ""
+      ]
+    },
+    {
       "id": 483,
       "type": "MaraScottMcBoatyUpscalerRefiner_v5",
       "pos": [
-        5895,
-        550
+        5220,
+        500
       ],
-      "size": [
-        315,
-        1014
-      ],
+      "size": {
+        "0": 319.20001220703125,
+        "1": 1014
+      },
       "flags": {},
-      "order": 30,
+      "order": 35,
       "mode": 0,
       "inputs": [
         {
@@ -1996,27 +1566,27 @@
         {
           "name": "model",
           "type": "MODEL",
-          "link": 1185
+          "link": 1225
         },
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 1186
+          "link": 1226
         },
         {
           "name": "vae",
           "type": "VAE",
-          "link": 1187
+          "link": 1227
         },
         {
           "name": "positive",
           "type": "CONDITIONING",
-          "link": 1189
+          "link": 1228
         },
         {
           "name": "negative",
           "type": "CONDITIONING",
-          "link": 1190
+          "link": 1229
         }
       ],
       "outputs": [
@@ -2071,7 +1641,7 @@
         "Node name for S&R": "MaraScottMcBoatyUpscalerRefiner_v5"
       },
       "widgets_values": [
-        308139244011277,
+        663270650838542,
         "randomize",
         "RealESRGAN_x2.pth",
         "bicubic",
@@ -2088,7 +1658,7 @@
         "BasicScheduler",
         "SDXL",
         "dpmpp_2m",
-        "sgm_uniform",
+        "karras",
         10,
         2.5,
         0.35000000000000003,
@@ -2101,18 +1671,189 @@
       ]
     },
     {
+      "id": 470,
+      "type": "VAEDecodeTiled",
+      "pos": [
+        4120,
+        380
+      ],
+      "size": {
+        "0": 315,
+        "1": 78
+      },
+      "flags": {},
+      "order": 34,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 1155
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 1223
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1191,
+            1193
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecodeTiled"
+      },
+      "widgets_values": [
+        512
+      ]
+    },
+    {
+      "id": 485,
+      "type": "Image Comparer (rgthree)",
+      "pos": {
+        "0": 5750,
+        "1": 380,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0,
+        "9": 0
+      },
+      "size": {
+        "0": 758.9908447265625,
+        "1": 659.4465942382812
+      },
+      "flags": {},
+      "order": 36,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_a",
+          "type": "IMAGE",
+          "link": 1192,
+          "dir": 3
+        },
+        {
+          "name": "image_b",
+          "type": "IMAGE",
+          "link": 1193,
+          "dir": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "comparer_mode": "Slide"
+      },
+      "widgets_values": [
+        [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "/view?filename=rgthree.compare._temp_tkxrm_00027_.png&type=temp&subfolder=&rand=0.11870297088979931"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "/view?filename=rgthree.compare._temp_tkxrm_00028_.png&type=temp&subfolder=&rand=0.5959324873633238"
+          }
+        ]
+      ]
+    },
+    {
+      "id": 484,
+      "type": "PreviewImage",
+      "pos": [
+        6620,
+        380
+      ],
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {},
+      "order": 37,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 1194
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 494,
+      "type": "Note",
+      "pos": [
+        -3717.5839368675456,
+        715.4389840806004
+      ],
+      "size": {
+        "0": 335.36700439453125,
+        "1": 141.52224731445312
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "properties": {
+        "text": ""
+      },
+      "widgets_values": [
+        "Painting prompt \n\nJapanese prints of (Kyoto market perspective:1.2), man leaning on archway observing crowd, background (opened doors:1.2) temple, street crowd trees greenery outdoor leisure activity, sunlit, peace reflective serene side view, travel destination vibrant colors"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 493,
+      "type": "Note",
+      "pos": [
+        -3721,
+        524
+      ],
+      "size": {
+        "0": 335.36700439453125,
+        "1": 141.52224731445312
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "properties": {
+        "text": ""
+      },
+      "widgets_values": [
+        "photography prompt\n\nphotography of (Kyoto market perspective:1.2), man leaning on archway observing crowd, background (opened doors:1.2) temple, street crowd trees greenery outdoor leisure activity, sunlit, High Resolution, soft focus natural lighting cityscape, depth of field, minimalistic modern urban setting, peace reflective serene side view, travel destination vibrant colors\n"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
       "id": 158,
       "type": "CR Prompt Text",
       "pos": [
-        -2950,
-        570
+        -2954,
+        555
       ],
       "size": {
         "0": 400,
         "1": 200
       },
       "flags": {},
-      "order": 9,
+      "order": 6,
       "mode": 0,
       "outputs": [
         {
@@ -2139,7 +1880,785 @@
         "Node name for S&R": "CR Prompt Text"
       },
       "widgets_values": [
-        "orientalist painting of Balat, archway open doors, market perspective, man leaning on arch observing background scene, people, noon"
+        "photography of (Kyoto market perspective:1.2), man leaning on archway observing crowd, background (opened doors:1.2) temple, street crowd trees greenery outdoor leisure activity, sunlit, High Resolution, soft focus natural lighting cityscape, depth of field, minimalistic modern urban setting, peace reflective serene side view, travel destination vibrant colors"
+      ]
+    },
+    {
+      "id": 491,
+      "type": "Note",
+      "pos": [
+        -3341,
+        525
+      ],
+      "size": [
+        335.366991721809,
+        141.52224750261666
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "properties": {
+        "text": ""
+      },
+      "widgets_values": [
+        "photography prompt\n\nphotography of (Dorset market perspective:1.2), man leaning on archway observing crowd, background (opened doors:1.2) church towers, street crowd trees greenery outdoor leisure activity, sunlit, High Resolution, soft focus natural lighting cityscape, depth of field, minimalistic modern urban setting, peace reflective serene side view, travel destination vibrant colors\n"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 492,
+      "type": "Note",
+      "pos": [
+        -3341,
+        714
+      ],
+      "size": {
+        "0": 335.36700439453125,
+        "1": 141.52224731445312
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "properties": {
+        "text": ""
+      },
+      "widgets_values": [
+        "Painting prompt \n\norientalist painting of (Balat market perspective:1.2), man leaning on archway observing crowd, background (opened doors:1.2) minarets, street crowd trees greenery outdoor leisure activity, sunlit, peace reflective serene side view, travel destination vibrant colors"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 452,
+      "type": "EmptyLatentImage",
+      "pos": [
+        580,
+        830
+      ],
+      "size": {
+        "0": 315,
+        "1": 106
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            1119
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        1
+      ]
+    },
+    {
+      "id": 454,
+      "type": "ControlNetApplyAdvanced",
+      "pos": [
+        590,
+        490
+      ],
+      "size": {
+        "0": 315,
+        "1": 166
+      },
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 1124
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 1125
+        },
+        {
+          "name": "control_net",
+          "type": "CONTROL_NET",
+          "link": 1128,
+          "slot_index": 2
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 1196
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "links": [
+            1126
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "links": [
+            1127
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ControlNetApplyAdvanced"
+      },
+      "widgets_values": [
+        1,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 456,
+      "type": "ControlNetLoader",
+      "pos": [
+        -40,
+        710
+      ],
+      "size": {
+        "0": 566.8556518554688,
+        "1": 62.433143615722656
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CONTROL_NET",
+          "type": "CONTROL_NET",
+          "links": [
+            1128
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ControlNetLoader"
+      },
+      "widgets_values": [
+        "SDXL\\controlnet-union-sdxl-1.0\\diffusion_pytorch_model.safetensors"
+      ]
+    },
+    {
+      "id": 488,
+      "type": "MaraScottAnyBus_v2",
+      "pos": [
+        3540,
+        40
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 306
+      },
+      "flags": {},
+      "order": 31,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 1209
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "* 04 - conditioning",
+          "type": "CONDITIONING",
+          "link": 1217
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": 1218
+        },
+        {
+          "name": "* 06 - image",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "* 07 - prompt",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 08 - prompt",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            1224
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": [
+            1249
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": [],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": [
+            1223
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "* 04 - conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            1238
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            1239
+          ],
+          "shape": 3,
+          "slot_index": 5
+        },
+        {
+          "name": "* 06 - image",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 6
+        },
+        {
+          "name": "* 07 - prompt",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 7
+        },
+        {
+          "name": "* 08 - prompt",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 8
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": [
+            1245
+          ],
+          "slot_index": 9
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
+          "links": [
+            1248
+          ],
+          "slot_index": 10
+        }
+      ],
+      "title": "AnyBus - refiner",
+      "properties": {
+        "Node name for S&R": "MaraScottAnyBus_v2",
+        "Profile": "refiner",
+        "prevProfileName": "refiner",
+        "Nb Inputs": 10,
+        "uuid": 488
+      },
+      "widgets_values": [
+        "refiner",
+        10,
+        null
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 476,
+      "type": "int _O",
+      "pos": [
+        604,
+        156
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": [
+            1168,
+            1246
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "int _O"
+      },
+      "widgets_values": [
+        24
+      ]
+    },
+    {
+      "id": 466,
+      "type": "MaraScottAnyBus_v2",
+      "pos": [
+        1445,
+        59
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 306
+      },
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 1146
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": null
+        },
+        {
+          "name": "* 04 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 06 - image",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "* 07 - prompt",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 08 - prompt",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": 1241
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
+          "link": 1246
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": [],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": [],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "* 04 - conditioning",
+          "type": "CONDITIONING",
+          "links": [],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": [],
+          "shape": 3,
+          "slot_index": 5
+        },
+        {
+          "name": "* 06 - image",
+          "type": "IMAGE",
+          "links": [
+            1202
+          ],
+          "slot_index": 6
+        },
+        {
+          "name": "* 07 - prompt",
+          "type": "STRING",
+          "links": [
+            1203
+          ],
+          "slot_index": 7
+        },
+        {
+          "name": "* 08 - prompt",
+          "type": "STRING",
+          "links": [
+            1244
+          ],
+          "slot_index": 8
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": [
+            1243
+          ],
+          "slot_index": 9
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
+          "links": [
+            1247
+          ],
+          "slot_index": 10
+        }
+      ],
+      "title": "AnyBus - main",
+      "properties": {
+        "Node name for S&R": "MaraScottAnyBus_v2",
+        "Profile": "main",
+        "prevProfileName": "main",
+        "Nb Inputs": 10,
+        "uuid": 466
+      },
+      "widgets_values": [
+        "main",
+        10,
+        null
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 487,
+      "type": "MaraScottAnyBus_v2",
+      "pos": [
+        2518,
+        48
+      ],
+      "size": {
+        "0": 329.20001220703125,
+        "1": 306
+      },
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": null
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": 1204
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": 1205
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": 1206
+        },
+        {
+          "name": "* 04 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "* 06 - image",
+          "type": "IMAGE",
+          "link": 1202
+        },
+        {
+          "name": "* 07 - prompt",
+          "type": "STRING",
+          "link": 1203
+        },
+        {
+          "name": "* 08 - prompt",
+          "type": "STRING",
+          "link": 1244
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "link": 1243
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
+          "link": 1247
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            1209
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "links": [
+            1219,
+            1220
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "links": [],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "* 04 - conditioning",
+          "type": "CONDITIONING",
+          "links": [],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "* 05 - conditioning",
+          "type": "CONDITIONING",
+          "links": [],
+          "shape": 3,
+          "slot_index": 5
+        },
+        {
+          "name": "* 06 - image",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 6
+        },
+        {
+          "name": "* 07 - prompt",
+          "type": "STRING",
+          "links": [
+            1221
+          ],
+          "slot_index": 7
+        },
+        {
+          "name": "* 08 - prompt",
+          "type": "STRING",
+          "links": [
+            1222
+          ],
+          "slot_index": 8
+        },
+        {
+          "name": "* 09 - latent",
+          "type": "LATENT",
+          "links": null
+        },
+        {
+          "name": "* 10 - int",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - refiner",
+      "properties": {
+        "Node name for S&R": "MaraScottAnyBus_v2",
+        "Profile": "refiner",
+        "prevProfileName": "refiner",
+        "Nb Inputs": 10,
+        "uuid": 487
+      },
+      "widgets_values": [
+        "refiner",
+        10,
+        null
+      ],
+      "color": "#232",
+      "bgcolor": "#353",
+      "shape": 4
+    },
+    {
+      "id": 462,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        2075,
+        27
+      ],
+      "size": {
+        "0": 315,
+        "1": 98
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1204
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            1205
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            1206
+          ],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "sd_xl_refiner_1.0.safetensors"
       ]
     }
   ],
@@ -2441,92 +2960,12 @@
       "CONTROL_NET"
     ],
     [
-      1136,
-      335,
-      1,
-      461,
-      0,
-      "MODEL"
-    ],
-    [
-      1137,
-      335,
-      6,
-      461,
-      1,
-      "IMAGE"
-    ],
-    [
-      1138,
-      461,
-      0,
-      446,
-      0,
-      "MODEL"
-    ],
-    [
-      1143,
-      462,
-      0,
-      463,
-      0,
-      "MODEL"
-    ],
-    [
       1146,
       335,
       0,
       466,
       0,
       "BUS"
-    ],
-    [
-      1147,
-      466,
-      7,
-      465,
-      1,
-      "STRING"
-    ],
-    [
-      1148,
-      466,
-      8,
-      467,
-      1,
-      "STRING"
-    ],
-    [
-      1149,
-      462,
-      1,
-      465,
-      0,
-      "CLIP"
-    ],
-    [
-      1150,
-      462,
-      1,
-      467,
-      0,
-      "CLIP"
-    ],
-    [
-      1151,
-      465,
-      0,
-      463,
-      1,
-      "CONDITIONING"
-    ],
-    [
-      1152,
-      467,
-      0,
-      463,
-      2,
-      "CONDITIONING"
     ],
     [
       1155,
@@ -2537,84 +2976,12 @@
       "LATENT"
     ],
     [
-      1157,
-      462,
-      2,
-      470,
-      1,
-      "VAE"
-    ],
-    [
-      1163,
-      446,
-      0,
-      463,
-      3,
-      "LATENT"
-    ],
-    [
-      1167,
-      476,
-      0,
-      463,
-      4,
-      "INT"
-    ],
-    [
       1168,
       476,
       0,
       446,
       4,
       "INT"
-    ],
-    [
-      1183,
-      459,
-      0,
-      454,
-      3,
-      "IMAGE"
-    ],
-    [
-      1185,
-      462,
-      0,
-      483,
-      1,
-      "MODEL"
-    ],
-    [
-      1186,
-      462,
-      1,
-      483,
-      2,
-      "CLIP"
-    ],
-    [
-      1187,
-      462,
-      2,
-      483,
-      3,
-      "VAE"
-    ],
-    [
-      1189,
-      465,
-      0,
-      483,
-      4,
-      "CONDITIONING"
-    ],
-    [
-      1190,
-      467,
-      0,
-      483,
-      5,
-      "CONDITIONING"
     ],
     [
       1191,
@@ -2647,6 +3014,254 @@
       484,
       0,
       "IMAGE"
+    ],
+    [
+      1195,
+      335,
+      1,
+      446,
+      0,
+      "MODEL"
+    ],
+    [
+      1196,
+      335,
+      6,
+      454,
+      3,
+      "IMAGE"
+    ],
+    [
+      1202,
+      466,
+      6,
+      487,
+      6,
+      "IMAGE"
+    ],
+    [
+      1203,
+      466,
+      7,
+      487,
+      7,
+      "STRING"
+    ],
+    [
+      1204,
+      462,
+      0,
+      487,
+      1,
+      "*"
+    ],
+    [
+      1205,
+      462,
+      1,
+      487,
+      2,
+      "*"
+    ],
+    [
+      1206,
+      462,
+      2,
+      487,
+      3,
+      "*"
+    ],
+    [
+      1209,
+      487,
+      0,
+      488,
+      0,
+      "BUS"
+    ],
+    [
+      1217,
+      465,
+      0,
+      488,
+      4,
+      "*"
+    ],
+    [
+      1218,
+      467,
+      0,
+      488,
+      5,
+      "*"
+    ],
+    [
+      1219,
+      487,
+      2,
+      465,
+      0,
+      "CLIP"
+    ],
+    [
+      1220,
+      487,
+      2,
+      467,
+      0,
+      "CLIP"
+    ],
+    [
+      1221,
+      487,
+      7,
+      465,
+      1,
+      "STRING"
+    ],
+    [
+      1222,
+      487,
+      8,
+      467,
+      1,
+      "STRING"
+    ],
+    [
+      1223,
+      488,
+      3,
+      470,
+      1,
+      "VAE"
+    ],
+    [
+      1224,
+      488,
+      0,
+      489,
+      0,
+      "BUS"
+    ],
+    [
+      1225,
+      489,
+      1,
+      483,
+      1,
+      "MODEL"
+    ],
+    [
+      1226,
+      489,
+      2,
+      483,
+      2,
+      "CLIP"
+    ],
+    [
+      1227,
+      489,
+      3,
+      483,
+      3,
+      "VAE"
+    ],
+    [
+      1228,
+      489,
+      4,
+      483,
+      4,
+      "CONDITIONING"
+    ],
+    [
+      1229,
+      489,
+      5,
+      483,
+      5,
+      "CONDITIONING"
+    ],
+    [
+      1238,
+      488,
+      4,
+      463,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      1239,
+      488,
+      5,
+      463,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      1241,
+      446,
+      0,
+      466,
+      9,
+      "*"
+    ],
+    [
+      1243,
+      466,
+      9,
+      487,
+      9,
+      "*"
+    ],
+    [
+      1244,
+      466,
+      8,
+      487,
+      8,
+      "STRING"
+    ],
+    [
+      1245,
+      488,
+      9,
+      463,
+      3,
+      "LATENT"
+    ],
+    [
+      1246,
+      476,
+      0,
+      466,
+      10,
+      "*"
+    ],
+    [
+      1247,
+      466,
+      10,
+      487,
+      10,
+      "*"
+    ],
+    [
+      1248,
+      488,
+      10,
+      463,
+      4,
+      "INT"
+    ],
+    [
+      1249,
+      488,
+      1,
+      463,
+      0,
+      "MODEL"
     ]
   ],
   "groups": [],
