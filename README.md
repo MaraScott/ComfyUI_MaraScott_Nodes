@@ -210,7 +210,11 @@ outputs :
 
 Below is an example of the LargeRefiner being connected to the TilePrompter and Refined by a second pass to a Refiner.
 
-using thje
+Using the upscale instead of the LargeRefiner will require to use the 1st pass of the refiner with tiles to process at empty value to process all tiles at least once (which the LargeRefiner does by default).
+
+The overall idea is to Upscale (/Refine) your image and slice it to provide each tiles to McPrompty the TilePrompter which will allow you to fine tune your prompt on a per tile basis as well as the denoise level. then those parameters are passed to the Refiner which will process those tiles and rebuild your image for the output. then you can continue the refining on another refiner pass or modify the current TilePrompter parameters to finetune the result.
+
+One use case, is to push the denoise to 0.76 (maximum denoise recommended with control net activated) in the LargeRefiner then finetune the prompt and denoise for the tiles which went too wild and process the tiles you want (specified in the tiles to process settings) again through a second refiner pass.
 
 ![img](./docs/img/McBoaty_v5_set.jpeg)
 
