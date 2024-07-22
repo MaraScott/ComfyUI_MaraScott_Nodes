@@ -102,7 +102,7 @@ Here is a very simple workflow
 
 ![AnyBus Node WorkFlow Example](./docs/img/bus-node-workflow-example.png)
 
-**What does it intend to do?**
+#### **What does it intend to do?**
 
 Any workflow can quickly become messy and difficult to identify easily which output goes to which input.
 At some point either you use a custom_node which "hide" the splines for you so you don't feel overwhelmed but you will still have some issue to identify which goes where OR you use a Bus node as AnyBus which will clarify your workflow without having to remember the origins of your splines.
@@ -110,7 +110,7 @@ At some point either you use a custom_node which "hide" the splines for you so y
 The AnyBus Node allow you to apply a profile to your Buses in order to organize paths in the same workflow.
 One Bus has a maximum of 25 inputs/outputs.
 
-**The profile setting**
+#### **The profile setting**
 
 The BusNode profile is a mecanism to synchronize BusNodes in the same flow (connected by the `Bus` input/output) all nodes with the same profile name and connected together will be synchronized if one of them is modified.
 
@@ -118,12 +118,113 @@ When adding a node, the profile is default, if you have another flow called main
 
 This AnyBus is *dyslexia friendly* :D
 
-### McBoaty Node Set (Upscaler, Prompter, Refiner) - *description in progress*
+### McBoaty Node Set (Upscaler, Prompter, Refiner)
 
-McBoaty Node Set (AKA Upscaler, Prompter, Refiner Node set) is an upscaler coupled with a refiner to achieve higher rendering results on a per tile base.
-The output image is a slightly modified image.
+McBoaty Node Set (AKA Upscaler, Prompter, Refiner Node set) is an upscaler coupled with a refiner to achieve higher rendering results on a per tile basis.
+
+#### What does it intend to do ?
+
+McBoaty intend to provide the most efficient way to Upscale and refine an image for printing purposes. Its core reason to exists is to provide a way to Upscale an image with minimum to null modification on the upscaled / refined image. to that purpose, using a denoise at 0.27 or maybe 0.35 is the sweet spot. Using multiple x2 upscaler model would as well provide a better result than using 1 model of x4 but that is for you to choose
+
+#### To which StableDiffusion version is it compatible ?
+
+it has been tested successfuly with SD1.5, SDXL, SD3, it will probably work with any SD version. Feel free to report issues in the issue section.
+
+#### What's inside ?
+
+McBoaty set of nodes come with 4 differents nodes :
+
+1) An **Upscaler Node** to Upscale the input image and slice it in tiles to Refine the image on a per tile approach
+
+![Upscaler Node](./docs/wf/McBoaty_v5/McBoaty_v5_Upscaler_Node.jpeg)
+
+Inputs :
+
+- image : input image
+- model, clip, vae, seed : as usual
+- positive, negative : this is required but not used, it will be replaced by positive and negative prompt in a near futur
+- upscale model, output upscale method : as usual with an Upscale (by model) node
+- tile size, feather mask : these 2 size will be used to slice your upscaled image and will define the size of the image the Ksampler will need to refine
+- vae encode, tile size vae : do you want to use a tiled vae encoding method and which size
+- color match method : do you want to apply a color match from your input image to the final output image after the refining process
+- tile prompting active, vision llm model, llm model : this is currently used to generate the prompt for the conditioning, it is not accurate and will be improved in the futur
+
+outputs :
+
+- McBoaty Pipe : to connect to Refiner input only
+- McPrompty Pipe : to connect to TilePrompter input only
+- info : Obsolete
+
+2) A **TilePrompter Node** to edit the prompt and denoise level on a per tile basis
+
+![TilePrompter Node](./docs/wf/McBoaty_v5/McBoaty_v5_TilePrompter_Node.jpeg)
+
+input
+
+- pipe : (McPrompty) Pipe output from Upscaler, Refiner or LargeRefiner
+
+output
+
+- McPrompty Pipe : Pipe to connect to Refiner input pipe_prompty only
+
+3) A **Refiner Node** to refine the image based on the settings provided, either via general settings if you don't use the tilePrompter or on a per tile basis if you do use the TilePrompter
+
+![Refiner Node](./docs/wf/McBoaty_v5/McBoaty_v5_Refiner_Node.jpeg)
+
+inputs:
+
+- pipe : McBoaty Pipe output from Upscaler, Refiner or LargeRefiner
+- McPrompty Pipe : to connect to TilePrompter input only
+- tiles to process : you can specify an empty input if you want to process all the tiles or you can specify a tile index shown on the TilePrompter to refine only that tile. The input can specify multiple tiles at once as well either by specifying the tile indexes one by one (`1,2,3,4,...`) or using a range notation like `x-y ` (`1-4 `, `5-8 `) or a combinaison of those `1,3,4-6,8,9`
+- output size type : you can choose between you Upscale size which will output an image of the size of your Upscale model or you can use custome size which will use the output size parameter
+- output size : this is a coefficient to apply on your input image size as output size if you pick custom size type
+- sigmas type : you can choose between BasicScheduler, SDTurboScheduler and AlignYourStepScheduler
+- ays model type : you can choose between SD1, SDXL, SD3, SVD (SVD has never been tested) even if you choose a scheduler different from the AYS, you still need to choose you input model type
+- sampler name, basic scheduler, steps, cfg, denoise : as usual on a Ksampler node
+- control net name, strength, start percent, end percent : as usual using an apply control net node
+- low threshold, high threshold : as usual using a canny node
+
+outputs:
+
+- McBoaty Pipe : to connect to Refiner input only
+- McPrompty Pipe : to connect to TilePrompter input only
+- image
+- image (original)
+- tiles
+- prompts
+- info
+
+4) the fourth node is the **LargeRefiner Node** which is actualy the combinaison or the Upscaler Node + the Refiner Node in 1 node using the general settings
+
+![LargeRefiner Node](./docs/wf/McBoaty_v5/McBoaty_v5_LargeRefiner_Node.jpeg)
+
+inputs
+
+- inputs from Upscaler + Refiner
+
+outputs :
+
+- outputs from refiner
+
+#### How does it work ?
+
+Below is an example of the LargeRefiner being connected to the TilePrompter and Refined by a second pass to a Refiner.
+
+Using the upscale instead of the LargeRefiner will require to use the 1st pass of the refiner with tiles to process at empty value to process all tiles at least once (which the LargeRefiner does by default).
+
+The overall idea is to Upscale (/Refine) your image and slice it to provide each tiles to McPrompty the TilePrompter which will allow you to fine tune your prompt on a per tile basis as well as the denoise level. then those parameters are passed to the Refiner which will process those tiles and rebuild your image for the output. then you can continue the refining on another refiner pass or modify the current TilePrompter parameters to finetune the result.
+
+One use case, is to push the denoise to 0.76 (maximum denoise recommended with control net activated) in the LargeRefiner then finetune the prompt and denoise for the tiles which went too wild and process the tiles you want (specified in the tiles to process settings) again through a second refiner pass.
 
 ![img](./docs/img/McBoaty_v5_set.jpeg)
+
+#### Where can I found a functional workflow to test it ?
+
+Below is a functional workflow embedded in the image which allow you to test both technic.
+
+![WorkFlow for McBoaty_V5](./docs/wf/McBoaty_v5/McBoaty_v5.png)
+
+![Base Image for Comparaison](./docs/benchmark/Competitor/input/template.png "FromKyotoToIstanbul")
 
 **Learn More on the Name McBoaty**
 

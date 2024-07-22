@@ -49,139 +49,6 @@
       "bgcolor": "#653"
     },
     {
-      "id": 445,
-      "type": "CheckpointLoaderSimple",
-      "pos": [
-        -2800,
-        240
-      ],
-      "size": {
-        "0": 320,
-        "1": 100
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            1100
-          ],
-          "slot_index": 0
-        },
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            1101,
-            1108,
-            1115
-          ],
-          "slot_index": 1
-        },
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "links": [
-            1102
-          ],
-          "slot_index": 2
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CheckpointLoaderSimple"
-      },
-      "widgets_values": [
-        "XL\\halcyonSDXL_v17.safetensors"
-      ]
-    },
-    {
-      "id": 446,
-      "type": "LoadImage",
-      "pos": [
-        -3320,
-        -30
-      ],
-      "size": {
-        "0": 320,
-        "1": 314
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "label": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            1093
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "label": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3,
-          "slot_index": 1
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "_MaraScott_Balat.png",
-        "image"
-      ]
-    },
-    {
-      "id": 448,
-      "type": "CR Prompt Text",
-      "pos": [
-        -2880,
-        580
-      ],
-      "size": {
-        "0": 400,
-        "1": 200
-      },
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "prompt",
-          "label": "prompt",
-          "type": "STRING",
-          "links": [
-            1098,
-            1113,
-            1114
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "show_help",
-          "label": "show_help",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CR Prompt Text"
-      },
-      "widgets_values": [
-        "2 wooden doors, 1 door red, 1 door yellow, blue wall, small windows in doors"
-      ]
-    },
-    {
       "id": 449,
       "type": "CR Prompt Text",
       "pos": [
@@ -193,7 +60,7 @@
         "1": 200
       },
       "flags": {},
-      "order": 5,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -243,7 +110,7 @@
         30
       ],
       "flags": {},
-      "order": 10,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -299,7 +166,7 @@
         30
       ],
       "flags": {},
-      "order": 9,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -355,7 +222,7 @@
         30
       ],
       "flags": {},
-      "order": 14,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -411,7 +278,7 @@
         30
       ],
       "flags": {},
-      "order": 13,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -515,7 +382,7 @@
         "1": 94.7237319946289
       },
       "flags": {},
-      "order": 6,
+      "order": 3,
       "mode": 0,
       "properties": {
         "text": ""
@@ -538,7 +405,7 @@
         "1": 202
       },
       "flags": {},
-      "order": 11,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -632,7 +499,7 @@
         "1": 202
       },
       "flags": {},
-      "order": 12,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -949,7 +816,7 @@
         "1": 220
       },
       "flags": {},
-      "order": 7,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -1303,7 +1170,7 @@
         "Profile": "main",
         "prevProfileName": "main",
         "Nb Inputs": 9,
-        "uuid": 336
+        "uuid": 456
       },
       "widgets_values": [
         "main",
@@ -1468,6 +1335,139 @@
         0.4,
         0,
         1
+      ]
+    },
+    {
+      "id": 448,
+      "type": "CR Prompt Text",
+      "pos": [
+        -2880,
+        580
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "prompt",
+          "label": "prompt",
+          "type": "STRING",
+          "links": [
+            1098,
+            1113,
+            1114
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "show_help",
+          "label": "show_help",
+          "type": "STRING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CR Prompt Text"
+      },
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 445,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        -2800,
+        240
+      ],
+      "size": {
+        "0": 320,
+        "1": 100
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1100
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            1101,
+            1108,
+            1115
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            1102
+          ],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "Juggernaut_X_RunDiffusion.safetensors"
+      ]
+    },
+    {
+      "id": 446,
+      "type": "LoadImage",
+      "pos": [
+        -3320,
+        -30
+      ],
+      "size": {
+        "0": 320,
+        "1": 314
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "label": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1093
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "label": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "_MaraScott_Market_Photography_Balat-input.png",
+        "image"
       ]
     }
   ],
