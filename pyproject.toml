@@ -2,7 +2,7 @@
 name = "comfyui_marascott_nodes"
 description = "A set of nodes including a universal bus, an Inpainting By Mask and a large Upscaler/Refiner"
 version = "5.0.4"
-license = "LICENSE"
+license = { file = "LICENSE" }
 dependencies = ["blend_modes", "numba", "color-matcher", "groq", "opencv-python"]
 
 [project.urls]
