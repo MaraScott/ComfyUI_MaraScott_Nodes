@@ -562,14 +562,14 @@ class MaraScottAnyBusNodeFlow {
 			window.marascott.AnyBus_v2.nodes[_node.id] = _node
 		}
 		for (let i in _bus_nodes) {
-			_bus_node_link = _bus_nodes[i].inputs[0].link
+			_bus_node_link = _bus_nodes[i].inputs[0]?.link
 			if (_bus_node_link == 'setNode') {
-				if (_bus_nodes[i].inputs[0].origin_id) _bus_nodes_connections[_bus_nodes[i].id] = _bus_nodes[i].inputs[0].origin_id
+				if (_bus_nodes[i].inputs[0]?.origin_id) _bus_nodes_connections[_bus_nodes[i].id] = _bus_nodes[i].inputs[0]?.origin_id
 			} else if (_bus_node_link != null) {
 				_bus_node_link = node.graph.links.find(
 					(otherLink) => otherLink?.id == _bus_node_link
 				)
-				if (_bus_node_link) _bus_nodes_connections[_bus_nodes[i].id] = _bus_node_link.origin_id
+				if (_bus_node_link) _bus_nodes_connections[_bus_nodes[i].id] = _bus_node_link?.origin_id
 			} else {
 				node_paths_start.push(_bus_nodes[i].id)
 			}
@@ -583,7 +583,7 @@ class MaraScottAnyBusNodeFlow {
 			while (_bus_nodes_connections[currentNode] !== undefined) {
 				currentNode = _bus_nodes_connections[currentNode]; // Move to the parent node
 				const _currentNode = node.graph.getNodeById(currentNode)
-				if (_currentNode.type == MaraScottAnyBus_v2.TYPE) {
+				if (_currentNode?.type == MaraScottAnyBus_v2.TYPE) {
 					node_paths[id].push(currentNode); // Add the parent node to the path
 				}
 			}
