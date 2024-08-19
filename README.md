@@ -1,5 +1,7 @@
 # ComfyUI MaraScott Nodes
 
+Turn ★ into ⭐ (top-right corner) if you like the project!
+
 **ComfyUI_MaraScott_nodes** is an extension set designed to improve the readability of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) workflows and enhance output images for printing. It offers a **Bus** manager, an **Upscaler/Refiner** set of nodes for printing purposes, and an **Inpainting** set of nodes to fine-tune outputs.
 
 [![](./docs/img/MaraScott.png)](https://www.marascott.ai/)
