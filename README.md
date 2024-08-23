@@ -122,6 +122,8 @@ This AnyBus is *dyslexia-friendly* :D
 
 McBoaty Node Set (AKA Upscaler, Prompter, Refiner Node set) is an upscaler coupled with a refiner to achieve higher rendering results on a per-tile basis.
 
+![Screenshot_23-8-2024_16200_comfyui-shadow marascott ai](https://github.com/user-attachments/assets/24f3410f-b4d2-4d7f-869a-1b401953135e)
+
 #### What does it intend to do?
 
 McBoaty intends to provide the most efficient way to upscale and refine an image for printing purposes. Its core purpose is to upscale an image with minimal to no modification on the upscaled/refined image. For that purpose, using a denoise at 0.27 or maybe 0.35 is the sweet spot. Using multiple x2 upscaler models would also provide a better result than using one x4 model, but that is for you to choose.
