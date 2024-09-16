@@ -1,9 +1,17 @@
 import torch
-from comfy_execution.graph_utils import GraphBuilder, is_link
+try:
+    from comfy_execution.graph_utils import GraphBuilder, is_link
+except:
+    GraphBuilder = None
 from .tools import VariantSupport
+from ...utils.helper import AlwaysEqualProxy
+
+
+MAX_FLOW_NUM = 10
+any_type = AlwaysEqualProxy("*")
 
 NUM_FLOW_SOCKETS = 5
-
+@VariantSupport()
 class ForLoopOpen_v1:
     def __init__(self):
         pass
@@ -67,7 +75,7 @@ class ForLoopClose_v1:
         sub = graph.node("MaraScottForLoopIntMathOperation_v1", operation="subtract", a=[while_open,1], b=1)
         cond = graph.node("MaraScottForLoopToBoolNode_v1", value=sub.out(0))
         input_values = {f"initial_value{i}": kwargs.get(f"initial_value{i}", None) for i in range(1, NUM_FLOW_SOCKETS)}
-        while_close = graph.node("MaraScottWhileLoopClose_v1",
+        while_close = graph.node("MaraScottForLoopWhileClose_v1",
                 flow_control=flow_control,
                 condition=cond.out(0),
                 initial_value0=sub.out(0),
@@ -223,11 +231,11 @@ class ForLoopIntMathOperation_v1:
         }
 
     RETURN_TYPES = ("INT",)
-    FUNCTION = "int_math_operation"
+    FUNCTION = "fn"
 
     CATEGORY = "MaraScott/Loop/Logic"
 
-    def int_math_operation(self, a, b, operation):
+    def fn(self, a, b, operation):
         if operation == "add":
             return (a + b,)
         elif operation == "subtract":
@@ -257,11 +265,11 @@ class ForLoopToBoolNode_v1:
         }
 
     RETURN_TYPES = ("BOOLEAN",)
-    FUNCTION = "to_bool"
+    FUNCTION = "fn"
 
     CATEGORY = "MaraScott/Loop/Logic"
 
-    def to_bool(self, value, invert = False):
+    def fn(self, value, invert = False):
         if isinstance(value, torch.Tensor):
             if value.max().item() == 0 and value.min().item() == 0:
                 result = False
