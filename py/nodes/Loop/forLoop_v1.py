@@ -1,15 +1,84 @@
-from ...utils.helper import AlwaysEqualProxy, ByPassTypeTuple
-from ...utils.cache import cache, update_cache, remove_cache
-from ...utils.math import Compare, mathIntOperation
-try:
-    from comfy_execution.graph_utils import GraphBuilder, is_link
-except:
-    GraphBuilder = None
+import torch
+from comfy_execution.graph_utils import GraphBuilder, is_link
+from .tools import VariantSupport
 
-MAX_FLOW_NUM = 10
-any_type = AlwaysEqualProxy("*")
+NUM_FLOW_SOCKETS = 5
 
-class whileLoopStart:
+class ForLoopOpen_v1:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "remaining": ("INT", {"default": 1, "min": 0, "max": 100000, "step": 1}),
+            },
+            "optional": {
+                f"initial_value{i}": ("*",) for i in range(1, NUM_FLOW_SOCKETS)
+            },
+            "hidden": {
+                "initial_value0": ("*",)
+            }
+        }
+
+    RETURN_TYPES = tuple(["FLOW_CONTROL", "INT",] + ["*"] * (NUM_FLOW_SOCKETS-1))
+    RETURN_NAMES = tuple(["flow_control", "remaining"] + [f"value{i}" for i in range(1, NUM_FLOW_SOCKETS)])
+    FUNCTION = "fn"
+
+    CATEGORY = "MaraScott/Flow"
+
+    def fn(self, remaining, **kwargs):
+        graph = GraphBuilder()
+        if "initial_value0" in kwargs:
+            remaining = kwargs["initial_value0"]
+        while_open = graph.node("MaraScottForLoopWhileOpen_v1", condition=remaining, initial_value0=remaining, **{(f"initial_value{i}"): kwargs.get(f"initial_value{i}", None) for i in range(1, NUM_FLOW_SOCKETS)})
+        outputs = [kwargs.get(f"initial_value{i}", None) for i in range(1, NUM_FLOW_SOCKETS)]
+        return {
+            "result": tuple(["stub", remaining] + outputs),
+            "expand": graph.finalize(),
+        }
+
+@VariantSupport()
+class ForLoopClose_v1:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "flow_control": ("FLOW_CONTROL", {"rawLink": True}),
+            },
+            "optional": {
+                f"initial_value{i}": ("*",{"rawLink": True}) for i in range(1, NUM_FLOW_SOCKETS)
+            },
+        }
+
+    RETURN_TYPES = tuple(["*"] * (NUM_FLOW_SOCKETS-1))
+    RETURN_NAMES = tuple([f"value{i}" for i in range(1, NUM_FLOW_SOCKETS)])
+    FUNCTION = "fn"
+
+    CATEGORY = "MaraScott/Flow"
+
+    def fn(self, flow_control, **kwargs):
+        graph = GraphBuilder()
+        while_open = flow_control[0]
+        sub = graph.node("MaraScottForLoopIntMathOperation_v1", operation="subtract", a=[while_open,1], b=1)
+        cond = graph.node("MaraScottForLoopToBoolNode_v1", value=sub.out(0))
+        input_values = {f"initial_value{i}": kwargs.get(f"initial_value{i}", None) for i in range(1, NUM_FLOW_SOCKETS)}
+        while_close = graph.node("MaraScottWhileLoopClose_v1",
+                flow_control=flow_control,
+                condition=cond.out(0),
+                initial_value0=sub.out(0),
+                **input_values)
+        return {
+            "result": tuple([while_close.out(i) for i in range(1, NUM_FLOW_SOCKETS)]),
+            "expand": graph.finalize(),
+        }
+
+@VariantSupport()
+class ForLoopWhileOpen_v1:
     def __init__(self):
         pass
 
@@ -22,23 +91,24 @@ class whileLoopStart:
             "optional": {
             },
         }
-        for i in range(MAX_FLOW_NUM):
-            inputs["optional"]["initial_value%d" % i] = ("*",)
+        for i in range(NUM_FLOW_SOCKETS):
+            inputs["optional"][f"initial_value{i}"] = ("*",)
         return inputs
 
-    RETURN_TYPES = ByPassTypeTuple(tuple(["FLOW_CONTROL"] + ["*"] * MAX_FLOW_NUM))
-    RETURN_NAMES = ByPassTypeTuple(tuple(["flow"] + ["value%d" % i for i in range(MAX_FLOW_NUM)]))
-    FUNCTION = "fn"
+    RETURN_TYPES = tuple(["FLOW_CONTROL"] + ["*"] * NUM_FLOW_SOCKETS)
+    RETURN_NAMES = tuple(["FLOW_CONTROL"] + [f"value{i}" for i in range(NUM_FLOW_SOCKETS)])
+    FUNCTION = "while_loop_open"
 
-    CATEGORY = "MaraScott/Loop"
+    CATEGORY = "MaraScott/Flow"
 
-    def fn(self, condition, **kwargs):
+    def while_loop_open(self, condition, **kwargs):
         values = []
-        for i in range(MAX_FLOW_NUM):
-            values.append(kwargs.get("initial_value%d" % i, None))
+        for i in range(NUM_FLOW_SOCKETS):
+            values.append(kwargs.get(f"initial_value{i}", None))
         return tuple(["stub"] + values)
 
-class whileLoopEnd:
+@VariantSupport()
+class ForLoopWhileClose_v1:
     def __init__(self):
         pass
 
@@ -46,8 +116,8 @@ class whileLoopEnd:
     def INPUT_TYPES(cls):
         inputs = {
             "required": {
-                "flow": ("FLOW_CONTROL", {"rawLink": True}),
-                "condition": ("BOOLEAN", {}),
+                "flow_control": ("FLOW_CONTROL", {"rawLink": True}),
+                "condition": ("BOOLEAN", {"forceInput": True}),
             },
             "optional": {
             },
@@ -56,15 +126,15 @@ class whileLoopEnd:
                 "unique_id": "UNIQUE_ID",
             }
         }
-        for i in range(MAX_FLOW_NUM):
-            inputs["optional"]["initial_value%d" % i] = (AlwaysEqualProxy('*'),)
+        for i in range(NUM_FLOW_SOCKETS):
+            inputs["optional"][f"initial_value{i}"] = ("*",)
         return inputs
 
-    RETURN_TYPES = ByPassTypeTuple(tuple([AlwaysEqualProxy('*')] * MAX_FLOW_NUM))
-    RETURN_NAMES = ByPassTypeTuple(tuple(["value%d" % i for i in range(MAX_FLOW_NUM)]))
+    RETURN_TYPES = tuple(["*"] * NUM_FLOW_SOCKETS)
+    RETURN_NAMES = tuple([f"value{i}" for i in range(NUM_FLOW_SOCKETS)])
     FUNCTION = "fn"
 
-    CATEGORY = "MaraScott/Loop"
+    CATEGORY = "MaraScott/Flow"
 
     def explore_dependencies(self, node_id, dynprompt, upstream):
         node_info = dynprompt.get_node(node_id)
@@ -87,26 +157,28 @@ class whileLoopEnd:
                 self.collect_contained(child_id, upstream, contained)
 
 
-    def fn(self, flow, condition, dynprompt=None, unique_id=None, **kwargs):
+    def fn(self, flow_control, condition, dynprompt=None, unique_id=None, **kwargs):
+        assert dynprompt is not None
         if not condition:
             # We're done with the loop
             values = []
-            for i in range(MAX_FLOW_NUM):
-                values.append(kwargs.get("initial_value%d" % i, None))
+            for i in range(NUM_FLOW_SOCKETS):
+                values.append(kwargs.get(f"initial_value{i}", None))
             return tuple(values)
 
         # We want to loop
-        # this_node = dynprompt.get_node(unique_id)
         upstream = {}
         # Get the list of all nodes between the open and close nodes
         self.explore_dependencies(unique_id, dynprompt, upstream)
 
         contained = {}
-        open_node = flow[0]
+        open_node = flow_control[0]
         self.collect_contained(open_node, upstream, contained)
         contained[unique_id] = True
         contained[open_node] = True
 
+        # We'll use the default prefix, but to avoid having node names grow exponentially in size,
+        # we'll use "Recurse" for the name of the recursively-generated copy of this node.
         graph = GraphBuilder()
         for node_id in contained:
             original_node = dynprompt.get_node(node_id)
@@ -115,26 +187,28 @@ class whileLoopEnd:
         for node_id in contained:
             original_node = dynprompt.get_node(node_id)
             node = graph.lookup_node("Recurse" if node_id == unique_id else node_id)
+            assert node is not None
             for k, v in original_node["inputs"].items():
                 if is_link(v) and v[0] in contained:
                     parent = graph.lookup_node(v[0])
+                    assert parent is not None
                     node.set_input(k, parent.out(v[1]))
                 else:
                     node.set_input(k, v)
-
         new_open = graph.lookup_node(open_node)
-        for i in range(MAX_FLOW_NUM):
-            key = "initial_value%d" % i
+        assert new_open is not None
+        for i in range(NUM_FLOW_SOCKETS):
+            key = f"initial_value{i}"
             new_open.set_input(key, kwargs.get(key, None))
         my_clone = graph.lookup_node("Recurse")
-        result = map(lambda x: my_clone.out(x), range(MAX_FLOW_NUM))
+        assert my_clone is not None
+        result = map(lambda x: my_clone.out(x), range(NUM_FLOW_SOCKETS))
         return {
             "result": tuple(result),
             "expand": graph.finalize(),
         }
 
-
-class forLoopStart:
+class ForLoopIntMathOperation_v1:
     def __init__(self):
         pass
 
@@ -142,42 +216,32 @@ class forLoopStart:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "total": ("INT", {"default": 1, "min": 1, "max": 100000, "step": 1}),
+                "a": ("INT", {"default": 0, "min": -0xffffffffffffffff, "max": 0xffffffffffffffff, "step": 1}),
+                "b": ("INT", {"default": 0, "min": -0xffffffffffffffff, "max": 0xffffffffffffffff, "step": 1}),
+                "operation": (["add", "subtract", "multiply", "divide", "modulo", "power"],),
             },
-            "optional": {
-                "initial_value%d" % i: (any_type,) for i in range(1, MAX_FLOW_NUM)
-            },
-            "hidden": {
-                "initial_value0": (any_type,),
-                "prompt": "PROMPT",
-                "extra_pnginfo": "EXTRA_PNGINFO",
-                "unique_id": "UNIQUE_ID"
-            }
         }
 
-    RETURN_TYPES = ByPassTypeTuple(tuple(["FLOW_CONTROL", "INT"] + [any_type] * (MAX_FLOW_NUM - 1)))
-    RETURN_NAMES = ByPassTypeTuple(tuple(["flow", "index"] + ["value%d" % i for i in range(1, MAX_FLOW_NUM)]))
-    FUNCTION = "fn"
+    RETURN_TYPES = ("INT",)
+    FUNCTION = "int_math_operation"
 
-    CATEGORY = "MaraScott/Loop"
+    CATEGORY = "MaraScott/Loop/Logic"
 
-    def fn(self, total, prompt=None, extra_pnginfo=None, unique_id=None, **kwargs):
-        graph = GraphBuilder()
-        i = 0
-        unique_id = unique_id.split('.')[len(unique_id.split('.'))-1] if "." in unique_id else unique_id
-        update_cache('forloop'+str(unique_id), 'forloop', total)
-        if "initial_value0" in kwargs:
-            i = kwargs["initial_value0"]
+    def int_math_operation(self, a, b, operation):
+        if operation == "add":
+            return (a + b,)
+        elif operation == "subtract":
+            return (a - b,)
+        elif operation == "multiply":
+            return (a * b,)
+        elif operation == "divide":
+            return (a // b,)
+        elif operation == "modulo":
+            return (a % b,)
+        elif operation == "power":
+            return (a ** b,)
 
-        # initial_values = {("initial_value%d" % num): kwargs.get("initial_value%d" % num, None) for num in range(1, MAX_FLOW_NUM)}
-        # while_open = graph.node("easy whileLoopStart", condition=total, initial_value0=i, **initial_values)
-        outputs = [kwargs.get("initial_value%d" % num, None) for num in range(1, MAX_FLOW_NUM)]
-        return {
-            "result": tuple(["stub", i] + outputs),
-            "expand": graph.finalize(),
-        }
-
-class forLoopEnd:
+class ForLoopToBoolNode_v1:
     def __init__(self):
         pass
 
@@ -185,74 +249,32 @@ class forLoopEnd:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "flow": ("FLOW_CONTROL", {"rawLink": True}),
+                "value": ("*",),
             },
             "optional": {
-                "initial_value%d" % i: (any_type, {"rawLink": True}) for i in range(1, MAX_FLOW_NUM)
-            },
-            "hidden": {
-                "prompt": "PROMPT",
-                "extra_pnginfo": "EXTRA_PNGINFO",
-                "unique_id": "UNIQUE_ID"
+                "invert": ("BOOLEAN", {"default": False}),
             },
         }
 
-    RETURN_TYPES = ByPassTypeTuple(tuple([any_type] * (MAX_FLOW_NUM - 1)))
-    RETURN_NAMES = ByPassTypeTuple(tuple(["value%d" % i for i in range(1, MAX_FLOW_NUM)]))
-    FUNCTION = "fn"
+    RETURN_TYPES = ("BOOLEAN",)
+    FUNCTION = "to_bool"
 
-    CATEGORY = "MaraScott/Loop"
+    CATEGORY = "MaraScott/Loop/Logic"
 
-    def fn(self, flow, prompt=None, extra_pnginfo=None, unique_id=None, **kwargs):
-        def get_last_segment(s):
-            """Helper function to retrieve the last segment after the final dot."""
-            if isinstance(s, str) and '.' in s:
-                return s.split('.')[-1]
-            return s  # Return as-is if it's not a string with dots
-        # Process flow: Extract the last segment of flow[0] if it's a string
-        if isinstance(flow, list) and len(flow) > 0:
-            processed_flow = [get_last_segment(flow[0])] + flow[1:]
-        else:
-            processed_flow = flow  # Handle cases where flow is not a list or is empty
-            
-        # Process unique_id: Extract the last segment if it's a string
-        processed_unique_id = get_last_segment(unique_id)
-        
-        # Process kwargs: Extract the last segment of the first element in each value list
-        processed_kwargs = {}
-        for key, value in kwargs.items():
-            if isinstance(value, list) and len(value) > 0:
-                # Assume the first element is the string to process
-                processed_first_element = get_last_segment(value[0])
-                # Reconstruct the list with the processed first element
-                processed_kwargs[key] = [processed_first_element] + value[1:]
+    def to_bool(self, value, invert = False):
+        if isinstance(value, torch.Tensor):
+            if value.max().item() == 0 and value.min().item() == 0:
+                result = False
             else:
-                # If the value isn't a list or is empty, keep it unchanged
-                processed_kwargs[key] = value
-                
-        # Reassign processed values
-        flow = processed_flow
-        unique_id = processed_unique_id
-        kwargs = processed_kwargs
+                result = True
+        else:
+            try:
+                result = bool(value)
+            except:
+                # Can't convert it? Well then it's something or other. I dunno, I'm not a Python programmer.
+                result = True
 
-        graph = GraphBuilder()
-        while_open = flow[0]
-        total = None
-        
-        if "forloop"+str(while_open) in cache:
-            total = cache['forloop'+str(while_open)][1]
-        elif extra_pnginfo:
-            all_nodes = extra_pnginfo['workflow']['nodes']
-            start_node = next((x for x in all_nodes if x['id'] == int(while_open)), None)
-            total = start_node['widgets_values'][0] if "widgets_values" in start_node else None
-        if total is None:
-            raise Exception("Unable to get parameters for the start of the loop")
-        sub = mathIntOperation(operation="add", a=[while_open, 1], b=1)
-        cond = Compare(a=sub.out(0), b=total, comparison='a < b')
-        input_values = {("initial_value%d" % i): kwargs.get("initial_value%d" % i, None) for i in 
-                        range(1, MAX_FLOW_NUM)}
-        while_close = whileLoopEnd(flow=flow, condition=cond.out(0), initial_value0=sub.out(0), **input_values)
-        return {
-            "result": tuple([while_close.out(i) for i in range(1, MAX_FLOW_NUM)]),
-            "expand": graph.finalize(),
-        }
+        if invert:
+            result = not result
+
+        return (result,)
