@@ -2,6 +2,26 @@ from ...utils.helper import AlwaysEqualProxy
 
 any_type = AlwaysEqualProxy("*")
 
+class IsEqual_v1:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "any_1": (any_type,),
+                "any_2": (any_type,)
+            },
+            "optional": {
+            }
+        }
+
+    RETURN_TYPES = ("BOOLEAN",)
+    RETURN_NAMES = ("boolean",)
+    FUNCTION = "fn"
+    CATEGORY = "MaraScott/Util"
+
+    def fn(self, any_1, any_2):
+        return (True if any_1 == any_2 else False,)
+
 class IsNone_v1:
     @classmethod
     def INPUT_TYPES(s):
