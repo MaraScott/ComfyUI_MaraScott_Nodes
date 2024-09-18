@@ -8,7 +8,7 @@
 ###
 
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
-from .py.nodes.Info.DisplayInfoNode_v1 import DisplayInfoNode_v1
+from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v2 import UpscalerRefiner_McBoaty_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
 from .py.nodes.UpscalerRefiner.McBoaty_v4 import McBoaty_Upscaler_v4, McBoaty_TilePrompter_v4, McBoaty_Refiner_v4
@@ -49,12 +49,12 @@ NODE_CLASS_MAPPINGS = {
     "MaraScottIsEqual_v1": IsEqual_v1,
 
     "MaraScottPromptFromImage_v1": PromptFromImage_v1,
-    "MaraScottDisplayInfo_v1": DisplayInfoNode_v1,
+    "MaraScottDisplayInfo_v2": DisplayInfo_v2,
 
     "MaraScott_Kijai_TokenCounter_v1": TokenCounter_v1,
 
     "MaraScottAnyBusNode": AnyBus_v2,
-    "MaraScottDisplayInfoNode": DisplayInfoNode_v1,
+    "MaraScottDisplayInfoNode": DisplayInfo_v2,
     "MaraScottUpscalerRefinerNode_v2": UpscalerRefiner_McBoaty_v2,
 }
 
@@ -62,7 +62,7 @@ NODE_CLASS_MAPPINGS = {
 # active : \ud83d\udc30
 # deprecated : \u274C
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "MaraScottDisplayInfo_v1": "\ud83d\udc30 Display Info - Text v1 /i",
+    "MaraScottDisplayInfo_v2": "\ud83d\udc30 Display Info - Text v2 /i",
     "MaraScottMcBoatyUpscalerRefiner_v5": "\ud83d\udc30 Large Refiner - McBoaty [1/3] v5 /u",
     "MaraScottMcBoatyUpscaler_v5": "\ud83d\udc30 Upscaler - McBoaty [1/3] v5 /u",
     "MaraScottMcBoatyTilePrompter_v5": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v5 /u",

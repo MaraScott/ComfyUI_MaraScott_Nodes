@@ -3,6 +3,10 @@
 #
 ###
 
+class AnyType(str):
+    def __ne__(self, __value: object) -> bool:
+        return False
+
 class AlwaysEqualProxy(str):
     def __eq__(self, _):
         return True
