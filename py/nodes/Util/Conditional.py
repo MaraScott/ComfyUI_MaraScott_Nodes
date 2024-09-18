@@ -1,8 +1,13 @@
+from ...utils.constants import get_name, get_category
 from ...utils.helper import AlwaysEqualProxy
+from ...utils.log import log
 
 any_type = AlwaysEqualProxy("*")
 
 class IsEqual_v1:
+
+    NAME = get_name('Is Equal ?')
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -17,9 +22,9 @@ class IsEqual_v1:
     RETURN_TYPES = ("BOOLEAN",)
     RETURN_NAMES = ("boolean",)
     FUNCTION = "fn"
-    CATEGORY = "MaraScott/Util"
+    CATEGORY = get_category('utils')
 
-    def fn(self, any_1, any_2):
+    def fn(self, any_1=None, any_2=None):
         return (True if any_1 == any_2 else False,)
 
 class IsNone_v1:
