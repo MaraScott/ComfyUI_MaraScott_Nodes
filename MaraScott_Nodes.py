@@ -54,7 +54,6 @@ NODE_CLASS_MAPPINGS = {
     "MaraScott_Kijai_TokenCounter_v1": TokenCounter_v1,
 
     "MaraScottAnyBusNode": AnyBus_v2,
-    "MaraScottDisplayInfoNode": DisplayInfo_v2,
     "MaraScottUpscalerRefinerNode_v2": UpscalerRefiner_McBoaty_v2,
 }
 
