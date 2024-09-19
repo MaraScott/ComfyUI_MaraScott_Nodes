@@ -52,9 +52,6 @@ NODE_CLASS_MAPPINGS = {
     "MaraScottDisplayInfo_v2": DisplayInfo_v2,
 
     "MaraScott_Kijai_TokenCounter_v1": TokenCounter_v1,
-
-    "MaraScottAnyBusNode": AnyBus_v2,
-    "MaraScottUpscalerRefinerNode_v2": UpscalerRefiner_McBoaty_v2,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes 
@@ -90,9 +87,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 
     "MaraScott_Kijai_TokenCounter_v1": "\ud83d\udc30 TokenCounter (from kijai/ComfyUI-KJNodes) /v",
 
-    "MaraScottAnyBusNode": "\u274C AnyBus - UniversalBus v2 /*",
-    "MaraScottDisplayInfoNode": "\u274C Display Info - Text v1 /i",
-    "MaraScottUpscalerRefinerNode_v2": "\u274C Large Refiner - McBoaty v2 /u",
 }
 
 print('\033[34m[MaraScott] \033[92mLoaded\033[0m')

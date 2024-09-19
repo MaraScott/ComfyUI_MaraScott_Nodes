@@ -214,7 +214,7 @@ class McBoaty_Upscaler_v5():
             negative = kwargs.get('negative', None),
             add_noise = True,
             sigmas_type = None,
-            ays_model_type = None,
+            model_type = None,
             steps = None,
             cfg = None,
             denoise = None,
@@ -306,13 +306,14 @@ class McBoaty_Refiner_v5():
         'SDTurboScheduler', 
         'AlignYourStepsScheduler'
     ]    
-    AYS_MODEL_TYPE_SIZES = {
+    MODEL_TYPE_SIZES = {
         'SD1': 512,
         'SDXL': 1024,
         'SD3': 1024,
+        'FLUX1': 1024,
         'SVD': 1024,
     }
-    AYS_MODEL_TYPES = list(AYS_MODEL_TYPE_SIZES.keys())
+    MODEL_TYPES = list(MODEL_TYPE_SIZES.keys())
 
     CONTROLNETS = folder_paths.get_filename_list("controlnet")
     CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
@@ -329,7 +330,7 @@ class McBoaty_Refiner_v5():
                 "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
                 "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
                 "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
-                "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
+                "model_type": (self.MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
@@ -440,15 +441,15 @@ class McBoaty_Refiner_v5():
         self.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
         self.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
         self.KSAMPLER.sigmas_type = kwargs.get('sigmas_type', None)
-        self.KSAMPLER.ays_model_type = kwargs.get('ays_model_type', None)
+        self.KSAMPLER.model_type = kwargs.get('model_type', None)
         self.KSAMPLER.steps = kwargs.get('steps', None)
         self.KSAMPLER.cfg = kwargs.get('cfg', None)
         self.KSAMPLER.denoise = kwargs.get('denoise', None)
                 
         self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
-        self.KSAMPLER.tile_size_sampler = self.AYS_MODEL_TYPE_SIZES[self.KSAMPLER.ays_model_type]
-        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
-        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
+        self.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type]
+        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
 
         self.CONTROLNET = SimpleNamespace(
             name = kwargs.get('control_net_name', 'None'),
@@ -485,13 +486,13 @@ class McBoaty_Refiner_v5():
         self.OUTPUTS.grid_denoises = grid_denoises
         
     @classmethod    
-    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, ays_model_type):
+    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
         if sigmas_type == "SDTurboScheduler":
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
         elif sigmas_type == "AlignYourStepsScheduler":
             SigmaScheduler = AlignYourStepsScheduler
-            sigmas = SigmaScheduler().get_sigmas(ays_model_type, steps, denoise)[0]
+            sigmas = SigmaScheduler().get_sigmas(model_type, steps, denoise)[0]
         else: # BasicScheduler
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
@@ -590,7 +591,7 @@ class McBoaty_Refiner_v5():
                 sigmas = self.KSAMPLER.sigmas
                 if self.OUTPUTS.grid_denoises[index] != self.KSAMPLER.denoise:
                     denoise = self.OUTPUTS.grid_denoises[index]
-                    sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.OUTPUTS.grid_denoises[index], self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
+                    sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.OUTPUTS.grid_denoises[index], self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
                 else:
                     denoise = self.KSAMPLER.denoise
                     
