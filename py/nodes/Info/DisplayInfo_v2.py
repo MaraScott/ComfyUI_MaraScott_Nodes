@@ -9,22 +9,13 @@
 #
 ###
 import json
+import numpy as np
+import torch
 from ...utils.helper import AlwaysEqualProxy, AnyType
 from ...utils.constants import get_name, get_category
 from ...utils.log import log
 
 any_type = AnyType("*")
-
-# Attempt to import numpy and torch, handle if they are not available
-try:
-    import numpy as np
-except ImportError:
-    np = None
-
-try:
-    import torch
-except ImportError:
-    torch = None
 
 class DisplayInfo_v2:
     NAME = get_name('Display Any')
