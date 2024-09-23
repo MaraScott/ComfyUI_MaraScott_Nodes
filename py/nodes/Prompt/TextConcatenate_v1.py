@@ -17,12 +17,14 @@ class TextConcatenate_v1:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "hidden": {"id":"UNIQUE_ID"},
+            "hidden": {
+                "id":"UNIQUE_ID",
+                **ProfileNodeTextConcatenate.ENTRIES,
+            },
             "required": {
-                "delimiter": ("STRING", { "label": "Delimiter" }),
+                "delimiter": ("STRING", { "default": ", ", "label": "Delimiter" }),
             },
             "optional": {
-                **ProfileNodeTextConcatenate.ENTRIES,
             }
         }
     
@@ -33,7 +35,7 @@ class TextConcatenate_v1:
 
     def fn(self, **kwargs):
         
-        delimiter = kwargs.get('delimiter', "")
+        delimiter = kwargs.get('delimiter', ", ")
         
         prefix="string"
         filtered_kwargs = {k: v for k, v in kwargs.items() if k.startswith(prefix)}
