@@ -25,6 +25,10 @@ Turn ★ into ⭐ (top-right corner) if you like the project!
 
 - V1 - Introducing a 2-node set: to generate an inpainted output and to paste it back to the original image
 
+**Text Concatenation**
+
+- V1 - Introducing up to 24 dynamic string to concatenate
+
 ## Installation
 
 ### Installation [method1] via [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager) (recommended)
@@ -44,6 +48,7 @@ To install `ComfyUI_MaraScott_Nodes` in addition to an existing installation of 
 
 ## Changes
 
+* v5.2.0 - Text Concatenation : Introduction
 * v5.0.0 - McBoaty: Improved Tile prompts editor
 * v4.4.1 - McBoaty: Tile prompts editor
 * v4.3.0 - McBoaty: Hotfix tiling ksampling issue on non-standard ratio
@@ -117,6 +122,30 @@ The BusNode profile is a mechanism to synchronize BusNodes in the same flow (con
 When adding a node, the profile is default. If you have another flow called main, for example, and you connect the bus output of the flow to the input of the default busnode, the main flow will synchronize the main input to the default one and change the profile name to main. This works only for the default node. If you have a node called TextFlow and try to connect main to TextFlow, the connection will be refused. This allows for multiple flows in the same workflow and avoids conflict.
 
 This AnyBus is *dyslexia-friendly* :D
+
+### Text Concatenation
+
+It is meant to allow you to concatenate up to 24 string inputs
+
+![image](https://github.com/user-attachments/assets/327e7d95-d7fa-4ff9-9b3a-f4d2f874a9e7)
+
+### Display Any - Text
+
+It is meant to display any content within the node + pass the input value as output allow you to use it within a ForLoopOpen/ForLoopClose workflow
+
+![image](https://github.com/user-attachments/assets/10e2c3b0-6ce1-444c-af84-333c2c25dbf2)
+
+### For Loop (Open/Close)
+
+These two nodes allow you to build loops within your workflow and subloops too in order to limitate the needs to repeats sequences in your workflows
+
+#### a Loop
+
+![image](https://github.com/user-attachments/assets/12995374-403f-44c4-a489-d0b1ebf05c55)
+
+#### a loop and its sub Loop
+
+![image](https://github.com/user-attachments/assets/4e2549de-7344-4fa2-9e1d-df26dedada3e)
 
 ### McBoaty Node Set (Upscaler, Prompter, Refiner)
 
