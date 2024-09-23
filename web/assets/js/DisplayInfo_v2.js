@@ -4,10 +4,6 @@ import { ComfyWidgets } from "../../scripts/widgets.js";
 app.registerExtension({
     name: "ComfyUI.MaraScott.DisplayInfo_v2",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (!nodeData?.category?.startsWith("MaraScott")) {
-            return;
-        }
-
         if (nodeData.name === "MaraScottDisplayInfo_v2") {
             const onExecuted = nodeType.prototype.onExecuted;
 
@@ -18,7 +14,6 @@ app.registerExtension({
 					for (let i = 1; i < this.widgets.length; i++) {
 						this.widgets[i].onRemove?.();
 					}
-					this.widgets.length = 1;
 				}
 
                 // Check if the "text" widget already exists.

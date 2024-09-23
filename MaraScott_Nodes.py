@@ -59,7 +59,7 @@ NODE_CLASS_MAPPINGS = {
 # active : \ud83d\udc30
 # deprecated : \u274C
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "MaraScottDisplayInfo_v2": "\ud83d\udc30 Display Info - Text v2 /i",
+    "MaraScottDisplayInfo_v2": "\ud83d\udc30 Display Any - Text v2 /i",
     "MaraScottMcBoatyUpscalerRefiner_v5": "\ud83d\udc30 Large Refiner - McBoaty [1/3] v5 /u",
     "MaraScottMcBoatyUpscaler_v5": "\ud83d\udc30 Upscaler - McBoaty [1/3] v5 /u",
     "MaraScottMcBoatyTilePrompter_v5": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v5 /u",
