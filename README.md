@@ -29,6 +29,14 @@ Turn ★ into ⭐ (top-right corner) if you like the project!
 
 - V1 - Introducing up to 24 dynamic string to concatenate
 
+**Display Any - Text**
+
+- V1 - Introducing to display text of any sources
+
+**ForLoop (Open/Close)**
+
+- V1 - Introducing to help reduce the quatity of duplicate piece of workflows
+
 ## Installation
 
 ### Installation [method1] via [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager) (recommended)
