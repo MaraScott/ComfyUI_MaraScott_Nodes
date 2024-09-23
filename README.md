@@ -149,11 +149,11 @@ These two nodes allow you to build loops within your workflow and subloops too i
 
 #### a Loop
 
-![image](https://github.com/user-attachments/assets/12995374-403f-44c4-a489-d0b1ebf05c55)
+[![image](https://github.com/user-attachments/assets/12995374-403f-44c4-a489-d0b1ebf05c55)](https://github.com/MaraScott/ComfyUI_MaraScott_Nodes/blob/main/docs/wf/ForLoop_v1/ForLoop_v1_single.json)
 
 #### a loop and its sub Loop
 
-![image](https://github.com/user-attachments/assets/4e2549de-7344-4fa2-9e1d-df26dedada3e)
+[![image](https://github.com/user-attachments/assets/4e2549de-7344-4fa2-9e1d-df26dedada3e)](https://github.com/MaraScott/ComfyUI_MaraScott_Nodes/blob/main/docs/wf/ForLoop_v1/ForLoop_v1_single_with_subloop.json)
 
 ### McBoaty Node Set (Upscaler, Prompter, Refiner)
 
