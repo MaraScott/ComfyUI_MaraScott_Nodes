@@ -170,6 +170,8 @@ These two nodes allow you to build loops within your workflow and subloops too i
 
 McBoaty Node Set (AKA Upscaler, Prompter, Refiner Node set) is an upscaler coupled with a refiner to achieve higher rendering results on a per-tile basis.
 
+You can follow a presentation video on my chanel : [ComfyUI Tutorial: How to Use McBoaty Nodes Set for Upscaling and Refining Images](https://www.youtube.com/watch?v=7hh-JxGVJHc)
+
 ![Screenshot_23-8-2024_16200_comfyui-shadow marascott ai](https://github.com/user-attachments/assets/24f3410f-b4d2-4d7f-869a-1b401953135e)
 
 #### What does it intend to do?
