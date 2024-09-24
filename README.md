@@ -33,6 +33,10 @@ Turn ★ into ⭐ (top-right corner) if you like the project!
 
 - V1 - Introducing to display text of any sources
 
+**Multiline to List**
+
+- V1 - Introducing to split a text in a list
+
 **ForLoop (Open/Close)**
 
 - V1 - Introducing to help reduce the quatity of duplicate piece of workflows
@@ -56,6 +60,7 @@ To install `ComfyUI_MaraScott_Nodes` in addition to an existing installation of 
 
 ## Changes
 
+* v5.3.0 - Multiline to List : Introduction
 * v5.2.0 - Text Concatenation : Introduction
 * v5.0.0 - McBoaty: Improved Tile prompts editor
 * v4.4.1 - McBoaty: Tile prompts editor
@@ -136,6 +141,12 @@ This AnyBus is *dyslexia-friendly* :D
 It is meant to allow you to concatenate up to 24 string inputs
 
 ![image](https://github.com/user-attachments/assets/327e7d95-d7fa-4ff9-9b3a-f4d2f874a9e7)
+
+### Multiline to List
+
+This return a multiline text as a text, a list of text 1 per line, a count of the number of lines
+
+![multiline 2 list](docs/img/multiline2list.png)
 
 ### Display Any - Text
 
@@ -281,8 +292,8 @@ McInpainty Node is a set of 2 nodes.
 
 [Img Slider for result comparison](https://imgsli.com/Mjc5NDg3/0/1)
 
-| Custom_node             | Execution Time from server start to end of queue | output                                                    | Type     | workflow                                                                          | OS Name                   | Processor                            | Installed Physical Memory (RAM) GB | GPU Name                                      |
-| ----------------------- | ------------------------------------------------ | --------------------------------------------------------- | -------- | --------------------------------------------------------------------------------- | ------------------------- | ------------------------------------ | ----------------------------------- | --------------------------------------------- |
+| Custom_node             | Execution Time from server start to end of queue | output                                                    | Type     | workflow                                                                          | OS Name                   | Processor                             | Installed Physical Memory (RAM) GB | GPU Name                                      |
+| ----------------------- | ------------------------------------------------ | --------------------------------------------------------- | -------- | --------------------------------------------------------------------------------- | ------------------------- | ------------------------------------- | ---------------------------------- | --------------------------------------------- |
 | McBoaty LargeRefiner v5 | 98.37                                            | ![McBoaty](./docs/benchmark/Competitor/McBoaty/McBoaty.png) | Upscaler | [benchmark_McBoaty.json](./docs/benchmark/Competitor/McBoaty/benchmark_McBoaty.json) | Microsoft Windows 10 Home | Intel(R) Xeon(R) W-3235 CPU @ 3.30GHz | 41                                 | Red Hat QXL controller NVIDIA Quadro RTX 6000 |
 | Supir                   | 70.48                                            | ![SUPIR](./docs/benchmark/Competitor/SUPIR/SUPIR.png)       | Upscaler | [benchmark_SUPIR.json](./docs/benchmark/Competitor/SUPIR/benchmark_SUPIR.json)       | Microsoft Windows 10 Home | Intel(R) Xeon(R) W-3235 CPU @ 3.30GHz | 41                                 | Red Hat QXL controller NVIDIA Quadro RTX 6000 |
 | UltimateSDUpscaler      | 47.34                                            | ![USDU](./docs/benchmark/Competitor/USDU/USDU.png)          | Upscaler | [benchmark_USDU.json](./docs/benchmark/Competitor/USDU/benchmark_USDU.json)          | Microsoft Windows 10 Home | Intel(R) Xeon(R) W-3235 CPU @ 3.30GHz | 41                                 | Red Hat QXL controller NVIDIA Quadro RTX 6000 |
@@ -290,6 +301,7 @@ McInpainty Node is a set of 2 nodes.
 **Visit this link to see [an Image Slider comparing the 3 results against the original](https://imgsli.com/Mjc5NDg3/0/1)**
 
 # Sponsorship
+
 [❤️ Github Sponsor](https://github.com/sponsors/MaraScott) | [🪙 Paypal](https://www.paypal.me/marascottai)
 
 If you like my work and wish to see updates and new features please consider sponsoring my projects.
@@ -298,7 +310,7 @@ Not to mention the documentation and videos tutorials. Check my YouTube Chanel [
 
 The only way to keep the code open and free is by sponsoring its development. The more sponsorships the more time I can dedicate to my open source projects.
 
-Please consider a [Github Sponsorship](https://github.com/sponsors/MaraScott) or [PayPal donation](https://www.paypal.me/marascottai) (David "MaraScott" Asquiedge). For sponsorships of $50+, let me know if you'd like to be mentioned in this readme file, you can find me on [Fern's Discord](https://discord.com/invite/t28yZEewrp) or david.asquiedge🐰maracott.ai.
+Please consider a [Github Sponsorship](https://github.com/sponsors/MaraScott) or [PayPal donation](https://www.paypal.me/marascottai) (David "MaraScott" Asquiedge). For sponsorships of $50+, let me know if you'd like to be mentioned in this readme file, you can find me on [Fern&#39;s Discord](https://discord.com/invite/t28yZEewrp) or david.asquiedge🐰maracott.ai.
 
 # Special thanks
 
