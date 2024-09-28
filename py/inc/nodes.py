@@ -23,7 +23,9 @@ class Configuration:
     }
 
     TYPES = {
-        "ANY": AnyType("*"),  # Our any instance wants to be a wildcard string
+        # Our any instance wants to be a wildcard string
+        "ANY": AnyType("*"),
+        "STRING": "STRING",
     }
 
     @classmethod
@@ -36,7 +38,9 @@ class Configuration:
             else:
                 if name.startswith("text"):
                     entries[name] = (type_, {"forceInput": True, "multiline": True})
-                elif name in {"width", "height"}:
+                elif name.startswith("string"):
+                    entries[name] = (type_, {"forceInput": True})
+                elif name == "width" or name == "height":
                     entries[name] = (type_, {"default": 1024, "min": 1, "max": 8192, "forceInput": True})
                 else:
                     entries[name] = (type_,)

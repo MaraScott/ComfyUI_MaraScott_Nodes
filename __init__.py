@@ -23,17 +23,57 @@
 #
 ###
 
-import os
+import os 
+import sys 
+import folder_paths
+
+from .py.utils.version import VERSION
+from .py.inc.lib.llm import MS_Llm
+
+MS_Llm.prestartup_script()
+
+python = sys.executable
+p310_plus = (sys.version_info >= (3, 10))
+
+__ROOT__file__ = __file__
+
+# Directory where you want to save the file
+base_dir = os.path.abspath(os.path.dirname(__ROOT__file__))
+root_dir = os.path.join(base_dir, "..", "..")
+web_dir = os.path.join(root_dir, "web", "extensions", "marascott")
+web_dir = os.path.realpath(web_dir)
+if not os.path.exists(web_dir):
+    os.makedirs(web_dir)
+__WEB_DIR__ = web_dir
+
+sessions_dir = os.path.join(web_dir, "sessions")
+if not os.path.exists(sessions_dir):
+    os.makedirs(sessions_dir)
+__SESSIONS_DIR__ = sessions_dir
+
+profiles_dir = os.path.join(web_dir, "profiles")
+if not os.path.exists(profiles_dir):
+    os.makedirs(profiles_dir)
+__PROFILES_DIR__ = profiles_dir
+
+marascott_temp_dir = os.path.join(folder_paths.get_temp_directory(), "MaraScott")
+if not os.path.exists(marascott_temp_dir):
+    os.makedirs(marascott_temp_dir)
+__MARASCOTT_TEMP__ = marascott_temp_dir
+
+cache_dir = os.path.join(marascott_temp_dir, "cache")
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+__CACHE_DIR__ = cache_dir
 
 from .MaraScott_Nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, WEB_DIRECTORY
-from .py.utils.version import VERSION
 
-__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY']
+__all__ = [ 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY' ]
 
 MANIFEST = {
     "name": "MaraScott Nodes",
     "version": VERSION,
     "author": "davask",
     "project": "https://github.com/davask/ComfyUI_MaraScott_Nodes",
-    "description": "AnyBus, UpScaler Refiner Nodes - a MaraScott.ai nodes suite",
+    "description": "AnyBus, UpScaler Refiner, Inpainting Nodes - a MaraScott.ai nodes suite",
 }

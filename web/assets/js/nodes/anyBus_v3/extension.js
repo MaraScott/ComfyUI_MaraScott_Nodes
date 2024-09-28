@@ -117,7 +117,7 @@ class extension {
         this.flow = new flow(this)
         this.menu = new menu(this)
         this.litegraph = new litegraph(this)
-        this.api()
+        // this.api()
 
         return getExtension(this)
 

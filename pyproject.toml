@@ -1,0 +1,15 @@
+[project]
+name = "comfyui_marascott_nodes"
+description = "A set of nodes including a universal bus, an Inpainting By Mask and a large Upscaler/Refiner"
+version = "5.3.1"
+license = { file = "LICENSE" }
+dependencies = ["blend_modes", "numba", "color-matcher", "groq", "opencv-python"]
+
+[project.urls]
+Repository = "https://github.com/MaraScott/ComfyUI_MaraScott_Nodes"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "marascott"
+DisplayName = "MaraScott Nodes"
+Icon = "https://raw.githubusercontent.com/MaraScott/ComfyUI_MaraScott_Nodes/main/web/assets/img/logo.svg"

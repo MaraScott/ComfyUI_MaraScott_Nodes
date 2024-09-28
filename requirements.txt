@@ -1,4 +1,5 @@
-aiohttp
-math
-numpy
-json
+blend_modes
+numba
+color-matcher
+groq
+opencv-python

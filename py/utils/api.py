@@ -8,7 +8,7 @@ class Api :
         app = web.Application()
         routes = web.RouteTableDef()
 
-        @routes.get("/test")
+        @routes.get("/marascott/test")
         async def test(request):
             testy = request.rel_url.query.get("testy", "")
 
