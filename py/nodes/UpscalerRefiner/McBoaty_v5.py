@@ -492,6 +492,8 @@ class McBoaty_Refiner_v5():
             sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
         elif sigmas_type == "AlignYourStepsScheduler":
             SigmaScheduler = AlignYourStepsScheduler
+            if model_type == "SD3" or model_type == "FLUX1":
+                model_type = "SDXL"
             sigmas = SigmaScheduler().get_sigmas(model_type, steps, denoise)[0]
         else: # BasicScheduler
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
