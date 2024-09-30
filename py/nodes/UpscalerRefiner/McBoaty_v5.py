@@ -271,7 +271,7 @@ class McBoaty_Upscaler_v5():
         cols_qty = math.ceil(cols_qty_float)
 
         tiles_qty = rows_qty * cols_qty        
-        if tiles_qty > 64 :
+        if tiles_qty > 16384 :
             msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 64 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - McBoaty_Upscaler_v5")
             raise ValueError(msg)
 
