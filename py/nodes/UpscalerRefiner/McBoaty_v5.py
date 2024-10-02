@@ -87,7 +87,7 @@ class McBoaty_Upscaler_v5():
                 "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
-                "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
+                "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 256, "max": 4096, "step": 64}),
 
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
@@ -272,7 +272,7 @@ class McBoaty_Upscaler_v5():
 
         tiles_qty = rows_qty * cols_qty        
         if tiles_qty > 16384 :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 64 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - McBoaty_Upscaler_v5")
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 16384 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - McBoaty_Upscaler_v5")
             raise ValueError(msg)
 
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
@@ -506,9 +506,9 @@ class McBoaty_Refiner_v5():
     def set_tiles_to_process(self, tiles_to_process=''):
 
         max_tiles = len(self.OUTPUTS.grid_tiles_to_process)
-        max = max_tiles if max_tiles > 0 else 64
+        max = max_tiles if max_tiles > 0 else 16384
         
-        def is_valid_index(index, max = 64):
+        def is_valid_index(index, max = 16384):
             return 1 <= index <= max
         def to_computer_index(human_index):
             return human_index - 1
