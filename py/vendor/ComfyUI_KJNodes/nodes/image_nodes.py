@@ -55,8 +55,10 @@ class ColorMatch:
             ], {
                "default": 'mkl'
             }),
-                
             },
+            "optional": {
+                "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01}),
+            }
         }
     
     CATEGORY = "KJNodes/image"
@@ -77,7 +79,7 @@ https://github.com/hahnec/color-matcher/
 
 """
     
-    def colormatch(self, image_ref, image_target, method):
+    def colormatch(self, image_ref, image_target, method, strength=1.0):
         try:
             from color_matcher import ColorMatcher
         except:
@@ -104,6 +106,8 @@ https://github.com/hahnec/color-matcher/
             except BaseException as e:
                 print(f"Error occurred during transfer: {e}")
                 break
+            # Apply the strength multiplier
+            image_result = image_target_np + strength * (image_result - image_target_np)
             out.append(torch.from_numpy(image_result))
             
         out = torch.stack(out, dim=0).to(torch.float32)
