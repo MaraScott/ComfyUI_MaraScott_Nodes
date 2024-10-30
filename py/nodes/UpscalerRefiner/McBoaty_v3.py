@@ -14,6 +14,7 @@ import comfy
 import comfy_extras
 import comfy_extras.nodes_custom_sampler
 from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
+from comfy_extras.nodes_canny import Canny
 import nodes
 import folder_paths
 
@@ -59,6 +60,9 @@ class UpscalerRefiner_McBoaty_v3():
     
     AYS_MODEL_TYPES = list(AYS_MODEL_TYPE_SIZES.keys())
     
+    CONTROLNETS = folder_paths.get_filename_list("controlnet")
+    CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
+    
     INPUTS = {}
     OUTPUTS = {}
     PARAMS = {}
@@ -100,6 +104,12 @@ class UpscalerRefiner_McBoaty_v3():
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
                 "vision_llm_model": (MS_Llm.VISION_LLM_MODELS, { "label": "Vision LLM Model", "default": "microsoft/Florence-2-large" }),
                 "llm_model": (MS_Llm.LLM_MODELS, { "label": "LLM Model", "default": "llama3-70b-8192" }),
+                "control_net_name": (self.CONTROLNET_CANNY_ONLY , { "label": "ControlNet (Canny only)", "default": "None" }),
+                "low_threshold": ("FLOAT", {"label": "Low Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
+                "high_threshold": ("FLOAT", {"label": "High Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
+                "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.4, "min": 0.0, "max": 10.0, "step": 0.01}),
+                "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001})                
 
             },
             "optional": {
@@ -223,6 +233,21 @@ class UpscalerRefiner_McBoaty_v3():
         self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
         self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
 
+        self.CONTROLNET = SimpleNamespace(
+            name = kwargs.get('control_net_name', 'None'),
+            path = None,
+            controlnet = None,
+            low_threshold = kwargs.get('low_threshold', None),
+            high_threshold = kwargs.get('high_threshold', None),
+            strength = kwargs.get('strength', None),
+            start_percent = kwargs.get('start_percent', None),
+            end_percent = kwargs.get('end_percent', None),
+        )
+        if self.CONTROLNET.name != "None":
+            self.CONTROLNET.path = folder_paths.get_full_path("controlnet", self.CONTROLNET.name)
+            self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)
+
+
         self.LLM = SimpleNamespace(
             vision_model = kwargs.get('vision_llm_model', None),
             model = kwargs.get('llm_model', None),
@@ -331,9 +356,17 @@ class UpscalerRefiner_McBoaty_v3():
         
         for index, latent_image in enumerate(grid_latents):
             positive = self.KSAMPLER.positive
+            negative = self.KSAMPLER.negative
             if self.PARAMS.tile_prompting_active:
                 log(f"tile {index + 1}/{total} : {grid_prompts[index]}", None, None, f"ClipTextEncoding {iteration}")
                 positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, grid_prompts[index])[0]
+                
+            if self.CONTROLNET.controlnet is not None:
+                log(f"tile {index + 1}/{total}", None, None, f"Canny {iteration}")
+                canny_image = Canny().detect_edge(grid_images[index], self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
+                log(f"tile {index + 1}/{total}", None, None, f"ControlNetApply {iteration}")
+                positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, canny_image, self.CONTROLNET.strength, self.CONTROLNET.start_percent, self.CONTROLNET.end_percent, self.KSAMPLER.vae )
+                
             log(f"tile {index + 1}/{total}", None, None, f"Refining {iteration}")
             latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                 self.KSAMPLER.model, 
@@ -341,7 +374,7 @@ class UpscalerRefiner_McBoaty_v3():
                 self.KSAMPLER.noise_seed, 
                 self.KSAMPLER.cfg, 
                 positive, 
-                self.KSAMPLER.negative, 
+                negative,
                 self.KSAMPLER.sampler, 
                 self.KSAMPLER.sigmas, 
                 latent_image

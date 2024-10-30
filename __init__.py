@@ -25,6 +25,7 @@
 
 import os 
 import sys 
+import folder_paths
 
 from .py.utils.version import VERSION
 from .py.inc.lib.llm import MS_Llm
@@ -55,7 +56,12 @@ if not os.path.exists(profiles_dir):
     os.makedirs(profiles_dir)
 __PROFILES_DIR__ = profiles_dir
 
-cache_dir = os.path.join(web_dir, "cache")
+marascott_temp_dir = os.path.join(folder_paths.get_temp_directory(), "MaraScott")
+if not os.path.exists(marascott_temp_dir):
+    os.makedirs(marascott_temp_dir)
+__MARASCOTT_TEMP__ = marascott_temp_dir
+
+cache_dir = os.path.join(marascott_temp_dir, "cache")
 if not os.path.exists(cache_dir):
     os.makedirs(cache_dir)
 __CACHE_DIR__ = cache_dir

@@ -1,0 +1,545 @@
+{
+  "last_node_id": 92,
+  "last_link_id": 153,
+  "nodes": [
+    {
+      "id": 65,
+      "type": "MaraScottForLoopOpen_v1",
+      "pos": {
+        "0": 30,
+        "1": 70
+      },
+      "size": {
+        "0": 342.5999755859375,
+        "1": 158
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "initial_value1",
+          "type": "*",
+          "link": 76,
+          "label": "initial_value1"
+        },
+        {
+          "name": "initial_value2",
+          "type": "*",
+          "link": null,
+          "label": "initial_value2"
+        },
+        {
+          "name": "initial_value3",
+          "type": "*",
+          "link": null,
+          "label": "initial_value3"
+        },
+        {
+          "name": "initial_value4",
+          "type": "*",
+          "link": null,
+          "label": "initial_value4"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "flow_control",
+          "type": "FLOW_CONTROL",
+          "links": [
+            57
+          ],
+          "slot_index": 0,
+          "shape": 3,
+          "label": "flow_control"
+        },
+        {
+          "name": "remaining",
+          "type": "INT",
+          "links": [],
+          "slot_index": 1,
+          "shape": 3,
+          "label": "remaining"
+        },
+        {
+          "name": "value1",
+          "type": "*",
+          "links": [
+            59,
+            102,
+            116
+          ],
+          "slot_index": 2,
+          "shape": 3,
+          "label": "value1"
+        },
+        {
+          "name": "value2",
+          "type": "*",
+          "links": [
+            94,
+            115
+          ],
+          "slot_index": 3,
+          "shape": 3,
+          "label": "value2"
+        },
+        {
+          "name": "value3",
+          "type": "*",
+          "links": [],
+          "slot_index": 4,
+          "shape": 3,
+          "label": "value3"
+        },
+        {
+          "name": "value4",
+          "type": "*",
+          "links": null,
+          "shape": 3,
+          "label": "value4"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottForLoopOpen_v1"
+      },
+      "widgets_values": [
+        3
+      ]
+    },
+    {
+      "id": 71,
+      "type": "MaraScottIsNone_v1",
+      "pos": {
+        "0": 400,
+        "1": 360
+      },
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "any",
+          "type": "*",
+          "link": 94,
+          "label": "any"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "boolean",
+          "type": "BOOLEAN",
+          "links": [
+            95
+          ],
+          "slot_index": 0,
+          "shape": 3,
+          "label": "boolean"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottIsNone_v1"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 72,
+      "type": "LayerUtility: If ",
+      "pos": {
+        "0": 660,
+        "1": 240
+      },
+      "size": {
+        "0": 210,
+        "1": 66
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "if_condition",
+          "type": "*",
+          "link": 95,
+          "label": "if_condition"
+        },
+        {
+          "name": "when_TRUE",
+          "type": "*",
+          "link": 102,
+          "label": "when_TRUE"
+        },
+        {
+          "name": "when_FALSE",
+          "type": "*",
+          "link": 115,
+          "label": "when_FALSE"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "?",
+          "type": "*",
+          "links": [
+            114
+          ],
+          "slot_index": 0,
+          "shape": 3,
+          "label": "?"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LayerUtility: If "
+      },
+      "widgets_values": [],
+      "color": "rgba(38, 73, 116, 0.7)"
+    },
+    {
+      "id": 66,
+      "type": "MaraScottForLoopClose_v1",
+      "pos": {
+        "0": 1160,
+        "1": 70
+      },
+      "size": {
+        "0": 289.79998779296875,
+        "1": 106
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "flow_control",
+          "type": "FLOW_CONTROL",
+          "link": 57,
+          "label": "flow_control"
+        },
+        {
+          "name": "initial_value1",
+          "type": "*",
+          "link": 59,
+          "label": "initial_value1"
+        },
+        {
+          "name": "initial_value2",
+          "type": "*",
+          "link": 153,
+          "label": "initial_value2"
+        },
+        {
+          "name": "initial_value3",
+          "type": "*",
+          "link": null,
+          "label": "initial_value3"
+        },
+        {
+          "name": "initial_value4",
+          "type": "*",
+          "link": null,
+          "label": "initial_value4"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "value1",
+          "type": "*",
+          "links": [],
+          "slot_index": 0,
+          "shape": 3,
+          "label": "value1"
+        },
+        {
+          "name": "value2",
+          "type": "*",
+          "links": [
+            88
+          ],
+          "slot_index": 1,
+          "shape": 3,
+          "label": "value2"
+        },
+        {
+          "name": "value3",
+          "type": "*",
+          "links": [],
+          "slot_index": 2,
+          "shape": 3,
+          "label": "value3"
+        },
+        {
+          "name": "value4",
+          "type": "*",
+          "links": null,
+          "shape": 3,
+          "label": "value4"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottForLoopClose_v1"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 64,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 1200,
+        "1": -230
+      },
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 88,
+          "label": "images"
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 63,
+      "type": "LoadImage",
+      "pos": {
+        "0": 50,
+        "1": -300
+      },
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            76
+          ],
+          "slot_index": 0,
+          "shape": 3,
+          "label": "IMAGE"
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3,
+          "label": "MASK"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "MaraScott_body.png",
+        "image"
+      ]
+    },
+    {
+      "id": 74,
+      "type": "ImageBatch",
+      "pos": {
+        "0": 890,
+        "1": 160
+      },
+      "size": {
+        "0": 210,
+        "1": 46
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image1",
+          "type": "IMAGE",
+          "link": 114,
+          "label": "image1"
+        },
+        {
+          "name": "image2",
+          "type": "IMAGE",
+          "link": 116,
+          "label": "image2"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            153
+          ],
+          "slot_index": 0,
+          "shape": 3,
+          "label": "IMAGE"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageBatch"
+      },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [
+      23,
+      1,
+      0,
+      12,
+      0,
+      "STRING"
+    ],
+    [
+      24,
+      2,
+      0,
+      12,
+      1,
+      "STRING"
+    ],
+    [
+      25,
+      12,
+      0,
+      10,
+      0,
+      "*"
+    ],
+    [
+      42,
+      2,
+      0,
+      21,
+      0,
+      "STRING"
+    ],
+    [
+      43,
+      6,
+      0,
+      21,
+      1,
+      "STRING"
+    ],
+    [
+      44,
+      21,
+      0,
+      10,
+      0,
+      "*"
+    ],
+    [
+      57,
+      65,
+      0,
+      66,
+      0,
+      "FLOW_CONTROL"
+    ],
+    [
+      59,
+      65,
+      2,
+      66,
+      1,
+      "*"
+    ],
+    [
+      76,
+      63,
+      0,
+      65,
+      0,
+      "*"
+    ],
+    [
+      88,
+      66,
+      1,
+      64,
+      0,
+      "IMAGE"
+    ],
+    [
+      94,
+      65,
+      3,
+      71,
+      0,
+      "*"
+    ],
+    [
+      95,
+      71,
+      0,
+      72,
+      0,
+      "*"
+    ],
+    [
+      102,
+      65,
+      2,
+      72,
+      1,
+      "*"
+    ],
+    [
+      114,
+      72,
+      0,
+      74,
+      0,
+      "IMAGE"
+    ],
+    [
+      115,
+      65,
+      3,
+      72,
+      2,
+      "*"
+    ],
+    [
+      116,
+      65,
+      2,
+      74,
+      1,
+      "IMAGE"
+    ],
+    [
+      153,
+      74,
+      0,
+      66,
+      2,
+      "*"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

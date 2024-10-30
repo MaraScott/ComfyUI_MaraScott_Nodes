@@ -302,7 +302,7 @@ class MaraScottAnyBus_v2 {
 
 		}
 
-		if (parentNode != null && MaraScottAnyBusNodeFlow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) == -1 && MaraScottAnyBusNodeFlow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) == -1) {
+		if (parentNode != null && typeof node.inputs[slot] != "undefined" && MaraScottAnyBusNodeFlow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) == -1 && MaraScottAnyBusNodeFlow.ALLOWED_GETSET_TYPE.indexOf(parentNode.type) == -1) {
 			if (parentNode != null) {
 				node.inputs[slot].name = parentNode.inputs[slot].name
 				node.inputs[slot].type = parentNode.inputs[slot].type
@@ -338,12 +338,14 @@ class MaraScottAnyBus_v2 {
 			busNodes.reverse()
 			for (let y in busNodes) {
 				_node = node.graph.getNodeById(busNodes[y])
-				if (typeof _node.inputs[slot] != 'undefined' && _node.inputs[slot].link != null && _node.inputs[slot].type != "*") {
-					newName = _node.inputs[slot].name
-					newType = _node.inputs[slot].type
-				} else if (typeof _node.inputs[slot] != 'undefined' && _node.inputs[slot].type == newType && _node.inputs[slot].name != newName) {
-					newName = _node.inputs[slot].name
-				}
+                if (_node != null) {
+                    if (typeof _node.inputs[slot] != 'undefined' && _node.inputs[slot].link != null && _node.inputs[slot].type != "*") {
+                        newName = _node.inputs[slot].name
+                        newType = _node.inputs[slot].type
+                    } else if (typeof _node.inputs[slot] != 'undefined' && _node.inputs[slot].type == newType && _node.inputs[slot].name != newName) {
+                        newName = _node.inputs[slot].name
+                    }
+                }
 			}
 		}
 		// input
