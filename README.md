@@ -41,6 +41,10 @@ Turn ★ into ⭐ (top-right corner) if you like the project!
 
 - V1 - Introducing to help reduce the quatity of duplicate piece of workflows
 
+**Image to gradient**
+
+- V1 - convert an image in a gradient version
+
 ## Installation
 
 ### Installation [method1] via [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager) (recommended)
@@ -60,6 +64,7 @@ To install `ComfyUI_MaraScott_Nodes` in addition to an existing installation of 
 
 ## Changes
 
+* v5.4.0 - Image to Gradient : Introduction
 * v5.3.0 - Multiline to List : Introduction
 * v5.2.0 - Text Concatenation : Introduction
 * v5.0.0 - McBoaty: Improved Tile prompts editor
