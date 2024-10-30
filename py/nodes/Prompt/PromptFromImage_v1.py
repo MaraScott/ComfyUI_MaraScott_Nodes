@@ -11,12 +11,14 @@
 
 from types import SimpleNamespace
 
+from ...utils.constants import get_name, get_category
 from ...inc.lib.llm import MS_Llm
 
-from ...utils.log import log
 
 class PromptFromImage_v1:
     
+    NAME = get_name('Prompt from Image')
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -35,7 +37,7 @@ class PromptFromImage_v1:
     FUNCTION = "fn"
     OUTPUT_NODE = True
     OUTPUT_IS_LIST = (False,)
-    CATEGORY = "MaraScott/Prompt"
+    CATEGORY = get_category('Prompt')
 
     RETURN_TYPES = (
         "STRING",

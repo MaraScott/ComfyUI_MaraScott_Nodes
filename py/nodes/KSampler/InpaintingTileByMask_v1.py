@@ -406,7 +406,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
         else:
 
             s.refine_tile()
-            s.paste_tile2source()            
+            s.paste_tile2source()
             s.refine_final()
 
             output_image_refined = s.outputs.refined
@@ -456,6 +456,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
             upscale_method = "lanczos",    
             subject_opacity = kwargs.get('subject_opacity', None),
             mask_region = SimpleNamespace(),
+            sampler_refiner_image = kwargs.get('sampler_refiner_image', False),
         )
                 
         s.ksampler = SimpleNamespace(
@@ -503,20 +504,22 @@ class KSampler_pasteInpaintingTileByMask_v1:
         s.outputs.image = extra_mask.ImageCompositeMasked().composite(s.inputs.source, s.outputs.tile.output, x = s.params.mask_region.x, y = s.params.mask_region.y, resize_source = False, mask = s.inputs.tile.mask)[0]
 
     def refine_final(s):
-        s.outputs.refined = MS_Sampler().refine(
-            s.outputs.image, 
-            s.params.upscale_method, 
-            s.ksampler.vae, 
-            int(s.params.inpaint_size/2), 
-            s.ksampler.model, 
-            s.ksampler.seed, 
-            s.ksampler.steps_refiner, 
-            s.ksampler.cfg_refiner, 
-            s.ksampler.sampler_name, 
-            s.ksampler.scheduler, 
-            s.ksampler.positive_inpaint, 
-            s.ksampler.negative_inpaint, 
-            s.ksampler.denoise_refiner
-        )[0]
+        s.outputs.refined = s.outputs.image
+        if s.params.sampler_refiner_image:
+            s.outputs.refined = MS_Sampler().refine(
+                s.outputs.image, 
+                s.params.upscale_method, 
+                s.ksampler.vae, 
+                int(s.params.inpaint_size/2), 
+                s.ksampler.model, 
+                s.ksampler.seed, 
+                s.ksampler.steps_refiner, 
+                s.ksampler.cfg_refiner, 
+                s.ksampler.sampler_name, 
+                s.ksampler.scheduler, 
+                s.ksampler.positive_inpaint, 
+                s.ksampler.negative_inpaint, 
+                s.ksampler.denoise_refiner
+            )[0]
 
         

@@ -89,7 +89,7 @@ class McBoaty_Upscaler_v5():
                 "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
                 "feather_mask": ("INT", { "label": "Feather Mask", "default": 64, "min": 32, "max": nodes.MAX_RESOLUTION, "step": 32}),
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
-                "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 320, "max": 4096, "step": 64}),
+                "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 256, "max": 4096, "step": 64}),
 
                 "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
                 "tile_prompting_active": ("BOOLEAN", { "label": "Tile prompting (with WD14 Tagger - experimental)", "default": False, "label_on": "Active", "label_off": "Inactive"}),
@@ -216,7 +216,7 @@ class McBoaty_Upscaler_v5():
             negative = kwargs.get('negative', None),
             add_noise = True,
             sigmas_type = None,
-            ays_model_type = None,
+            model_type = None,
             steps = None,
             cfg = None,
             denoise = None,
@@ -273,8 +273,8 @@ class McBoaty_Upscaler_v5():
         cols_qty = math.ceil(cols_qty_float)
 
         tiles_qty = rows_qty * cols_qty        
-        if tiles_qty > 64 :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 64 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - McBoaty_Upscaler_v5")
+        if tiles_qty > 16384 :
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 16384 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - McBoaty_Upscaler_v5")
             raise ValueError(msg)
 
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
@@ -308,13 +308,14 @@ class McBoaty_Refiner_v5():
         'SDTurboScheduler', 
         'AlignYourStepsScheduler'
     ]    
-    AYS_MODEL_TYPE_SIZES = {
+    MODEL_TYPE_SIZES = {
         'SD1': 512,
         'SDXL': 1024,
         'SD3': 1024,
+        'FLUX1': 1024,
         'SVD': 1024,
     }
-    AYS_MODEL_TYPES = list(AYS_MODEL_TYPE_SIZES.keys())
+    MODEL_TYPES = list(MODEL_TYPE_SIZES.keys())
 
     CONTROLNETS = folder_paths.get_filename_list("controlnet")
     CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
@@ -331,7 +332,7 @@ class McBoaty_Refiner_v5():
                 "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
                 "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
                 "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
-                "ays_model_type": (self.AYS_MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
+                "model_type": (self.MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
@@ -442,15 +443,15 @@ class McBoaty_Refiner_v5():
         self.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
         self.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
         self.KSAMPLER.sigmas_type = kwargs.get('sigmas_type', None)
-        self.KSAMPLER.ays_model_type = kwargs.get('ays_model_type', None)
+        self.KSAMPLER.model_type = kwargs.get('model_type', None)
         self.KSAMPLER.steps = kwargs.get('steps', None)
         self.KSAMPLER.cfg = kwargs.get('cfg', None)
         self.KSAMPLER.denoise = kwargs.get('denoise', None)
                 
         self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
-        self.KSAMPLER.tile_size_sampler = self.AYS_MODEL_TYPE_SIZES[self.KSAMPLER.ays_model_type]
-        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
-        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.ays_model_type)
+        self.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type]
+        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+        self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
 
         self.CONTROLNET = SimpleNamespace(
             name = kwargs.get('control_net_name', 'None'),
@@ -487,13 +488,15 @@ class McBoaty_Refiner_v5():
         self.OUTPUTS.grid_denoises = grid_denoises
         
     @classmethod    
-    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, ays_model_type):
+    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
         if sigmas_type == "SDTurboScheduler":
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
         elif sigmas_type == "AlignYourStepsScheduler":
             SigmaScheduler = AlignYourStepsScheduler
-            sigmas = SigmaScheduler().get_sigmas(ays_model_type, steps, denoise)[0]
+            if model_type == "SD3" or model_type == "FLUX1":
+                model_type = "SDXL"
+            sigmas = SigmaScheduler().get_sigmas(model_type, steps, denoise)[0]
         else: # BasicScheduler
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
@@ -505,9 +508,9 @@ class McBoaty_Refiner_v5():
     def set_tiles_to_process(self, tiles_to_process=''):
 
         max_tiles = len(self.OUTPUTS.grid_tiles_to_process)
-        max = max_tiles if max_tiles > 0 else 64
+        max = max_tiles if max_tiles > 0 else 16384
         
-        def is_valid_index(index, max = 64):
+        def is_valid_index(index, max = 16384):
             return 1 <= index <= max
         def to_computer_index(human_index):
             return human_index - 1
@@ -638,7 +641,39 @@ class McBoaty_Refiner_v5():
         #     for latent_output in executor.map(wrapper_get_grid_output_latents, latent_output_args_list):
         #         grid_latent_outputs.append(latent_output)
         for index, latent_image in enumerate(grid_latents):
-            latent_output = self.get_grid_output_latents(index, latent_image, total, iteration)
+            latent_output = None
+            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
+
+                positive = self.KSAMPLER.positive
+                negative = self.KSAMPLER.negative
+
+                sigmas = self.KSAMPLER.sigmas
+                if self.OUTPUTS.grid_denoises[index] != self.KSAMPLER.denoise:
+                    denoise = self.OUTPUTS.grid_denoises[index]
+                    sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.OUTPUTS.grid_denoises[index], self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+                else:
+                    denoise = self.KSAMPLER.denoise
+                    
+                log(f"tile {index + 1}/{total} : {denoise} / {self.OUTPUTS.grid_prompts[index]}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding {iteration}")
+                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
+                if self.CONTROLNET.controlnet is not None:
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny {iteration}")
+                    canny_image = Canny().detect_edge(self.OUTPUTS.grid_images[index], self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply {iteration}")
+                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, canny_image, self.CONTROLNET.strength, self.CONTROLNET.start_percent, self.CONTROLNET.end_percent, self.KSAMPLER.vae )
+                    
+                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining {iteration}")
+                latent_output = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
+                    self.KSAMPLER.model, 
+                    self.KSAMPLER.add_noise, 
+                    self.KSAMPLER.noise_seed, 
+                    self.KSAMPLER.cfg, 
+                    positive, 
+                    negative, 
+                    self.KSAMPLER.sampler, 
+                    sigmas, 
+                    latent_image
+                )[0]
             grid_latent_outputs.append(latent_output)
                 
         for index, latent_output in enumerate(grid_latent_outputs):            
