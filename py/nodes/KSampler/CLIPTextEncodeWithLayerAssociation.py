@@ -40,29 +40,23 @@ class CLIPTextEncodeWithLayerAssociation:
     DESCRIPTION = "A CLIP Layer Text Detailer Node"    
     FUNCTION = "fn"
 
-    def fn(self, clip, text):
-
-        # Usage example
-        # Initialize the custom model with necessary parameters
-        model = SDClipModel(
-            version="openai/clip-vit-large-patch14",
-            device="cpu",
-            max_length=77,
-            freeze=True,
-            layer="last",
-            layer_idx=None,
-            textmodel_json_config=None,
-            dtype=None,
-            model_class=comfy.clip_model.CLIPTextModel,
-            special_tokens={"start": 49406, "end": 49407, "pad": 49407},
-            layer_norm_hidden_state=True,
-            enable_attention_masks=False,
-            return_projected_pooled=True
+    def fn(self, clip, text, model_options={}):
+        
+        clip_l_class = model_options.get("clip_l_class", SDClipModel)
+        
+        model = clip_l_class(
+            layer="last", 
+            layer_idx=None, 
+            device="cpu", 
+            dtype=None, 
+            layer_norm_hidden_state=True, 
+            return_projected_pooled=True, 
+            model_options=model_options
         )
 
         # Example input tokens (this would usually come from a tokenizer)
         conditioning = CLIPTextEncode.encode(CLIPTextEncode, clip, text)
-        hidden_states = model.get_hidden_states(text)
+        hidden_states = [vars(model), dir(model)]
 
         # Print hidden states
         return (conditioning, hidden_states)
