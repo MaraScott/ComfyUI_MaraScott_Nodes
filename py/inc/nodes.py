@@ -13,7 +13,7 @@ class AnyType(str):
 class Configuration:
     
     OUTPUT_NODE = False
-    CATEGORY = "MarasIT/utils"
+    CATEGORY = "MaraScott/utils"
     
     # SHAPE = LiteGraph.CARD_SHAPE
     # COLOR = "#8154A6"
@@ -27,6 +27,7 @@ class Configuration:
     TYPES = {
         # Our any instance wants to be a wildcard string
         "ANY": AnyType("*"),
+        "STRING": "STRING",
     }
     
     @classmethod
@@ -39,6 +40,8 @@ class Configuration:
             else:
                 if name.startswith("text"):
                     entries[name] = (type_, {"forceInput": True, "multiline": True})
+                elif name.startswith("string"):
+                    entries[name] = (type_, {"forceInput": True})
                 elif name == "width" or name == "height":
                     entries[name] = (type_, {"default": 1024, "min": 1, "max": 8192, "forceInput": True})
                 else:

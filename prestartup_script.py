@@ -7,4 +7,4 @@
 #
 ###
 
-print('\033[34m[Maras IT] \033[92mInitialization\033[0m')
+print('\033[34m[MaraScott] \033[92mInitialization\033[0m')
