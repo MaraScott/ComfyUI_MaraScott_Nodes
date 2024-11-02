@@ -47,7 +47,19 @@ class DisplayInfo_v2:
         return {"ui": {"text": (value,)}, "result": (any, )}
 
     def serialize_any(self, any):
-        if any is None:
+        if self.is_user_defined_object(any):
+            try:
+                analyzed_object = self.analyze_object(any)
+                # log(analyzed_object.model_state_dict(), None, None, "model_state_dict")
+                analyzed_object_info = {
+                    # "model_state_dict": analyzed_object.model_state_dict(),
+                    # "model_options": getattr(analyzed_object, "model_options"),
+                    "analyzed_object": analyzed_object
+                }
+                return json.dumps(analyzed_object_info, indent=2, default=str)
+            except Exception:
+                return str(any)
+        elif any is None:
             return 'None'
         elif isinstance(any, (str, int, float, bool)):
             return str(any)
@@ -73,3 +85,40 @@ class DisplayInfo_v2:
             return f'Object of type {type(any).__name__} with attributes {any.__dict__}'
         else:
             return f'Object of type {type(any).__name__}'
+        
+    def is_user_defined_object(self, obj):
+        # Check if the object is an instance of a class but not a built-in type
+        return not isinstance(obj, (int, float, str, list, dict, tuple, set, bool, type(None)))
+
+    def analyze_object(self, obj):
+        properties = []
+        methods = []
+        
+        for attribute_name in dir(obj):
+            attribute = getattr(obj, attribute_name)
+            
+            # Check if the attribute is callable (method)
+            if callable(attribute):
+                methods.append(attribute_name)
+            else:
+                properties.append(attribute_name)
+        
+        return {"properties": properties, "methods": methods}
+    
+    def display_object_info(self, info):
+        # Extract properties and methods
+        properties = info.get("properties", [])
+        methods = info.get("methods", [])
+        
+        # Organize properties and methods
+        dunder_methods = [m for m in methods if m.startswith("__") and m.endswith("__")]
+        user_defined_methods = [m for m in methods if not (m.startswith("__") and m.endswith("__"))]
+        user_defined_properties = [p for p in properties if not (p.startswith("__") and p.endswith("__"))]
+        
+        # Create the display structure
+        return {
+            "Dunder Methods": dunder_methods,
+            "User-defined Properties": user_defined_properties,
+            "User-defined Methods": user_defined_methods
+        }
+        
