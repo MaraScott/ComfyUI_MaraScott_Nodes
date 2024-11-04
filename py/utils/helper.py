@@ -3,6 +3,7 @@
 #
 ###
 
+import re
 class AnyType(str):
     def __ne__(self, __value: object) -> bool:
         return False
@@ -26,3 +27,25 @@ class ByPassTypeTuple(tuple):
         if isinstance(item, str):
             return TautologyStr(item)
         return item
+
+def is_user_defined_object(obj):
+    # Check if the object is an instance of a class but not a built-in type
+    return not isinstance(obj, (int, float, str, list, dict, tuple, set, bool, type(None)))
+
+def analyze_object(obj):
+    properties = []
+    methods = []
+    
+    for attribute_name in dir(obj):
+        attribute = getattr(obj, attribute_name)
+        
+        # Check if the attribute is callable (method)
+        if callable(attribute):
+            methods.append(attribute_name)
+        else:
+            properties.append(attribute_name)
+    
+    return {"properties": properties, "methods": methods}
+
+def natural_key(entry):
+    return [int(text) if text.isdigit() else text for text in re.split(r'(\d+)', entry)]
