@@ -64,6 +64,7 @@ To install `ComfyUI_MaraScott_Nodes` in addition to an existing installation of 
 
 ## Changes
 
+* v5.5.0 - Get Model Blocks : Introduction
 * v5.4.0 - Image to Gradient : Introduction
 * v5.3.0 - Multiline to List : Introduction
 * v5.2.0 - Text Concatenation : Introduction
