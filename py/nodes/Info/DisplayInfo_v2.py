@@ -8,9 +8,11 @@
 #       Largely inspired by PYSSSSS - ShowText 
 #
 ###
+import re
 import json
 import numpy as np
 import torch
+from collections import defaultdict
 from ...utils.helper import AlwaysEqualProxy, AnyType
 from ...utils.constants import get_name, get_category
 from ...utils.log import log
@@ -42,7 +44,6 @@ class DisplayInfo_v2:
     CATEGORY = get_category('utils')
 
     def fn(self, any=None, unique_id=None, extra_pnginfo=None):
-        log(any)
         value = self.serialize_any(any)
         return {"ui": {"text": (value,)}, "result": (any, )}
 
@@ -50,13 +51,12 @@ class DisplayInfo_v2:
         if self.is_user_defined_object(any):
             try:
                 analyzed_object = self.analyze_object(any)
-                # log(analyzed_object.model_state_dict(), None, None, "model_state_dict")
                 analyzed_object_info = {
-                    # "model_state_dict": analyzed_object.model_state_dict(),
-                    # "model_options": getattr(analyzed_object, "model_options"),
-                    "analyzed_object": analyzed_object
+                    "state_dict": self.get_max_block_indexes(any.model_state_dict()),
+                    "analyzed_object": analyzed_object,
+                    "input": json.dumps(any)
                 }
-                return json.dumps(analyzed_object_info, indent=2, default=str)
+                return json.dumps(analyzed_object_info, indent=2, default=str).replace('\\n', '\n')
             except Exception:
                 return str(any)
         elif any is None:
@@ -121,4 +121,20 @@ class DisplayInfo_v2:
             "User-defined Properties": user_defined_properties,
             "User-defined Methods": user_defined_methods
         }
+        
+    def get_max_block_indexes(self, data):
+        max_indexes = defaultdict(int)
+        # pattern = re.compile(r"(\w*block\w*\.\w+)\.(\d+)")
+        pattern = re.compile(r"(\w+\.\w+)\.(\d+)")
+        for key in data.keys():
+            if "block" in key: 
+                match = pattern.search(key)
+                if match:
+                    block_prefix = match.group(1)
+                    index = int(match.group(2))
+                    if block_prefix.startswith("diffusion_model."):
+                        block_prefix = block_prefix.replace("diffusion_model.", "", 1)
+                    max_indexes[block_prefix] = max(max_indexes[block_prefix], index)
+        
+        return max_indexes
         
