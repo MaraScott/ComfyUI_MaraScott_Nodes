@@ -20,7 +20,7 @@ from .py.nodes.Loop.ForLoop_v1 import ForLoopOpen_v1, ForLoopClose_v1, ForLoopWh
 from .py.nodes.Util.Conditional import IsEmpty_v1, IsNone_v1, IsEmptyOrNone_v1, IsEqual_v1
 from .py.nodes.Util.Image import ImageToGradient_v1
 from .py.vendor.ComfyUI_JNodes.blob.main.py.prompting_nodes import TokenCounter as TokenCounter_v1
-from .py.nodes.Util.Model import GetModelBlocks_v1
+from .py.nodes.Util.Model import GetModelBlocks_v1, GetModelBlocksHeatmap_v1
 
 WEB_DIRECTORY = "./web/assets/js"
 
@@ -58,6 +58,7 @@ NODE_CLASS_MAPPINGS = {
     "MaraScottDisplayInfo_v2": DisplayInfo_v2,
     
     "MaraScottGetModelBlocks_v1": GetModelBlocks_v1,
+    "MaraScottGetModelBlocksHeatmap_v1": GetModelBlocksHeatmap_v1,
 
     "MaraScott_Kijai_TokenCounter_v1": TokenCounter_v1,
 }
@@ -97,6 +98,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottAnyBus_v2": "\ud83d\udc30 AnyBus - UniversalBus v2 /*",
     
     "MaraScottGetModelBlocks_v1": "\ud83d\udc30 Get Model Blocks v1 /b",    
+    "MaraScottGetModelBlocksHeatmap_v1": "\ud83d\udc30 Get Model Blocks heatmap v1 /b",    
 
     "MaraScott_Kijai_TokenCounter_v1": "\ud83d\udc30 TokenCounter (from kijai/ComfyUI-KJNodes) /v",
 
