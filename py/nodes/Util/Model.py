@@ -138,11 +138,11 @@ class GetModelBlocksHeatmap_v1(ModelBlocks_v1):
 
         # Define the structure and weights
         categories = {
-            "input_blocks": range(2),    # 0 to 11
+            "input_blocks": range(4),    # 0 to 11
             "middle_blocks": range(3),    # 0 to 2
-            "output_blocks": range(2)    # 0 to 11
+            "output_blocks": range(4)    # 0 to 11
         }
-        weights = [0.1]
+        weights = [0.9,1.0,1.1]
         
         # Generate all possible combinations of weights
         all_combinations = list(product(weights, repeat=sum(len(v) for v in categories.values())))
