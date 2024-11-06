@@ -6,6 +6,7 @@ import random
 from PIL import Image, ImageDraw
 import numpy as np
 
+from ...inc.lib.image import MS_Image
 from ...utils.constants import get_name, get_category
 from ...utils.helper import AlwaysEqualProxy, is_user_defined_object, natural_key
 from ...utils.log import log
@@ -116,42 +117,73 @@ class GetModelBlocksHeatmap_v1:
             variation_qty=variation_qty,
             img_width=width,
             img_height=height,
-            heatmap_width=heatmap_size,
-            heatmap_height=heatmap_size,
-            max_variations=250  # Limit to 250 variations for actual processing
+            heatmap_width=int(variation_qty**0.5),
+            heatmap_height=int(variation_qty**0.5),
+            max_variations=250,  # Limit to 250 variations for actual processing
+            variation_min=0.8,
+            variation_max=1.4
         )
 
         return (heatmap_tensor,)
 
     @classmethod
-    def generate_heatmap(self, variation_qty, img_width, img_height, heatmap_width, heatmap_height, max_variations):
+    def generate_heatmap(self, variation_qty, img_width, img_height, heatmap_width, heatmap_height, max_variations, variation_min, variation_max):
         # Create a blank heatmap image at the desired size
         heatmap = Image.new("RGB", (heatmap_width, heatmap_height), (255, 255, 255))
-
-        # Simulate variations by drawing directly on the heatmap
         draw = ImageDraw.Draw(heatmap)
 
-        # Only process a manageable number of variations
-        num_variations_to_draw = min(variation_qty, max_variations)
-        variation_size=10
-        for _ in range(num_variations_to_draw):
-            # Random position
-            x = random.randint(0, heatmap_width - 1)
-            y = random.randint(0, heatmap_height - 1)
+        # Define layers and variations
+        total_layers = 27  # 12 input layers + 3 middle layers + 12 output layers
+        initial_variations = 14
 
-            # Random color to represent variation
-            color = (
-                random.randint(0, 250),
-                random.randint(0, 250),
-                random.randint(0, 250)
-            )
+        # Create a smooth gradient from lighter dark gray (top-left) to light gray (bottom-right)
+        for y in range(heatmap_height):
+            for x in range(heatmap_width):
+                # Calculate intensity based on position (linear gradient from top-left to bottom-right)
+                intensity = 200 - int((x + y) / (heatmap_width + heatmap_height) * 100)  # Lighter dark gray, intensity range 200 to 100
+                intensity = max(0, min(255, intensity))  # Clamp the intensity between 0 and 255
+                color = (intensity, intensity, intensity)
+                draw.point((x, y), fill=color)
+                
+        # Create a table of all variations to use for coloring pixels
+        variation_table = []
+        for input_layer in range(12):
+            variation_table.append(f'input_blocks.{input_layer}={variation_min}')
+        for middle_layer in range(3):
+            variation_table.append(f'middle_blocks.{middle_layer}={variation_min}')
+        for output_layer in range(12):
+            variation_table.append(f'output_blocks.{output_layer}={variation_min}')
+        variation_table.append(f'variation_range={variation_min}-{variation_max}')                
 
-            # Draw a small rectangle or point to represent the variation
-            draw.rectangle(
-                [x, y, x + variation_size, y + variation_size],
+        # Determine the number of variations in the specified range
+        total_variations_in_range = int((variation_max - variation_min) * variation_qty)
+
+        # Randomly sample variations within the specified range to overlay with colorful dots
+        sampled_variations = random.sample(range(total_variations_in_range), max_variations)
+        sampled_positions = set()
+
+        # Overlay the sampled variations with colorful dots
+        for idx in sampled_variations:
+            # Randomly select x and y positions within the heatmap size
+            x = random.randint(0, heatmap_width - 10)
+            y = random.randint(0, heatmap_height - 10)
+            sampled_positions.add((x, y))
+
+            # Determine color based on the variation index to distinguish different types of layers
+            layer_idx = idx % total_layers
+            if layer_idx < 12:
+                color = (0, 0, 255)  # Blue for input layers
+            elif layer_idx < 15:
+                color = (255, 165, 0)  # Orange for middle layers
+            else:
+                color = (255, 0, 0)  # Red for output layers
+
+            # Draw a small dot to represent the sampled variation
+            draw.ellipse(
+                [x, y, x + 10, y + 10],  # Size of the dot representing the variation
                 fill=color
             )
 
         # Convert the heatmap image to a tensor
-        heatmap_tensor = torch.from_numpy(np.array(heatmap).astype(np.float32) / 255.0).unsqueeze(0)
+        heatmap_tensor = MS_Image.pil2tensor(heatmap)
         return heatmap_tensor
