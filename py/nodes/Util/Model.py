@@ -23,8 +23,8 @@ class GetModelBlocks_v1:
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "INT")
-    RETURN_NAMES = ("BLOCKS", "NAMES", "COUNT")
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "INT")
+    RETURN_NAMES = ("BLOCKS", "NAMES", "BLOCKS WEIGTHS", "COUNT")
     FUNCTION = "fn"
     CATEGORY = get_category('utils')
 
@@ -35,18 +35,20 @@ class GetModelBlocks_v1:
         model_blocks_names_string = ""
         if is_user_defined_object(model):
             try:
-                model_blocks, model_blocks_names = self.get_blocks_variations(model, type, variation)
+                model_blocks, model_blocks_names, model_block_weights = self.get_blocks_variations(model, type, variation)
                 model_blocks_string = "\n".join(model_blocks)
                 model_blocks_length = len(model_blocks)
                 model_blocks_names_string = "\n".join(model_blocks_names)
+                model_block_weights_string = "\n".join(model_block_weights)
             except Exception:
                 log(str(model), None, None, "model_blocks error")
-        return (model_blocks_string, model_blocks_names_string, model_blocks_length)
+        return (model_blocks_string, model_blocks_names_string, model_block_weights_string, model_blocks_length)
 
     @classmethod
     def get_blocks_variations(self, model=None, type="Names", variation=1.4):
         all_blocks = self.get_blocks(model)
         blocks = []
+        block_weights = []
         blocks_names = []
         variations = int(variation*10)
         for block in all_blocks:
@@ -57,12 +59,16 @@ class GetModelBlocks_v1:
                     x = round(0.1 * i, 1)
                     block_var=f"{block}={x}"
                     blocks.append(block_var)
+                    block_weights_var=f"{block}=%WEIGHT%"
+                    block_weights.append(block_weights_var)
                     block_name_var=f"{block_name}_weight_{x}"
                     blocks_names.append(block_name_var)
             else:
-                blocks.append(block)                
+                blocks.append(block)
+                block_weights_var=f"{block}=%WEIGHT%"
+                block_weights.append(block_weights_var)
                 blocks_names.append(block_name)
-        return blocks, blocks_names
+        return blocks, blocks_names, block_weights
         
     @classmethod
     def get_blocks(self, model):
