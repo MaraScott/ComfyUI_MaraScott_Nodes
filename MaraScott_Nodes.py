@@ -10,8 +10,8 @@
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
 from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
-from .py.nodes.UpscalerRefiner.McBoaty_v4 import McBoaty_Upscaler_v4, McBoaty_TilePrompter_v4, McBoaty_Refiner_v4
 from .py.nodes.UpscalerRefiner.McBoaty_v5 import McBoaty_UpscalerRefiner_v5, McBoaty_Upscaler_v5, McBoaty_TilePrompter_v5, McBoaty_Refiner_v5
+from .py.nodes.UpscalerRefiner.McBoaty_v6 import McBoaty_UpscalerRefiner_v6, McBoaty_Upscaler_v6, McBoaty_TilePrompter_v6, McBoaty_Refiner_v6
 from .py.nodes.KSampler.InpaintingTileByMask_v1 import KSampler_setInpaintingTileByMask_v1, KSampler_pasteInpaintingTileByMask_v1
 from .py.nodes.Prompt.PromptFromImage_v1 import PromptFromImage_v1
 from .py.nodes.Prompt.TextConcatenate_v1 import TextConcatenate_v1
@@ -30,13 +30,14 @@ WEB_DIRECTORY = "./web/assets/js"
 NODE_CLASS_MAPPINGS = {
 
     "MaraScottAnyBus_v2": AnyBus_v2,
+    "MaraScottMcBoatyUpscalerRefiner_v6": McBoaty_UpscalerRefiner_v6,
+    "MaraScottMcBoatyUpscaler_v6": McBoaty_Upscaler_v6,
+    "MaraScottMcBoatyTilePrompter_v6": McBoaty_TilePrompter_v6,
+    "MaraScottMcBoatyRefiner_v6": McBoaty_Refiner_v6,
     "MaraScottMcBoatyUpscalerRefiner_v5": McBoaty_UpscalerRefiner_v5,
     "MaraScottMcBoatyUpscaler_v5": McBoaty_Upscaler_v5,
     "MaraScottMcBoatyTilePrompter_v5": McBoaty_TilePrompter_v5,
     "MaraScottMcBoatyRefiner_v5": McBoaty_Refiner_v5,
-    "MaraScottMcBoatyUpscaler_v4": McBoaty_Upscaler_v4,
-    "MaraScottMcBoatyTilePrompter_v4": McBoaty_TilePrompter_v4,
-    "MaraScottMcBoatyRefiner_v4": McBoaty_Refiner_v4,
     "MaraScottUpscalerRefinerNode_v3": UpscalerRefiner_McBoaty_v3,
     "MaraScottSetInpaintingByMask_v1": KSampler_setInpaintingTileByMask_v1,
     "MaraScottPasteInpaintingByMask_v1": KSampler_pasteInpaintingTileByMask_v1,
@@ -70,13 +71,14 @@ NODE_CLASS_MAPPINGS = {
 # deprecated : \u274C
 NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottDisplayInfo_v2": "\ud83d\udc30 Display Any - Text v2 /i",
+    "MaraScottMcBoatyUpscalerRefiner_v6": "\ud83d\udc30 Large Refiner - McBoaty [1/3] v6 /u",
+    "MaraScottMcBoatyUpscaler_v6": "\ud83d\udc30 Upscaler - McBoaty [1/3] v6 /u",
+    "MaraScottMcBoatyTilePrompter_v6": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v6 /u",
+    "MaraScottMcBoatyRefiner_v6": "\ud83d\udc30 Refiner - McBoaty [3/3] v6 /u",
     "MaraScottMcBoatyUpscalerRefiner_v5": "\ud83d\udc30 Large Refiner - McBoaty [1/3] v5 /u",
     "MaraScottMcBoatyUpscaler_v5": "\ud83d\udc30 Upscaler - McBoaty [1/3] v5 /u",
     "MaraScottMcBoatyTilePrompter_v5": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v5 /u",
     "MaraScottMcBoatyRefiner_v5": "\ud83d\udc30 Refiner - McBoaty [3/3] v5 /u",
-    "MaraScottMcBoatyUpscaler_v4": "\ud83d\udc30 Upscaler - McBoaty [1/3] v4 /u",
-    "MaraScottMcBoatyTilePrompter_v4": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v4 /u",
-    "MaraScottMcBoatyRefiner_v4": "\ud83d\udc30 Refiner - McBoaty [3/3] v4 /u",
     "MaraScottMcBoatyUpscalerRefinerNode_v3": "\ud83d\udc30 Large Refiner - McBoaty v3 /u",
     "MaraScottSetInpaintingByMask_v1": "\ud83d\udc30 Set Inpainting Tile by mask - McInpainty [1/2] v1 /m",
     "MaraScottPasteInpaintingByMask_v1": "\ud83d\udc30 Paste Inpainting Tile by mask - McInpainty [2/2] v1 /m",
