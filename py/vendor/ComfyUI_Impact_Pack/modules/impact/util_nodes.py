@@ -413,7 +413,7 @@ class RemoveNoiseMask:
 
 #     def doit(self, samples, tile_mode, input_vae, output_vae, tile_size=512):
 #         if tile_mode in ["Both", "Decode(input) only"]:
-#             pixels = nodes.VAEDecodeTiled().decode(input_vae, samples, tile_size)[0]
+#             pixels = nodes.VAEDecodeTiled().decode(input_vae, samples, tile_size, tile_size // 4)[0]
 #         else:
 #             pixels = nodes.VAEDecode().decode(input_vae, samples)[0]
 
