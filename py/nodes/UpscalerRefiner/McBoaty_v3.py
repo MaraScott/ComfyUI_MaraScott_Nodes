@@ -384,7 +384,7 @@ class UpscalerRefiner_McBoaty_v3():
         for index, latent_output in enumerate(grid_latent_outputs):            
             if self.KSAMPLER.tiled:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
-                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae)[0].unsqueeze(0))[0]
+                output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae, self.KSAMPLER.tile_size_vae // 4)[0].unsqueeze(0))[0]
             else:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
                 output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]

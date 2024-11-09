@@ -187,7 +187,7 @@ class UpscalerRefiner_McBoaty_v2():
         for index, latent_output in enumerate(grid_latent_outputs):            
             if tiled == True:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
-                output = nodes.VAEDecodeTiled.decode(nodes.VAEDecodeTiled, vae, latent_output, tile_size)[0].unsqueeze(0)
+                output = nodes.VAEDecodeTiled().decode(vae, latent_output, tile_size, tile_size // 4)[0].unsqueeze(0)
             else:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
                 output = nodes.VAEDecode.decode(nodes.VAEDecode, vae, latent_output)[0].unsqueeze(0)

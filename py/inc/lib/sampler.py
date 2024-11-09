@@ -30,7 +30,7 @@ class MS_Sampler:
             denoise
         )[0]
 
-        inpainted = VAEDecodeTiled().decode(vae, latent, tile_size)[0]
+        inpainted = VAEDecodeTiled().decode(vae, latent, tile_size, tile_size // 4)[0]
         return ImageScaleBy().upscale(inpainted, upscale_method, (1/1.5))
     
     def refine_custom(self, image, tiled, upscale_method, vae, tile_size, model, noise_seed, cfg, sampler, sigmas, positive, negative):
@@ -56,7 +56,7 @@ class MS_Sampler:
         )[0]
 
         if tiled == True:
-            output = VAEDecodeTiled().decode(vae, latent_image, tile_size)[0] # .unsqueeze(0)
+            output = VAEDecodeTiled().decode(vae, latent_image, tile_size, tile_size // 4)[0] # .unsqueeze(0)
         else:
             output = VAEDecode().decode(vae, latent_image, tile_size)[0]
 

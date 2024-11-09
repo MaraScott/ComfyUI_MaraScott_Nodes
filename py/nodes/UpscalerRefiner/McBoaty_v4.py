@@ -561,7 +561,7 @@ class McBoaty_Refiner_v4():
             if self.PARAMS.tile_to_process == 0 or (self.PARAMS.tile_to_process > 0 and index == tile_to_process_index):
                 if self.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"VAEDecodingTiled {iteration}")
-                    output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae)[0].unsqueeze(0))[0]
+                    output = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, latent_output, self.KSAMPLER.tile_size_vae, self.KSAMPLER.tile_size_vae // 4)[0].unsqueeze(0))[0]
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"VAEDecoding {iteration}")
                     output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]            

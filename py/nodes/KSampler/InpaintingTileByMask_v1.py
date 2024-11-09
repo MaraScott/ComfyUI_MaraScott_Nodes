@@ -306,7 +306,9 @@ class KSampler_setInpaintingTileByMask_v1:
         
         if s.params.is_model_diffdiff:
             latent = RemoveNoiseMask().doit(latent)[0]
-        s.tile.inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=int(s.params.inpaint_size/2))[0]
+            
+        tile_size=int(s.params.inpaint_size/2)
+        s.tile.inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=tile_size, overlap=tile_size // 4)[0]
 
 class KSampler_pasteInpaintingTileByMask_v1:
 
