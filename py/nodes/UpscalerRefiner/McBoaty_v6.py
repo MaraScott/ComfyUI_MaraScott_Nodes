@@ -47,6 +47,7 @@ class Mara_Tiler_v1():
     INPUTS = {}
     OUTPUTS = {}
     PARAMS = {}
+    INFOS = {}
     
     @classmethod
     def INPUT_TYPES(self):
@@ -64,14 +65,17 @@ class Mara_Tiler_v1():
         }
 
     RETURN_TYPES = (
+        "MC_BOATY_PIPE",
         "IMAGE",
     )
     
     RETURN_NAMES = (
+        "McBoayty Pipe",
         "tiles",
     )
     
     OUTPUT_IS_LIST = (
+        False,
         False,
     )
     
@@ -84,12 +88,23 @@ class Mara_Tiler_v1():
     @classmethod    
     def fn(self, **kwargs):
         
-        log("McBoaty (Upscaler) is starting to do its magic", None, None, f"Node {self.INFO.id}")
+        start_time = time.time()
+
+        log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {self.INFO.id}")
         
-        self.OUTPUTS.image, image_width, image_height, is_image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
-        self.OUTPUTS.tiles = self.get_tiles(self.OUTPUTS.image)        
+        self.init(**kwargs)
+        
+        end_time = time.time()
+        
+        self.OUTPUTS.image, self.INFOS.image_width, self.INFOS.image_height, self.INFOS.is_image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
+        self.OUTPUTS.tiles = self.get_tiles(self.OUTPUTS.image)
+        self.INFOS.execution_time = int(end_time - start_time)
+
         return (
             self.OUTPUTS.tiles,
+            (
+                self.INFOS,
+            )
         )
 
     @classmethod
@@ -174,7 +189,8 @@ class McBoaty_Upscaler_v6():
                 "id":"UNIQUE_ID",
             },
             "required":{
-                "image": ("IMAGE", {"label": "Image" }),
+                "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
+                "tiles": ("IMAGE", {"label": "Tiles" }),
 
                 "model": ("MODEL", { "label": "Model" }),
                 "clip": ("CLIP", { "label": "Clip" }),
@@ -232,17 +248,9 @@ class McBoaty_Upscaler_v6():
         
         self.init(**kwargs)
         
-        if self.INPUTS.image is None:
-            raise ValueError(f"MaraScottUpscalerRefinerNode id {self.INFO.id}: No image provided")
-
-        if not isinstance(self.INPUTS.image, torch.Tensor):
-            raise ValueError(f"MaraScottUpscalerRefinerNode id {self.INFO.id}: Image provided is not a Tensor")
-        
         log("McBoaty (Upscaler) is starting to do its magic", None, None, f"Node {self.INFO.id}")
         
-        self.OUTPUTS.image, image_width, image_height, image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
-
-        self.PARAMS.grid_specs, self.OUTPUTS.grid_images, self.OUTPUTS.grid_prompts = self.upscale(self.OUTPUTS.image, "Upscaling")
+        self.PARAMS.grid_specs, self.OUTPUTS.grid_images, self.OUTPUTS.grid_prompts = self.upscale(self.INPUTS.tiles, "Upscaling")
 
         end_time = time.time()
 
@@ -279,9 +287,21 @@ class McBoaty_Upscaler_v6():
             id = kwargs.get('id', None),
         )
         
+        attribute_names = ('INPUTS', 'PARAMS', 'KSAMPLER', 'OUTPUTS', 'INFO') 
+        pipe = kwargs.get('pipe', (None,) * len(attribute_names))
+        for name, value in zip(attribute_names, pipe):
+            setattr(self, name, value)
+        
+        
         self.INPUTS = SimpleNamespace(
-            image = kwargs.get('image', None),
+            tiles = kwargs.get('tiles', None),
         )
+        if self.INPUTS.tiles is None:
+            raise ValueError(f"{self.NAME} id {self.INFO.id}: No tiles provided")
+
+        if not isinstance(self.INPUTS.tiles, torch.Tensor):
+            raise ValueError(f"{self.NAME} id {self.INFO.id}: tiles provided are not Tensors")
+        
         
         self.LLM = SimpleNamespace(
             vision_model = kwargs.get('vision_llm_model', None),
