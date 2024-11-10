@@ -40,14 +40,23 @@ from .inc.prompt import Node as NodePrompt
 from ...utils.log import log, get_log, COLORS
 
 
-class Mara_Tiler_v1():
+class Mara_Common_v1():
     
-    NAME = get_name('Tiler - v1')
+    PIPE_ATTRIBUTES = ('INPUTS', 'PARAMS', 'KSAMPLER', 'OUTPUTS', 'INFO')
+
+    @classmethod
+    def set_pipe_values(self, pipe):
+        for name, value in zip(self.PIPE_ATTRIBUTES, pipe):
+            setattr(self, name, value)
+    
+class Mara_Tiler_v1(Mara_Common_v1):
+    
+    NAME = get_name('Image to tiles - v1')
     
     INPUTS = {}
     OUTPUTS = {}
     PARAMS = {}
-    INFOS = {}
+    INFO = {}
     
     @classmethod
     def INPUT_TYPES(self):
@@ -90,26 +99,33 @@ class Mara_Tiler_v1():
         
         start_time = time.time()
 
-        log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {self.INFO.id}")
-        
         self.init(**kwargs)
+        
+        log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {self.INFO.id}")
         
         end_time = time.time()
         
-        self.OUTPUTS.image, self.INFOS.image_width, self.INFOS.image_height, self.INFOS.is_image_divisible_by_8 = MS_Image().format_2_divby8(self.INPUTS.image)
-        self.OUTPUTS.tiles = self.get_tiles(self.OUTPUTS.image)
-        self.INFOS.execution_time = int(end_time - start_time)
+        self.OUTPUTS.image, self.INFO.image_width, self.INFO.image_height, self.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=self.INPUTS.image)
+        self.OUTPUTS.tiles = self.get_tiles(image=self.OUTPUTS.image)
+        self.OUTPUTS.tiles = torch.cat(self.OUTPUTS.tiles)
+        self.INFO.execution_time = int(end_time - start_time)
 
         return (
-            self.OUTPUTS.tiles,
             (
-                self.INFOS,
-            )
+                self.INPUTS,
+                self.OUTPUTS,
+                self.PARAMS,
+                self.INFO,
+            ),
+            self.OUTPUTS.tiles,
         )
 
     @classmethod
     def init(self, **kwargs):
         
+        self.INFO = SimpleNamespace(
+            id = kwargs.get('id', None),
+        )
         self.INPUTS = SimpleNamespace(
             image = kwargs.get('image', None),
         )
@@ -131,6 +147,7 @@ class Mara_Tiler_v1():
         )
         self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
     
+    @classmethod
     def get_tiles(self, image):
         
         rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model.scale) / self.PARAMS.tile_size
@@ -154,6 +171,99 @@ class Mara_Tiler_v1():
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
         return grid_images
+        
+        
+class Mara_Untiler_v1(Mara_Common_v1):
+    
+    NAME = get_name('Tiles to Image - v1')
+    
+    INPUTS = {}
+    OUTPUTS = {}
+    PARAMS = {}
+    INFO = {}
+    
+    @classmethod
+    def INPUT_TYPES(self):
+        return {
+            "hidden": {
+                "id":"UNIQUE_ID",
+            },
+            "required":{
+                "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
+                "tiles": ("IMAGE", {"label": "Image" }),
+                "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
+                "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
+                
+            },
+            "optional": {
+            }
+        }
+
+    RETURN_TYPES = (
+        "IMAGE",
+    )
+    
+    RETURN_NAMES = (
+        "image",
+    )
+    
+    OUTPUT_IS_LIST = (
+        False,
+    )
+    
+    
+    OUTPUT_NODE = True
+    DESCRIPTION = "An \"Untiler\" Node"
+    FUNCTION = "fn"
+    CATEGORY = get_category('upscaling')
+
+    @classmethod    
+    def fn(self, **kwargs):
+        
+        start_time = time.time()
+
+        self.init(**kwargs)
+        
+        log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {self.INFO.id}")
+        
+        end_time = time.time()
+        
+        # output_image, tiles_order = MS_Image().rebuild_image_from_parts(0, self.INPUTS.tiles, self.INPUTS.image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
+
+        # if not self.PARAMS.upscale_size_type:
+        #     self.OUTPUTS.image = nodes.ImageScale().upscale(self.OUTPUTS.image, self.PARAMS.upscale_method, int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), False)[0]
+        
+        self.INFO.execution_time = int(end_time - start_time)
+
+        return (
+            self.OUTPUTS.image,
+        )
+        
+    @classmethod
+    def init(self, **kwargs):
+        
+        self.INFO = SimpleNamespace(
+            id = kwargs.get('id', None),
+        )
+
+        pipe = kwargs.get('pipe', (None,) * len(self.PIPE_ATTRIBUTES))
+        self.set_pipe_values(pipe)
+        
+        self.INPUTS = SimpleNamespace(
+            tiles = kwargs.get('tiles', None),
+        )
+        self.OUTPUTS = SimpleNamespace(
+            image = self.INPUTS.tiles,
+            tiles = self.INPUTS.tiles,
+        )
+
+        self.PARAMS.upscale_size_type = kwargs.get('output_size_type', None)
+        self.PARAMS.upscale_size = kwargs.get('output_size', None)
+
+        if self.INPUTS.tiles is None:
+            raise ValueError(f"{self.NAME} id {self.INFO.id}: No image provided")
+        if not isinstance(self.INPUTS.tiles, torch.Tensor):
+            raise ValueError(f"{self.NAME} id {self.INFO.id}: Image provided is not a Tensor")
         
 class McBoaty_Upscaler_v6():
 
@@ -179,6 +289,7 @@ class McBoaty_Upscaler_v6():
     INPUTS = {}
     OUTPUTS = {}
     PARAMS = {}
+    INFOS = {}
     KSAMPLERS = {}
     LLM = {}
     
@@ -255,9 +366,9 @@ class McBoaty_Upscaler_v6():
         end_time = time.time()
 
         output_info = self._get_info(
-            image_width, 
-            image_height, 
-            image_divisible_by_8, 
+            self.INFO.image_width, 
+            self.INFO.image_height, 
+            self.INFO.image_divisible_by_8, 
             self.OUTPUTS.grid_prompts,
             int(end_time - start_time)
         )
@@ -287,11 +398,8 @@ class McBoaty_Upscaler_v6():
             id = kwargs.get('id', None),
         )
         
-        attribute_names = ('INPUTS', 'PARAMS', 'KSAMPLER', 'OUTPUTS', 'INFO') 
-        pipe = kwargs.get('pipe', (None,) * len(attribute_names))
-        for name, value in zip(attribute_names, pipe):
-            setattr(self, name, value)
-        
+        pipe = kwargs.get('pipe', (None,) * len(self.PIPE_ATTRIBUTES))
+        self.set_pipe_values(pipe)
         
         self.INPUTS = SimpleNamespace(
             tiles = kwargs.get('tiles', None),
@@ -422,6 +530,8 @@ class McBoaty_Upscaler_v6():
         return grid_specs, grid_images, grid_prompts
 
 class McBoaty_Refiner_v6():
+    
+    NAME = get_name('McBoaty Refiner - v6')
 
     SIGMAS_TYPES = [
         'BasicScheduler', 
@@ -449,8 +559,6 @@ class McBoaty_Refiner_v6():
             "required":{
                 "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
                 "tiles_to_process": ("STRING", { "label": "Tile to process", "default": ''}),
-                "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
-                "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
                 "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
                 "model_type": (self.MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
@@ -494,7 +602,7 @@ class McBoaty_Refiner_v6():
     
     
     OUTPUT_NODE = True
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category('upscaling')
     DESCRIPTION = "A \"Refiner\" Node"
     FUNCTION = "fn"
 
@@ -549,14 +657,9 @@ class McBoaty_Refiner_v6():
             id = kwargs.get('id', None),
         )
         
-        attribute_names = ('INPUTS', 'PARAMS', 'KSAMPLER', 'OUTPUTS') 
-        pipe = kwargs.get('pipe', (None,) * len(attribute_names))
+        pipe = kwargs.get('pipe', (None,) * len(self.PIPE_ATTRIBUTES))
+        self.set_pipe_values(pipe)
 
-        for name, value in zip(attribute_names, pipe):
-            setattr(self, name, value)
-
-        self.PARAMS.upscale_size_type = kwargs.get('output_size_type', None)
-        self.PARAMS.upscale_size = kwargs.get('output_size', None)
         _tiles_to_process = kwargs.get('tiles_to_process', '')
         self.PARAMS.tiles_to_process = self.set_tiles_to_process(_tiles_to_process)
         
@@ -765,11 +868,14 @@ class McBoaty_Refiner_v6():
         output_images = tuple(output_images)
 
         feather_mask = self.PARAMS.feather_mask
+
+        # UNTILER
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
 
         if self.PARAMS.color_match_method != 'none':
             output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
 
+        # UNTILER
         if not self.PARAMS.upscale_size_type:
             output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), False)[0]
 

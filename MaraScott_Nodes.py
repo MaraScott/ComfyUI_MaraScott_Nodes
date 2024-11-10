@@ -11,7 +11,7 @@ from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
 from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
 from .py.nodes.UpscalerRefiner.McBoaty_v5 import McBoaty_UpscalerRefiner_v5, McBoaty_Upscaler_v5, McBoaty_TilePrompter_v5, McBoaty_Refiner_v5
-from .py.nodes.UpscalerRefiner.McBoaty_v6 import McBoaty_UpscalerRefiner_v6, McBoaty_Upscaler_v6, McBoaty_TilePrompter_v6, McBoaty_Refiner_v6
+from .py.nodes.UpscalerRefiner.McBoaty_v6 import Mara_Tiler_v1, Mara_Untiler_v1, McBoaty_UpscalerRefiner_v6, McBoaty_Upscaler_v6, McBoaty_TilePrompter_v6, McBoaty_Refiner_v6
 from .py.nodes.KSampler.InpaintingTileByMask_v1 import KSampler_setInpaintingTileByMask_v1, KSampler_pasteInpaintingTileByMask_v1
 from .py.nodes.Prompt.PromptFromImage_v1 import PromptFromImage_v1
 from .py.nodes.Prompt.TextConcatenate_v1 import TextConcatenate_v1
@@ -30,6 +30,8 @@ WEB_DIRECTORY = "./web/assets/js"
 NODE_CLASS_MAPPINGS = {
 
     "MaraScottAnyBus_v2": AnyBus_v2,
+    "MaraScott_Tiler_v1": Mara_Tiler_v1,
+    "MaraScott_Untiler_v1": Mara_Untiler_v1,
     "MaraScottMcBoatyUpscalerRefiner_v6": McBoaty_UpscalerRefiner_v6,
     "MaraScottMcBoatyUpscaler_v6": McBoaty_Upscaler_v6,
     "MaraScottMcBoatyTilePrompter_v6": McBoaty_TilePrompter_v6,
@@ -71,6 +73,8 @@ NODE_CLASS_MAPPINGS = {
 # deprecated : \u274C
 NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottDisplayInfo_v2": "\ud83d\udc30 Display Any - Text v2 /i",
+    "MaraScott_Tiler_v1": "\ud83d\udc30 Image to tiles - v1 /t",
+    "MaraScott_Untiler_v1": "\ud83d\udc30 Tiles to image - v1 /t",
     "MaraScottMcBoatyUpscalerRefiner_v6": "\ud83d\udc30 Large Refiner - McBoaty [1/3] v6 /u",
     "MaraScottMcBoatyUpscaler_v6": "\ud83d\udc30 Upscaler - McBoaty [1/3] v6 /u",
     "MaraScottMcBoatyTilePrompter_v6": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v6 /u",
