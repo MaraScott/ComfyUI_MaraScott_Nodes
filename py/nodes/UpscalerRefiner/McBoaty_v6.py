@@ -228,10 +228,21 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
         end_time = time.time()
         
-        # output_image, tiles_order = MS_Image().rebuild_image_from_parts(0, self.INPUTS.tiles, self.INPUTS.image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
+        feather_mask = self.PARAMS.feather_mask
 
-        # if not self.PARAMS.upscale_size_type:
-        #     self.OUTPUTS.image = nodes.ImageScale().upscale(self.OUTPUTS.image, self.PARAMS.upscale_method, int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), False)[0]
+        self.OUTPUTS.image, tiles_order = MS_Image().rebuild_image_from_parts(0, self.INPUTS.tiles, self.INPUTS.image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
+
+        if self.PARAMS.color_match_method != 'none':
+            self.OUTPUTS.image = ColorMatch().colormatch(self.INPUTS.image, self.OUTPUTS.image, self.PARAMS.color_match_method)[0]
+
+        if not self.PARAMS.upscale_size_type:
+            self.OUTPUTS.image = nodes.ImageScale().upscale(self.OUTPUTS.image, self.PARAMS.upscale_method, int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), False)[0]
+
+        # _tiles_order = tuple(output for _, output, _ in tiles_order)
+        # tiles_order.sort(key=lambda x: x[0])
+        # output_tiles = tuple(output for _, output, _ in tiles_order)
+        # output_tiles = torch.cat(output_tiles)
+        # output_prompts = tuple(prompt for _, _, prompt in tiles_order)
         
         self.INFO.execution_time = int(end_time - start_time)
 
@@ -581,8 +592,6 @@ class McBoaty_Refiner_v6():
     RETURN_TYPES = (
         "MC_BOATY_PIPE", 
         "MC_PROMPTY_PIPE_IN", 
-        "IMAGE", 
-        "IMAGE", 
         "IMAGE",
         "STRING",
         "STRING"
@@ -590,9 +599,7 @@ class McBoaty_Refiner_v6():
     
     RETURN_NAMES = (
         "McBoaty Pipe", 
-        "McPrompty Pipe", 
-        "image", 
-        "image (original)", 
+        "McPrompty Pipe",
         "tiles", 
         "prompts", 
         "info", 
@@ -620,7 +627,7 @@ class McBoaty_Refiner_v6():
         KSAMPLER = self.KSAMPLER
         OUTPUTS = self.OUTPUTS
         
-        PARAMS.grid_prompts, OUTPUTS.output_image, OUTPUTS.output_tiles, OUTPUTS.grid_tiles_to_process = self.refine(self.OUTPUTS.image, "Upscaling")
+        PARAMS.grid_prompts, OUTPUTS.output_tiles, OUTPUTS.grid_tiles_to_process = self.refine(self.OUTPUTS.image, "Upscaling")
         
         end_time = time.time()
 
@@ -643,8 +650,6 @@ class McBoaty_Refiner_v6():
                 self.OUTPUTS.grid_prompts,
                 output_tiles,
             ),            
-            OUTPUTS.output_image, 
-            OUTPUTS.image, 
             OUTPUTS.output_tiles, 
             PARAMS.grid_prompts, 
             output_info, 
@@ -867,25 +872,15 @@ class McBoaty_Refiner_v6():
                     
         output_images = tuple(output_images)
 
-        feather_mask = self.PARAMS.feather_mask
+        # _tiles_order = tuple(output for _, output, _ in tiles_order)
+        # tiles_order.sort(key=lambda x: x[0])
+        # output_tiles = tuple(output for _, output, _ in tiles_order)
+        # output_tiles = torch.cat(output_tiles)
+        output_tiles = output
+        # output_prompts = tuple(prompt for _, _, prompt in tiles_order)
+        output_prompts = tuple("")
 
-        # UNTILER
-        output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
-
-        if self.PARAMS.color_match_method != 'none':
-            output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
-
-        # UNTILER
-        if not self.PARAMS.upscale_size_type:
-            output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), False)[0]
-
-        _tiles_order = tuple(output for _, output, _ in tiles_order)
-        tiles_order.sort(key=lambda x: x[0])
-        output_tiles = tuple(output for _, output, _ in tiles_order)
-        output_tiles = torch.cat(output_tiles)
-        output_prompts = tuple(prompt for _, _, prompt in tiles_order)
-
-        return output_prompts, output_image, output_tiles, _tiles_order
+        return output_prompts, output_tiles
 
 class McBoaty_TilePrompter_v6():
 
@@ -1102,6 +1097,7 @@ async def tile_prompt(request):
     return web.json_response(f"here is the prompt \n{image_path}")
 
 class McBoaty_UpscalerRefiner_v6(McBoaty_Upscaler_v6, McBoaty_Refiner_v6):
+
     @classmethod
     def INPUT_TYPES(self):
         upscaler_inputs = McBoaty_Upscaler_v6.INPUT_TYPES()
@@ -1149,6 +1145,7 @@ class McBoaty_UpscalerRefiner_v6(McBoaty_Upscaler_v6, McBoaty_Refiner_v6):
 
     @classmethod
     def fn(self, **kwargs):
+        
         start_time = time.time()
         
         # Upscaling phase
@@ -1161,8 +1158,7 @@ class McBoaty_UpscalerRefiner_v6(McBoaty_Upscaler_v6, McBoaty_Refiner_v6):
         })
 
         # Refining phase
-        refiner_result = McBoaty_Refiner_v6.fn(**kwargs)
-        refiner_pipe, refiner_prompty_pipe, output_image, original_resized, output_tiles, grid_prompts, refiner_info = refiner_result
+        refiner_pipe, refiner_prompty_pipe, output_image, original_resized, output_tiles, grid_prompts, refiner_info = McBoaty_Refiner_v6.fn(**kwargs)
 
         end_time = time.time()
         total_time = int(end_time - start_time)
