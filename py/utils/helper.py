@@ -49,3 +49,7 @@ def analyze_object(obj):
 
 def natural_key(entry):
     return [int(text) if text.isdigit() else text for text in re.split(r'(\d+)', entry)]
+
+def current_method(super_class, current_frame):
+    return getattr(super_class, current_frame.f_code.co_name)
+    
