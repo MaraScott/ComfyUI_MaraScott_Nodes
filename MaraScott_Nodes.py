@@ -7,6 +7,7 @@
 #
 ###
 
+from .py.nodes.Image.LoadImage_v1 import LoadImage_v1
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
 from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
@@ -61,6 +62,8 @@ NODE_CLASS_MAPPINGS = {
     
     "MaraScottGetModelBlocks_v1": GetModelBlocks_v1,
 
+    "MaraScottLoadImage_v1": LoadImage_v1,
+
     "MaraScott_Kijai_TokenCounter_v1": TokenCounter_v1,
     "MaraScott_laksjdjf_Hires_v1": Hires_v1,
 }
@@ -77,7 +80,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottMcBoatyUpscaler_v4": "\ud83d\udc30 Upscaler - McBoaty [1/3] v4 /u",
     "MaraScottMcBoatyTilePrompter_v4": "\ud83d\udc30 Tile Prompter - McBoaty [2/3] v4 /u",
     "MaraScottMcBoatyRefiner_v4": "\ud83d\udc30 Refiner - McBoaty [3/3] v4 /u",
-    "MaraScottMcBoatyUpscalerRefinerNode_v3": "\ud83d\udc30 Large Refiner - McBoaty v3 /u",
+    "MaraScottUpscalerRefinerNode_v3": "\ud83d\udc30 Large Refiner - McBoaty v3 /u",
     "MaraScottSetInpaintingByMask_v1": "\ud83d\udc30 Set Inpainting Tile by mask - McInpainty [1/2] v1 /m",
     "MaraScottPasteInpaintingByMask_v1": "\ud83d\udc30 Paste Inpainting Tile by mask - McInpainty [2/2] v1 /m",
 
@@ -100,6 +103,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottAnyBus_v2": "\ud83d\udc30 AnyBus - UniversalBus v2 /*",
     
     "MaraScottGetModelBlocks_v1": "\ud83d\udc30 Get Model Blocks v1 /b",    
+
+    "MaraScottLoadImage_v1": "\ud83d\udc30 Load Image v1 /i",
 
     "MaraScott_Kijai_TokenCounter_v1": "\ud83d\udc30 TokenCounter (from kijai/ComfyUI-KJNodes) /v",
     "MaraScott_laksjdjf_Hires_v1": "\ud83d\udc30 Apply Kohya's HiresFix (from laksjdjf) sd1.5 only /sd15",
