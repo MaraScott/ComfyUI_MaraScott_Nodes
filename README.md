@@ -2,7 +2,7 @@
 
 Due to latest ComfyUI released and improvement on the JS part, this node set is creating bugs.
 
-The AnyBus and the McBoaty Tile Prompter make the WF unresponsive.
+the McBoaty Tile Prompter make the WF unresponsive.
 
 I apologize for this temporary issues and I'm working on fixing the issue.
 
