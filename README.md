@@ -1,3 +1,13 @@
+# !!! ATTENTION NODES TEMPORARY UNRESPONSIVE !!!
+
+Due to latest ComfyUI released and improvement on the JS part, this node set is creating bugs.
+
+The AnyBus and the McBoaty Tile Prompter make the WF unresponsive.
+
+I apologize for this temporary issues and I'm working on fixing the issue.
+
+As I don t know exactly what is going on, I hope you'll be patient until I found a fix.
+
 # ComfyUI MaraScott Nodes
 
 Turn ★ into ⭐ (top-right corner) if you like the project!
