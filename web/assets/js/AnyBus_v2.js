@@ -197,7 +197,6 @@ class MaraScottAnyBus_v2 {
 		node.color = LGraphCanvas.node_colors.green.color
 		node.bgcolor = LGraphCanvas.node_colors.green.bgcolor
 		node.groupcolor = LGraphCanvas.node_colors.green.groupcolor
-		node.groupcolor = LGraphCanvas.node_colors.green.groupcolor
 		node.size[0] = 150 // width
 		if (!node.properties || !(MaraScottAnyBusNodeWidget.PROFILE.name in node.properties)) {
 			node.properties[MaraScottAnyBusNodeWidget.PROFILE.name] = MaraScottAnyBusNodeWidget.PROFILE.default;
@@ -243,7 +242,7 @@ class MaraScottAnyBus_v2 {
 				}
 				window.marascott.AnyBus_v2.sync = preSyncMode;
 			}
-			if (window.marascott.AnyBus_v2.nodeToSync.id != node.id) {
+			if (window.marascott.AnyBus_v2.nodeToSync != null && window.marascott.AnyBus_v2.nodeToSync.id != node.id) {
 				if (node.inputs[slot].link == null) {
 					node.inputs[slot].name = window.marascott.AnyBus_v2.nodeToSync.inputs[slot].name.toLowerCase()
 					node.inputs[slot].type = window.marascott.AnyBus_v2.nodeToSync.inputs[slot].type
@@ -285,9 +284,14 @@ class MaraScottAnyBus_v2 {
 		
 		if (node.inputs[0].link != null) {
 
-			const parentLink = node.graph.links.find(
-				(otherLink) => otherLink?.id == node.inputs[0].link
-			)
+            const nodeGraphLinks = Array.isArray(node.graph.links)
+            ? node.graph.links
+            : Object.values(node.graph.links);
+
+			const parentLink = nodeGraphLinks.find(
+                (otherLink) => otherLink?.id == node.inputs[0].link
+            );
+
 			if (parentLink != undefined) parentNode = node.graph.getNodeById(parentLink.origin_id)
 
 			if (parentNode != null && MaraScottAnyBusNodeFlow.ALLOWED_REROUTE_TYPE.indexOf(parentNode.type) > -1) {
@@ -495,7 +499,11 @@ class MaraScottAnyBusNodeFlow {
 
 			} else {
 
-				const __originLink = node.graph.links.find(
+                const nodeGraphLinks = Array.isArray(node.graph.links)
+                ? node.graph.links
+                : Object.values(node.graph.links);
+    
+				const __originLink = nodeGraphLinks.find(
 					(otherLink) => otherLink?.id == node.inputs[0].link
 				)
 				_originNode = node.graph.getNodeById(__originLink.origin_id)
@@ -568,7 +576,12 @@ class MaraScottAnyBusNodeFlow {
 			if (_bus_node_link == 'setNode') {
 				if (_bus_nodes[i].inputs[0].origin_id) _bus_nodes_connections[_bus_nodes[i].id] = _bus_nodes[i].inputs[0].origin_id
 			} else if (_bus_node_link != null) {
-				_bus_node_link = node.graph.links.find(
+
+                const nodeGraphLinks = Array.isArray(node.graph.links)
+                ? node.graph.links
+                : Object.values(node.graph.links);
+
+				_bus_node_link = nodeGraphLinks.find(
 					(otherLink) => otherLink?.id == _bus_node_link
 				)
 				if (_bus_node_link) _bus_nodes_connections[_bus_nodes[i].id] = _bus_node_link.origin_id
@@ -640,7 +653,12 @@ class MaraScottAnyBusNodeFlow {
 		let _node_origin_link = null
 		let _node_origin = null
 		if (node.inputs[MaraScottAnyBus_v2.BUS_SLOT].link != null) {
-			_node_origin_link = node.graph.links.find(
+
+            const nodeGraphLinks = Array.isArray(node.graph.links)
+            ? node.graph.links
+            : Object.values(node.graph.links);
+
+			_node_origin_link = nodeGraphLinks.find(
 				(otherLink) => otherLink?.id == node.inputs[MaraScottAnyBus_v2.BUS_SLOT].link
 			)
 			_node_origin = node.graph.getNodeById(_node_origin_link.origin_id)
@@ -656,7 +674,11 @@ class MaraScottAnyBusNodeFlow {
 
 				if (node.inputs[slot].link != null) {
 
-					_node_origin_link = node.graph.links.find(
+                    const nodeGraphLinks = Array.isArray(node.graph.links)
+                    ? node.graph.links
+                    : Object.values(node.graph.links);
+
+                    _node_origin_link = nodeGraphLinks.find(
 						(otherLink) => otherLink?.id == node.inputs[slot].link
 					)
 					_node_origin = node.graph.getNodeById(_node_origin_link.origin_id)
