@@ -7,7 +7,7 @@ from .configuration import Configuration as _CONF
 
 class Node:
     
-    INPUT_QTY = 16384
+    INPUT_QTY = 64
 
     INPUT_NAMES = tuple("tile {:02d}".format(i) for i in range(0, INPUT_QTY))
     
