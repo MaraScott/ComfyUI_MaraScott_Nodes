@@ -1,13 +1,3 @@
-# !!! ATTENTION NODES TEMPORARY UNRESPONSIVE !!!
-
-Due to latest ComfyUI released and improvement on the JS part, this node set is creating bugs.
-
-the McBoaty Tile Prompter make the WF unresponsive.
-
-I apologize for this temporary issues and I'm working on fixing the issue.
-
-As I don t know exactly what is going on, I hope you'll be patient until I found a fix.
-
 # ComfyUI MaraScott Nodes
 
 Turn ★ into ⭐ (top-right corner) if you like the project!
@@ -74,6 +64,7 @@ To install `ComfyUI_MaraScott_Nodes` in addition to an existing installation of 
 
 ## Changes
 
+* v5.7.0 - Tile Prompter : Hotfix issue applying max 64 tiles
 * v5.5.0 - Get Model Blocks : Introduction
 * v5.4.0 - Image to Gradient : Introduction
 * v5.3.0 - Multiline to List : Introduction
