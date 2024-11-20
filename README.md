@@ -366,3 +366,13 @@ I would like to thank my [AI Classroom Discord](discord.gg/t28yZEewrp) buddies w
 
 If anybody is interested in using these nodes, I'm following up on feature requests via the issues.
 If you have Node ideas, feel free to make a request in the issues.
+
+## Star History
+
+<a href="https://star-history.com/#MaraScott/ComfyUI_MaraScott_Nodes&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MaraScott/ComfyUI_MaraScott_Nodes&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=MaraScott/ComfyUI_MaraScott_Nodes&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MaraScott/ComfyUI_MaraScott_Nodes&type=Date" />
+ </picture>
+</a>
