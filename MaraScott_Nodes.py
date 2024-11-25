@@ -14,7 +14,7 @@ from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
 from .py.nodes.UpscalerRefiner.McBoaty_v4 import McBoaty_Upscaler_v4, McBoaty_TilePrompter_v4, McBoaty_Refiner_v4
 from .py.nodes.UpscalerRefiner.McBoaty_v5 import McBoaty_UpscalerRefiner_v5, McBoaty_Upscaler_v5, McBoaty_TilePrompter_v5, McBoaty_Refiner_v5
 from .py.nodes.KSampler.InpaintingTileByMask_v1 import KSampler_setInpaintingTileByMask_v1, KSampler_pasteInpaintingTileByMask_v1
-from .py.nodes.Prompt.PromptFromImage_v1 import PromptFromImage_v1
+from .py.nodes.Prompt.PromptFromImage_v1 import PromptFromImage_v1, EnhancedPromptFromImage_v1
 from .py.nodes.Prompt.TextConcatenate_v1 import TextConcatenate_v1
 from .py.nodes.Prompt.TextConversion_v1 import TextConversion_StringToList_v1
 from .py.nodes.Loop.ForLoop_v1 import ForLoopOpen_v1, ForLoopClose_v1, ForLoopWhileOpen_v1, ForLoopWhileClose_v1, ForLoopIntMathOperation_v1, ForLoopToBoolNode_v1
@@ -57,6 +57,8 @@ NODE_CLASS_MAPPINGS = {
     "MaraScottIsEqual_v1": IsEqual_v1,
 
     "MaraScottPromptFromImage_v1": PromptFromImage_v1,
+    "EnhancedPromptFromImage_v1": EnhancedPromptFromImage_v1,
+
     "MaraScottTextConcatenate_v1": TextConcatenate_v1,
     "MaraScottTextConversion_StringToList_v1": TextConversion_StringToList_v1,
     "MaraScottImageToGradient_v1": ImageToGradient_v1,
@@ -100,6 +102,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "MaraScottIsEqual_v1": "\ud83d\udc30 Is Equal v1 /c",
 
     "MaraScottPromptFromImage_v1": "\ud83d\udc30 Prompt From Image - McPrompty v1 /p",
+    "EnhancedPromptFromImage_v1": "\ud83d\udc30 Enhanced Prompt From Image - McPrompty v1 /p",
     "MaraScottTextConcatenate_v1": "\ud83d\udc30 Text Concatenation v1 /t",
     "MaraScottTextConversion_StringToList_v1": "\ud83d\udc30 Multiline to List v1 /t",
     "MaraScottImageToGradient_v1": "\ud83d\udc30 Image to Gradient v1 /t",

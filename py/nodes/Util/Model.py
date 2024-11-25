@@ -1,11 +1,17 @@
 import re
+import os
+import requests
+from tqdm import tqdm
 from collections import defaultdict
+import folder_paths
 
 from ...utils.constants import get_name, get_category
 from ...utils.helper import AlwaysEqualProxy, is_user_defined_object, natural_key
 from ...utils.log import log
 
 any_type = AlwaysEqualProxy("*")
+
+folder_paths.folder_names_and_paths["LLM"] = ([os.path.join(folder_paths.models_dir, "LLM")], folder_paths.supported_pt_extensions)
 
 class GetModelBlocks_v1:
 
@@ -85,4 +91,25 @@ class GetModelBlocks_v1:
                     blocks.append(block)
                     
         return sorted(set(blocks), key=natural_key)
-                
+  
+class Common:
+
+    @classmethod
+    def download_large_file(self, url, filename):
+        exists = os.path.exists(filename)
+        if exists:
+            pass
+        else:
+            print("downloading "+url + " to "+filename)
+            directory = os.path.dirname(filename)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            with requests.get(url, stream=True) as r:
+                r.raise_for_status()
+                total_size_in_bytes = int(r.headers.get('content-length', 0))
+                block_size = 1024  # 1 Kibibyte
+                progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
+                with open(filename, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        progress_bar.update(len(chunk)) 
+                        f.write(chunk)
