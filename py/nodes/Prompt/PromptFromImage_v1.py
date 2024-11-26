@@ -14,9 +14,11 @@ import torch
 import numpy as np
 from types import SimpleNamespace
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForCausalLM
 
 import folder_paths
+
+from janus.janusflow.models import MultiModalityCausalLM, VLChatProcessor
+from janus.utils.io import load_pil_images
 
 from ...utils.constants import get_name, get_category
 from ...inc.lib.llm import MS_Llm
@@ -99,7 +101,7 @@ class EnhancedPromptFromImage_v1(Common_model):
     def INPUT_TYPES(s):
         return {
             "required": {
-                "image": ("IMAGE",),
+                "image_path": ("STRING",),
                 "prompt": ("STRING", {"multiline": True,"default": "Improve the following prompt analyzing the picture which includes :\nobject\nPrompt to modify : \"From raw disorganized data to organized data in a database or multiple databases to beautiful dashboards\"",}),
             },
         }
@@ -110,38 +112,48 @@ class EnhancedPromptFromImage_v1(Common_model):
     CATEGORY = get_category('Prompt')
 
     @classmethod
-    def fn(self, image, prompt):
+    def fn(self, image_path, prompt):
 
-        model_path = os.path.join(folder_paths.get_folder_paths("LLM")[0],'deepseek-ai-JanusFlow-1.3B.safetensors')
+        # specify the path to the model
+        model_path = "deepseek-ai/JanusFlow-1.3B"
+        vl_chat_processor: VLChatProcessor = VLChatProcessor.from_pretrained(model_path)
+        tokenizer = vl_chat_processor.tokenizer
 
-        self.download_large_file(url='https://cdn-lfs-us-1.hf.co/repos/7a/2b/7a2ba2c22c7681f280799868e1e88333bcb081fbf6f240f449ae07bbda72db82/2e43167cf7a74edfaed1c35e7450c0e1f8345ff39f825e5372a0dbda8ef77eeb?response-content-disposition=attachment%3B+filename*%3DUTF-8%27%27model.safetensors%3B+filename%3D%22model.safetensors%22%3B&Expires=1732829193&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTczMjgyOTE5M319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy11cy0xLmhmLmNvL3JlcG9zLzdhLzJiLzdhMmJhMmMyMmM3NjgxZjI4MDc5OTg2OGUxZTg4MzMzYmNiMDgxZmJmNmYyNDBmNDQ5YWUwN2JiZGE3MmRiODIvMmU0MzE2N2NmN2E3NGVkZmFlZDFjMzVlNzQ1MGMwZTFmODM0NWZmMzlmODI1ZTUzNzJhMGRiZGE4ZWY3N2VlYj9yZXNwb25zZS1jb250ZW50LWRpc3Bvc2l0aW9uPSoifV19&Signature=MofvVcjL3xmRt8uQSIO71Ow0Pi9fdF1z1o%7Er92I7H4Qbp%7EGt%7EcIBkdndu%7El1glidUuq7%7ExUsi9Ah-T3pyY1Yn7Qgg-Ol6QguAW6tDwNzRNgfyIQM7LxufoiUuH5ENszFJrSSC-FUFSZYIifZq-lxkDSx26zB9Puzjyef%7EdVpIyWy3OIaPZ5rjjMSGmIn1tsBBR6VsGNS8Mn%7E3p8mC5e7BaNFi-r-gaJ8HZWGmW7VRqQH0d8qVFJvWsEn6NU%7EOteFL3u5BqE8BXJxkQqULbDr8PJ-5u8mQuXF0ijFM9rwcWPbYwTfMn%7EfL2ahcSpKZDmDHVHHrghQfjWmytGbWOmCFQ__&Key-Pair-Id=K24J24Z295AEI9', filename=model_path)
-        self.processor = AutoProcessor.from_pretrained(model_path)
-        self.model = AutoModelForCausalLM.from_pretrained(model_path)
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model.to(self.device)
+        vl_gpt = MultiModalityCausalLM.from_pretrained(
+            model_path, trust_remote_code=True
+        )
+        vl_gpt = vl_gpt.to(torch.bfloat16).cuda().eval()
 
-        # Convert the input image to a PIL Image if it's a tensor or NumPy array
-        if isinstance(image, torch.Tensor):
-            # Convert tensor to NumPy array
-            image = image.squeeze(0).permute(1, 2, 0).cpu().numpy()
-            image = (image * 255).astype(np.uint8)
-            image = Image.fromarray(image)
-        elif isinstance(image, np.ndarray):
-            image = Image.fromarray((image * 255).astype(np.uint8))
+        conversation = [
+            {
+                "role": "User",
+                "content": "<image_placeholder>\n{prompt}",
+                "images": [image_path],
+            },
+            {"role": "Assistant", "content": ""},
+        ]
 
-        # Step 1: Prepare inputs for Janus
-        inputs = self.processor(images=image, text=prompt, return_tensors="pt").to(self.device)
+        # load images and prepare for inputs
+        pil_images = load_pil_images(conversation)
+        prepare_inputs = vl_chat_processor(
+            conversations=conversation, images=pil_images, force_batchify=True
+        ).to(vl_gpt.device)
 
-        # Step 2: Generate the prompt using Janus
-        outputs = self.model.generate(
-            input_ids=inputs['input_ids'],
-            attention_mask=inputs['attention_mask'],
-            max_length=150,
-            num_beams=5,
-            early_stopping=True
+        # # run image encoder to get the image embeddings
+        inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
+
+        # # run the model to get the response
+        outputs = vl_gpt.language_model.generate(
+            inputs_embeds=inputs_embeds,
+            attention_mask=prepare_inputs.attention_mask,
+            pad_token_id=tokenizer.eos_token_id,
+            bos_token_id=tokenizer.bos_token_id,
+            eos_token_id=tokenizer.eos_token_id,
+            max_new_tokens=512,
+            do_sample=False,
+            use_cache=True,
         )
 
-        # Decode the generated tokens
-        generated_prompt = self.processor.decode(outputs[0], skip_special_tokens=True)
+        generated_prompt = tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
 
         return (generated_prompt,)

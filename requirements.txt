@@ -3,3 +3,4 @@ numba
 color-matcher
 groq
 opencv-python
+-e git+https://github.com/deepseek-ai/Janus.git#egg=janus

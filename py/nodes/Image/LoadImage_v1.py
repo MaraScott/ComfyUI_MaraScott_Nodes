@@ -96,8 +96,8 @@ class LoadImage_v1(nodes_LoadImage_v1):
 
         return super()._INPUT_TYPES(INPUT_TYPES)
 
-    RETURN_TYPES = nodes_LoadImage_v1()._RETURN_OUTPUTS("RETURN_TYPES") + ("STRING",)
-    RETURN_NAMES = nodes_LoadImage_v1()._RETURN_OUTPUTS("RETURN_NAMES") + ("File Name",)
+    RETURN_TYPES = nodes_LoadImage_v1()._RETURN_OUTPUTS("RETURN_TYPES") + ("STRING", "STRING",)
+    RETURN_NAMES = nodes_LoadImage_v1()._RETURN_OUTPUTS("RETURN_NAMES") + ("File Name", "File Path",)
 
     INPUT_IS_LIST = False
     FUNCTION = "fn"
@@ -119,4 +119,5 @@ class LoadImage_v1(nodes_LoadImage_v1):
             output_image,
             output_mask,
             filename,
+            file_path,
         )
