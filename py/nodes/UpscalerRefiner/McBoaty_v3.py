@@ -18,6 +18,7 @@ from comfy_extras.nodes_canny import Canny
 import nodes
 import folder_paths
 
+from ...utils.constants import get_name, get_category
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...inc.lib.llm import MS_Llm
@@ -131,7 +132,7 @@ class UpscalerRefiner_McBoaty_v3():
     )
     
     OUTPUT_NODE = False
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category("Upscaling/v3")
     DESCRIPTION = "An \"UPSCALER\" Node"
     FUNCTION = "fn"
 

@@ -5,6 +5,8 @@
 
 import torch
 
+from ..utils.constants import get_category
+
 # Hack: string type that is always equal in not equal comparisons
 class AnyType(str):
     def __ne__(self, __value: object) -> bool:
@@ -13,7 +15,7 @@ class AnyType(str):
 class Configuration:
     
     OUTPUT_NODE = False
-    CATEGORY = "MaraScott/utils"
+    CATEGORY = get_category("Utils")
     
     # SHAPE = LiteGraph.CARD_SHAPE
     # COLOR = "#8154A6"

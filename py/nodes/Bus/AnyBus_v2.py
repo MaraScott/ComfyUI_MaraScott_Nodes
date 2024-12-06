@@ -12,6 +12,7 @@
 #
 ###
 
+from ...utils.constants import get_name, get_category
 from ...inc.nodes import Configuration as _CONF
 from ...inc.profiles.any import Node as ProfileNodeAny
 # from ..inc.profiles.pipe_basic import Node as ProfileNodePipeBasic
@@ -47,7 +48,7 @@ class AnyBus_v2:
     )
     
     OUTPUT_NODE = _CONF.OUTPUT_NODE
-    CATEGORY = _CONF.CATEGORY
+    CATEGORY = get_category("Utils")
     DESCRIPTION = "An \"ANY\" Bus Node"
     FUNCTION = "bus_fn"
     

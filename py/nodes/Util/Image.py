@@ -22,7 +22,7 @@ class ImageToGradient_v1:
     FUNCTION = "fn"
 
     NAME = get_name('Image to gradient')    
-    CATEGORY = get_category('utils')
+    CATEGORY = get_category("Utils")
     
     COLOR_MATCH_METHOD = 'mkl'
     STRENGTH = 0.25

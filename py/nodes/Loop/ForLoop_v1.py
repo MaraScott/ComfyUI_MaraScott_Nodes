@@ -4,6 +4,7 @@ try:
 except:
     GraphBuilder = None
 from .tools import VariantSupport
+from ...utils.constants import get_name, get_category
 from ...utils.helper import AlwaysEqualProxy
 
 
@@ -34,7 +35,7 @@ class ForLoopOpen_v1:
     RETURN_NAMES = tuple(["flow_control", "remaining"] + [f"value{i}" for i in range(1, NUM_FLOW_SOCKETS)])
     FUNCTION = "fn"
 
-    CATEGORY = "MaraScott/Flow"
+    CATEGORY = get_category("Loop/Flow")
 
     def fn(self, remaining, **kwargs):
         graph = GraphBuilder()
@@ -67,7 +68,7 @@ class ForLoopClose_v1:
     RETURN_NAMES = tuple([f"value{i}" for i in range(1, NUM_FLOW_SOCKETS)])
     FUNCTION = "fn"
 
-    CATEGORY = "MaraScott/Flow"
+    CATEGORY = get_category("Loop/Flow")
 
     def fn(self, flow_control, **kwargs):
         graph = GraphBuilder()
@@ -107,7 +108,7 @@ class ForLoopWhileOpen_v1:
     RETURN_NAMES = tuple(["FLOW_CONTROL"] + [f"value{i}" for i in range(NUM_FLOW_SOCKETS)])
     FUNCTION = "while_loop_open"
 
-    CATEGORY = "MaraScott/Flow"
+    CATEGORY = get_category("Loop/Flow")
 
     def while_loop_open(self, condition, **kwargs):
         values = []
@@ -142,7 +143,7 @@ class ForLoopWhileClose_v1:
     RETURN_NAMES = tuple([f"value{i}" for i in range(NUM_FLOW_SOCKETS)])
     FUNCTION = "fn"
 
-    CATEGORY = "MaraScott/Flow"
+    CATEGORY = get_category("Loop/Flow")
 
     def explore_dependencies(self, node_id, dynprompt, upstream):
         node_info = dynprompt.get_node(node_id)
@@ -233,7 +234,7 @@ class ForLoopIntMathOperation_v1:
     RETURN_TYPES = ("INT",)
     FUNCTION = "fn"
 
-    CATEGORY = "MaraScott/Loop/Logic"
+    CATEGORY = get_category("Loop/Logic")
 
     def fn(self, a, b, operation):
         if operation == "add":
@@ -267,7 +268,7 @@ class ForLoopToBoolNode_v1:
     RETURN_TYPES = ("BOOLEAN",)
     FUNCTION = "fn"
 
-    CATEGORY = "MaraScott/Loop/Logic"
+    CATEGORY = get_category("Loop/Logic")
 
     def fn(self, value, invert = False):
         if isinstance(value, torch.Tensor):

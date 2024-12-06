@@ -26,7 +26,7 @@ class GetModelBlocks_v1:
     RETURN_TYPES = ("STRING", "STRING", "STRING", "INT")
     RETURN_NAMES = ("BLOCKS", "NAMES", "BLOCKS WEIGTHS", "COUNT")
     FUNCTION = "fn"
-    CATEGORY = get_category('utils')
+    CATEGORY = get_category("Utils")
 
     @classmethod
     def fn(self, model=None, type="Names", variation=1.4):

@@ -3,10 +3,12 @@
 #
 ###
 
+from ....utils.constants import get_category
+
 class Configuration:
     
     OUTPUT_NODE = False
-    CATEGORY = "MaraScott/Upscaling"
+    CATEGORY = get_category("Upscaling")
     
     @classmethod
     def generate_entries(self, input_names, input_types, code = 'py'):

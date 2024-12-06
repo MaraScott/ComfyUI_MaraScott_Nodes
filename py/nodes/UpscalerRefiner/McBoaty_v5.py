@@ -26,6 +26,7 @@ import folder_paths
 from PIL import Image
 import numpy as np
 
+from ...utils.constants import get_name, get_category
 from .... import root_dir, __MARASCOTT_TEMP__
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
@@ -119,7 +120,7 @@ class McBoaty_Upscaler_v5():
     
     
     OUTPUT_NODE = True
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category("Upscaling/v5")
     DESCRIPTION = "An \"UPSCALER\" Node"
     FUNCTION = "fn"
 
@@ -372,7 +373,7 @@ class McBoaty_Refiner_v5():
     
     
     OUTPUT_NODE = True
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category("Upscaling/v5")
     DESCRIPTION = "A \"Refiner\" Node"
     FUNCTION = "fn"
 
@@ -689,7 +690,7 @@ class McBoaty_TilePrompter_v5():
     )
         
     OUTPUT_NODE = True
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category("Upscaling/v5")
     DESCRIPTION = "A \"Tile Prompt Editor\" Node"
     FUNCTION = "fn"
 
@@ -915,7 +916,7 @@ class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
     OUTPUT_IS_LIST = (False,) * len(RETURN_TYPES)
     
     OUTPUT_NODE = True
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category("Upscaling/v5")
     DESCRIPTION = "An \"UPSCALER REFINER\" Node"
     FUNCTION = "fn"
 

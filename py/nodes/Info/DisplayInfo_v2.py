@@ -40,7 +40,7 @@ class DisplayInfo_v2:
     OUTPUT_NODE = True
     OUTPUT_IS_LIST = (False,)
 
-    CATEGORY = get_category('utils')
+    CATEGORY = get_category("Utils")
 
     def fn(self, any=None, unique_id=None, extra_pnginfo=None):
         value = self.serialize_any(any)

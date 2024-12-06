@@ -22,7 +22,7 @@ class IsEqual_v1:
     RETURN_TYPES = ("BOOLEAN",)
     RETURN_NAMES = ("boolean",)
     FUNCTION = "fn"
-    CATEGORY = get_category('utils')
+    CATEGORY = get_category("Utils")
 
     def fn(self, any_1=None, any_2=None):
         return (True if any_1 == any_2 else False,)
@@ -41,7 +41,7 @@ class IsNone_v1:
     RETURN_TYPES = ("BOOLEAN",)
     RETURN_NAMES = ("boolean",)
     FUNCTION = "fn"
-    CATEGORY = "MaraScott/Util"
+    CATEGORY = get_category("Utils")
 
     def fn(self, any):
         return (True if any is None else False,)
@@ -60,7 +60,7 @@ class IsEmpty_v1:
     RETURN_TYPES = ("BOOLEAN",)
     RETURN_NAMES = ("boolean",)
     FUNCTION = "fn"
-    CATEGORY = "MaraScott/Util"
+    CATEGORY = get_category("Utils")
 
     def fn(self, any):
         return (True if any == "" else False,)
@@ -79,7 +79,7 @@ class IsEmptyOrNone_v1:
     RETURN_TYPES = ("BOOLEAN",)
     RETURN_NAMES = ("boolean",)
     FUNCTION = "fn"
-    CATEGORY = "MaraScott/Util"
+    CATEGORY = get_category("Utils")
 
     def fn(self, any):
         isEmptyOrNone = False

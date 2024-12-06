@@ -92,7 +92,7 @@ class Mara_Tiler_v1(Mara_Common_v1):
     OUTPUT_NODE = True
     DESCRIPTION = "An \"Tiler\" Node"
     FUNCTION = "fn"
-    CATEGORY = get_category('upscaling')
+    CATEGORY = get_category("Utils")
 
     @classmethod    
     def fn(self, **kwargs):
@@ -215,7 +215,7 @@ class Mara_Untiler_v1(Mara_Common_v1):
     OUTPUT_NODE = True
     DESCRIPTION = "An \"Untiler\" Node"
     FUNCTION = "fn"
-    CATEGORY = get_category('upscaling')
+    CATEGORY = get_category("Utils")
 
     @classmethod    
     def fn(self, **kwargs):
@@ -359,7 +359,7 @@ class McBoaty_Upscaler_v6():
     
     
     OUTPUT_NODE = True
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category('Upscaling/v6')
     DESCRIPTION = "An \"UPSCALER\" Node"
     FUNCTION = "fn"
 
@@ -609,7 +609,7 @@ class McBoaty_Refiner_v6():
     
     
     OUTPUT_NODE = True
-    CATEGORY = get_category('upscaling')
+    CATEGORY = get_category('Upscaling/v6')
     DESCRIPTION = "A \"Refiner\" Node"
     FUNCTION = "fn"
 
@@ -912,7 +912,7 @@ class McBoaty_TilePrompter_v6():
     )
         
     OUTPUT_NODE = True
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category('Upscaling/v6')
     DESCRIPTION = "A \"Tile Prompt Editor\" Node"
     FUNCTION = "fn"
 
@@ -1139,7 +1139,7 @@ class McBoaty_UpscalerRefiner_v6(McBoaty_Upscaler_v6, McBoaty_Refiner_v6):
     OUTPUT_IS_LIST = (False,) * len(RETURN_TYPES)
     
     OUTPUT_NODE = True
-    CATEGORY = "MaraScott/upscaling"
+    CATEGORY = get_category('Upscaling/v6')
     DESCRIPTION = "An \"UPSCALER REFINER\" Node"
     FUNCTION = "fn"
 

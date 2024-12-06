@@ -15,6 +15,7 @@ import comfy
 from comfy_extras import nodes_differential_diffusion as DiffDiff, nodes_images as extra_images, nodes_mask as extra_mask, nodes_compositing as extra_compo, nodes_upscale_model as extra_upscale_model
 from nodes import KSampler, CLIPTextEncode, VAEEncodeTiled, VAEEncodeForInpaint, VAEDecode, VAEDecodeTiled, ImageScale, SetLatentNoiseMask, ImageScaleBy
 
+from ...utils.constants import get_name, get_category
 from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...inc.lib.mask import MS_Mask as MS_Mask
 from ...inc.lib.sampler import MS_Sampler
@@ -95,7 +96,7 @@ class KSampler_setInpaintingTileByMask_v1:
     FUNCTION = "fn"
     OUTPUT_NODE = True
 
-    CATEGORY = "MaraScott/Ksampler"
+    CATEGORY = get_category("Inpainting")
 
     def fn(s, **kwargs):
         s.init(**kwargs)
@@ -384,7 +385,7 @@ class KSampler_pasteInpaintingTileByMask_v1:
     FUNCTION = "fn"
     OUTPUT_NODE = True
 
-    CATEGORY = "MaraScott/Ksampler"
+    CATEGORY = get_category("Inpainting")
 
     def fn(s, **kwargs):
         

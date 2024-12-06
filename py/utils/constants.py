@@ -8,4 +8,4 @@ def get_category(sub_dirs = None):
     if sub_dirs is None:
         return NAMESPACE
     else:
-        return "{}/{}".format(NAMESPACE, sub_dirs)
+        return "\ud83d\udc30 {}/{}".format(NAMESPACE, sub_dirs)

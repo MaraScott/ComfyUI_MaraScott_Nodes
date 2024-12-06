@@ -12,7 +12,7 @@ from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
 from .py.nodes.UpscalerRefiner.McBoaty_v5 import McBoaty_UpscalerRefiner_v5, McBoaty_Upscaler_v5, McBoaty_TilePrompter_v5, McBoaty_Refiner_v5
 from .py.nodes.UpscalerRefiner.McBoaty_v6 import Mara_Tiler_v1, Mara_Untiler_v1, McBoaty_UpscalerRefiner_v6, McBoaty_Upscaler_v6, McBoaty_TilePrompter_v6, McBoaty_Refiner_v6
-from .py.nodes.KSampler.InpaintingTileByMask_v1 import KSampler_setInpaintingTileByMask_v1, KSampler_pasteInpaintingTileByMask_v1
+from .py.nodes.Inpainting.InpaintingTileByMask_v1 import KSampler_setInpaintingTileByMask_v1, KSampler_pasteInpaintingTileByMask_v1
 from .py.nodes.Prompt.PromptFromImage_v1 import PromptFromImage_v1
 from .py.nodes.Prompt.TextConcatenate_v1 import TextConcatenate_v1
 from .py.nodes.Prompt.TextConversion_v1 import TextConversion_StringToList_v1
