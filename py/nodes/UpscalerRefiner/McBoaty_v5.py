@@ -272,8 +272,8 @@ class McBoaty_Upscaler_v5():
         cols_qty = math.ceil(cols_qty_float)
 
         tiles_qty = rows_qty * cols_qty        
-        if tiles_qty > 16384 :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 16384 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - McBoaty_Upscaler_v5")
+        if tiles_qty > NodePrompt.INPUT_QTY :
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {NodePrompt.INPUT_QTY} ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - McBoaty_Upscaler_v5")
             raise ValueError(msg)
 
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
@@ -507,9 +507,9 @@ class McBoaty_Refiner_v5():
     def set_tiles_to_process(self, tiles_to_process=''):
 
         max_tiles = len(self.OUTPUTS.grid_tiles_to_process)
-        max = max_tiles if max_tiles > 0 else 16384
+        max = max_tiles if max_tiles > 0 else NodePrompt.INPUT_QTY
         
-        def is_valid_index(index, max = 16384):
+        def is_valid_index(index, max = NodePrompt.INPUT_QTY):
             return 1 <= index <= max
         def to_computer_index(human_index):
             return human_index - 1
