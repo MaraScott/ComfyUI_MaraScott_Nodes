@@ -958,7 +958,7 @@ class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
         )        
         
         # Upscaling phase
-        upscaler_result = Mara_McBoaty_Configurator_v6().fn(**kwargs)
+        upscaler_result = Mara_McBoaty_Configurator_v6.fn(**kwargs)
         upscaler_pipe, _, upscaler_info = upscaler_result
 
         # Update kwargs with upscaler results for refiner
