@@ -8,6 +8,7 @@
 ###
 
 import os
+import sys
 import time
 import glob
 import torch
@@ -40,22 +41,37 @@ from ...utils.log import log, get_log, COLORS
 
 class Mara_Common_v1():
 
-    INPUTS = {}
-    OUTPUTS = {}
-    KSAMPLER = {}
-    PARAMS = {}
-    INFO = {}
+    NAME = get_name('🐰 McBoaty Set - v6')
+
+    PIPE_ATTRIBUTES = (
+        'INPUTS', 
+        'OUTPUTS', 
+        'PARAMS', 
+        'INFO', 
+
+        'CONTROLNET',
+        'KSAMPLER', 
+        'LLM', 
+    )
     
-    PIPE_ATTRIBUTES = ('INPUTS', 'PARAMS', 'KSAMPLER', 'OUTPUTS', 'INFO')
+    def __init__(self):
+        # Dynamically create attributes from PIPE_ATTRIBUTES
+        for attr in self.PIPE_ATTRIBUTES:
+            if not hasattr(type(self), attr):  # Only set the attribute if it doesn't already exist
+                setattr(type(self), attr, SimpleNamespace())
 
     @classmethod
     def set_pipe_values(self, pipe):
         for name, value in zip(self.PIPE_ATTRIBUTES, pipe):
             setattr(self, name, value)
+
+    @classmethod
+    def set_mc_boaty_pipe(self):
+        return tuple(getattr(self, attr, None) for attr in self.PIPE_ATTRIBUTES)
     
 class Mara_Tiler_v1(Mara_Common_v1):
     
-    NAME = get_name('Image to tiles - v1')
+    NAME = get_name('🐰 Image to tiles - v1')
 
     @classmethod
     def INPUT_TYPES(self):
@@ -102,8 +118,7 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
         log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {self.INFO.id}")
         
-        self.OUTPUTS.image, 
-        self.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=self.INPUTS.image)
+        self.OUTPUTS.image, _, _, self.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=self.INPUTS.image)
         self.OUTPUTS.upscaled_image = self.OUTPUTS.image 
         if self.PARAMS.upscale_model is not None:
             self.OUTPUTS.upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, self.OUTPUTS.upscaled_image)[0]
@@ -115,44 +130,34 @@ class Mara_Tiler_v1(Mara_Common_v1):
 
         end_time = time.time()        
         self.INFO.execution_time = int(end_time - start_time)
-
+        
+        mc_boaty_pipe = self.set_mc_boaty_pipe()
+        
         return (
-            (
-                self.INPUTS,
-                self.OUTPUTS,
-                self.PARAMS,
-                self.INFO,
-            ),
+            mc_boaty_pipe,
             self.OUTPUTS.tiles,
         )
 
     @classmethod
     def init(self, **kwargs):
         
-        self.INFO = SimpleNamespace(
-            id = kwargs.get('id', None),
-        )
-        self.INPUTS = SimpleNamespace(
-            image = kwargs.get('image', None),
-        )
-        self.OUTPUTS = SimpleNamespace(
-            image = self.INPUTS.image,
-            tiles = self.INPUTS.image,
-        )
+        self.INFO.id = kwargs.get('id', None)
+        self.INPUTS.image = kwargs.get('image', None)
+        self.OUTPUTS.image = self.INPUTS.image
+        self.OUTPUTS.tiles = self.INPUTS.image
 
         if self.INPUTS.image is None:
             raise ValueError(f"{self.NAME} id {self.INFO.id}: No image provided")
         if not isinstance(self.INPUTS.image, torch.Tensor):
             raise ValueError(f"{self.NAME} id {self.INFO.id}: Image provided is not a Tensor")
 
-        self.PARAMS = SimpleNamespace(
-            upscale_model_name = kwargs.get('upscale_model', 'None'),
-            upscale_model = None,
-            upscale_model_scale = 1,
-            tile_size = kwargs.get('tile_size', None),
-            rows_qty = 1,
-            cols_qty = 1,
-        )
+        self.PARAMS.upscale_model_name = kwargs.get('upscale_model', 'None')
+        self.PARAMS.upscale_model = None
+        self.PARAMS.upscale_model_scale = 1
+        self.PARAMS.tile_size = kwargs.get('tile_size', None)
+        self.PARAMS.rows_qty = 1
+        self.PARAMS.cols_qty = 1
+
         if self.PARAMS.upscale_model_name != 'None':
             self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
             self.PARAMS.upscale_model_scale = self.PARAMS.upscale_model.scale
@@ -173,7 +178,8 @@ class Mara_Tiler_v1(Mara_Common_v1):
         self.PARAMS.rows_qty = rows_qty
         self.PARAMS.cols_qty = cols_qty
         
-        grid_specs = MS_Image().get_tiled_grid_specs(image, self.PARAMS.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, 0)[0]
+        grid_specs = MS_Image().get_dynamic_grid_specs(image.shape[2], image.shape[1], self.PARAMS.rows_qty, self.PARAMS.cols_qty, 0)[0]
+        # grid_specs = MS_Image().get_tiled_grid_specs(image, self.PARAMS.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, 0)[0]
         grid_images = MS_Image().get_grid_images(image, grid_specs)
         
         return grid_images, grid_specs
@@ -181,7 +187,7 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
 class Mara_Untiler_v1(Mara_Common_v1):
     
-    NAME = get_name('Tiles to Image - v1')
+    NAME = get_name('🐰 Tiles to Image - v1')
     
     UPSCALE_METHODS = [
         "area", 
@@ -190,6 +196,11 @@ class Mara_Untiler_v1(Mara_Common_v1):
         "bislerp",
         "lanczos",
         "nearest-exact"
+    ]
+
+    UPSCALE_SIZE_REF = [
+        "Output Image",
+        "Input Image",
     ]
         
     INPUTS = {}
@@ -207,8 +218,8 @@ class Mara_Untiler_v1(Mara_Common_v1):
                 "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
                 "tiles": ("IMAGE", {"label": "Image" }),
                 "output_upscale_method": (self.UPSCALE_METHODS, { "label": "Custom Output Upscale Method", "default": "bicubic"}),
-                "output_size_type": ("BOOLEAN", { "label": "Output Size Type", "default": True, "label_on": "Upscale size", "label_off": "Custom size"}),
-                "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 1.00, "max": 16.00, "step":0.01, "round": 0.01}),
+                "output_size_ref": (self.UPSCALE_SIZE_REF, { "label": "Output Size Ref", "default": "Output Image"}),
+                "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 0.10, "max": 16.00, "step":0.01, "round": 0.01}),
                 
             },
             "optional": {
@@ -242,24 +253,23 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
         log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {self.INFO.id}")
         
-        # feather_mask = 64 # self.PARAMS.feather_mask
-        # upscale_model_scale = 1 # self.PARAMS.upscale_model_scale
-        # grid_prompts = [] # self.OUTPUTS.grid_prompts
-        
-        # self.OUTPUTS.image, tiles_order = MS_Image().rebuild_image_from_parts(
-        #     0, 
-        #     self.INPUTS.tiles, 
-        #     self.OUTPUTS.image, 
-        #     self.PARAMS.grid_specs, 
-        #     feather_mask, 
-        #     upscale_model_scale, 
-        #     self.PARAMS.rows_qty, 
-        #     self.PARAMS.cols_qty, 
-        #     grid_prompts
-        # )
+        self.OUTPUTS.image, tiles_order = MS_Image().rebuild_image_from_parts(
+            0, 
+            self.OUTPUTS.tiles, 
+            self.OUTPUTS.image, 
+            self.PARAMS.grid_specs, 
+            self.PARAMS.feather_mask, 
+            self.PARAMS.upscale_model_scale, 
+            self.PARAMS.rows_qty, 
+            self.PARAMS.cols_qty, 
+            self.OUTPUTS.grid_prompts
+        )
 
-        # if not self.PARAMS.upscale_size_type:
-        #     self.OUTPUTS.image = nodes.ImageScale().upscale(self.OUTPUTS.image, self.PARAMS.upscale_method, int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), False)[0]
+        if not (self.PARAMS.upscale_size_ref == self.UPSCALE_SIZE_REF[0] and self.PARAMS.upscale_size == 1.00):
+            image_ref = self.OUTPUTS.image
+            if self.PARAMS.upscale_size_ref != self.UPSCALE_SIZE_REF[0]:
+                image_ref = self.INPUTS.image
+            self.OUTPUTS.image = nodes.ImageScale().upscale(self.OUTPUTS.image, self.PARAMS.upscale_method, int(image_ref.shape[2] * self.PARAMS.upscale_size), int(image_ref.shape[1] * self.PARAMS.upscale_size), False)[0]
 
         end_time = time.time()        
         self.INFO.execution_time = int(end_time - start_time)
@@ -270,25 +280,17 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
     @classmethod
     def init(self, **kwargs):
-        
-        self.INFO = SimpleNamespace(
-            id = kwargs.get('id', None),
-        )
 
-        pipe = kwargs.get('pipe', (None,) * len(self.PIPE_ATTRIBUTES))
+        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(self.PIPE_ATTRIBUTES))
         self.set_pipe_values(pipe)
-        
-        self.INPUTS = SimpleNamespace(
-            tiles = kwargs.get('tiles', None),
-        )
-        self.OUTPUTS = SimpleNamespace(
-            image = self.INPUTS.tiles,
-            tiles = self.INPUTS.tiles,
-        )
 
-        self.PARAMS.upscale_size_type = kwargs.get('output_size_type', None)
-        self.PARAMS.upscale_size = kwargs.get('output_size', None)
-        self.PARAMS.upscale_method = kwargs.get('output_upscale_method', "lanczos"),
+        self.INFO.id = kwargs.get('id', None)
+        self.INPUTS.tiles = kwargs.get('tiles', None)
+        self.OUTPUTS.image = self.INPUTS.image
+
+        self.PARAMS.upscale_size_ref = kwargs.get('output_size_ref', False)
+        self.PARAMS.upscale_size = kwargs.get('output_size', 1.00)
+        self.PARAMS.upscale_method = kwargs.get('output_upscale_method', "lanczos")
 
         if self.INPUTS.tiles is None:
             raise ValueError(f"{self.NAME} id {self.INFO.id}: No image provided")
@@ -297,12 +299,14 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
 class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
+    NAME = get_name('🐰 McBoaty Configurator - v6')
     
     SIGMAS_TYPES = [
         'BasicScheduler', 
         'SDTurboScheduler', 
         'AlignYourStepsScheduler'
-    ]    
+    ]
+    
     MODEL_TYPE_SIZES = {
         'SD1': 512,
         'SDXL': 1024,
@@ -310,15 +314,9 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         'FLUX1': 1024,
         'SVD': 1024,
     }
+    
     MODEL_TYPES = list(MODEL_TYPE_SIZES.keys())
-    
-    INPUTS = {}
-    OUTPUTS = {}
-    PARAMS = {}
-    INFOS = {}
-    KSAMPLERS = {}
-    LLM = {}
-    
+        
     @classmethod
     def INPUT_TYPES(self):
         return {
@@ -327,7 +325,6 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
             },
             "required":{
                 "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
-                "tiles": ("IMAGE", {"label": "Tiles" }),
 
                 "model": ("MODEL", { "label": "Model" }),
                 "clip": ("CLIP", { "label": "Clip" }),
@@ -349,6 +346,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
             },
             "optional": {
+                "tiles": ("IMAGE", {"label": "Tiles" }),
                 "Florence2": ("FL2MODEL", { "label": "Florence2" }),
                 "Llm_party": ("CUSTOM", { "label": "LLM Model" }),
             }
@@ -390,9 +388,11 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         # self.PARAMS.grid_specs, self.OUTPUTS.grid_images, self.OUTPUTS.grid_prompts = self.upscale(self.INPUTS.tiles, "Upscaling")
 
         # self.OUTPUTS.tiles = torch.cat(self.OUTPUTS.grid_images)
-        self.OUTPUTS.tiles = self.INPUTS.tiles
+        
+        # self.OUTPUTS.tiles = self.INPUTS.tiles
         
         end_time = time.time()
+
         output_info = self._get_info(
             0, # self.INFO.image_width, 
             0, # self.INFO.image_height, 
@@ -400,16 +400,12 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
             int(end_time - start_time)
         )
         
+        mc_boaty_pipe = self.set_mc_boaty_pipe()
+
         log("McBoaty (Upscaler) is done with its magic", None, None, f"Node {self.INFO.id}")
 
-
         return (
-            (
-                self.INPUTS,
-                self.PARAMS,
-                self.KSAMPLER,
-                self.OUTPUTS,
-            ),
+            mc_boaty_pipe,
             (
                 self.OUTPUTS.tiles
             ),
@@ -418,65 +414,48 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         
     @classmethod
     def init(self, **kwargs):
-        # Initialize the bus tuple with None values for each parameter
-        self.INFO = SimpleNamespace(
-            id = kwargs.get('id', None),
-        )
-        
-        pipe = kwargs.get('pipe', (None,) * len(self.PIPE_ATTRIBUTES))
-        self.set_pipe_values(pipe)
-        
-        self.INPUTS = SimpleNamespace(
-            tiles = kwargs.get('tiles', None),
-        )
-        if self.INPUTS.tiles is None:
-            raise ValueError(f"{self.NAME} id {self.INFO.id}: No tiles provided")
 
-        if not isinstance(self.INPUTS.tiles, torch.Tensor):
+        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(self.PIPE_ATTRIBUTES))
+        self.set_pipe_values(pipe)
+
+        self.INFO.id = kwargs.get('id', None)
+        
+        self.INPUTS.tiles = kwargs.get('tiles', None)
+        if self.INPUTS.tiles is not None and not isinstance(self.INPUTS.tiles, torch.Tensor):
             raise ValueError(f"{self.NAME} id {self.INFO.id}: tiles provided are not Tensors")
                 
-        self.LLM = SimpleNamespace(
-            vision_model = kwargs.get('FL2MODEL', None),
-            model = kwargs.get('llm_model', None),
-        )
+        self.LLM.vision_model = kwargs.get('FL2MODEL', None)
+        self.LLM.model = kwargs.get('llm_model', None)
         
-        self.PARAMS = SimpleNamespace(
-            tile_prompting_active = kwargs.get('tile_prompting_active', False),
-            grid_specs = None,
-            rows_qty = 1,
-            cols_qty = 1,
-        )
+        self.PARAMS.tile_prompting_active = kwargs.get('tile_prompting_active', False)
 
-        self.KSAMPLER = SimpleNamespace(
-            tiled = kwargs.get('vae_encode', None),
-            tile_size_vae = kwargs.get('tile_size_vae', None),
-            model = kwargs.get('model', None),
-            clip = kwargs.get('clip', None),
-            vae = kwargs.get('vae', None),
-            noise_seed = kwargs.get('seed', None),
-            sampler_name = None,
-            scheduler = None,
-            positive = kwargs.get('positive', None),
-            negative = kwargs.get('negative', None),
-            add_noise = True,
-            sigmas_type = None,
-            model_type = None,
-            steps = None,
-            cfg = kwargs.get('cfg', None),
-            denoise = kwargs.get('denoise', None),
-            control_net_name = None,
-            control = None,
-        )
+        self.KSAMPLER.tiled = kwargs.get('vae_encode', None)
+        self.KSAMPLER.tile_size_vae = kwargs.get('tile_size_vae', None)
+        self.KSAMPLER.model = kwargs.get('model', None)
+        self.KSAMPLER.clip = kwargs.get('clip', None)
+        self.KSAMPLER.vae = kwargs.get('vae', None)
+        self.KSAMPLER.noise_seed = kwargs.get('seed', None)
+        self.KSAMPLER.sampler_name = None
+        self.KSAMPLER.scheduler = None
+        self.KSAMPLER.positive = kwargs.get('positive', None)
+        self.KSAMPLER.negative = kwargs.get('negative', None)
+        self.KSAMPLER.add_noise = True
+        self.KSAMPLER.sigmas_type = None
+        self.KSAMPLER.model_type = None
+        self.KSAMPLER.steps = None
+        self.KSAMPLER.cfg = kwargs.get('cfg', None)
+        self.KSAMPLER.denoise = kwargs.get('denoise', None)
+        self.KSAMPLER.control_net_name = None
+        self.KSAMPLER.control = None
 
         # TODO : make the feather_mask proportional to tile size ?
         # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
+        self.PARAMS.feather_mask = 0
 
-        self.OUTPUTS = SimpleNamespace(
-            grid_images = [],
-            grid_prompts = [],
-            output_info = ["No info"],
-            grid_tiles_to_process = [],
-        )
+        self.OUTPUTS.grid_images = []
+        self.OUTPUTS.grid_prompts = [self.KSAMPLER.positive for _ in self.PARAMS.grid_specs]
+        self.OUTPUTS.output_info = ["No info"]
+        self.OUTPUTS.grid_tiles_to_process = []
     
         
     @classmethod
@@ -504,7 +483,6 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
     @classmethod
     def upscale(self, image, iteration):
         
-        feather_mask = self.PARAMS.feather_mask
         rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model_scale) / self.KSAMPLER.tile_size
         cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model_scale) / self.KSAMPLER.tile_size
         rows_qty = math.ceil(rows_qty_float)
@@ -521,8 +499,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.PARAMS.cols_qty = cols_qty
         
         
-        # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, feather_mask)[0]
-        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, feather_mask)[0]
+        # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, self.PARAMS.feather_mask)[0]
+        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.PARAMS.feather_mask)[0]
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
         grid_prompts = []
@@ -541,7 +519,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
 class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     
-    NAME = get_name('McBoaty Refiner - v6')
+    NAME = get_name('🐰 McBoaty Refiner - v6')
 
     COLOR_MATCH_METHODS = [   
         'none',
@@ -603,10 +581,10 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
         log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {self.INFO.id}")
         
-        INPUTS = self.INPUTS
-        PARAMS = self.PARAMS
-        KSAMPLER = self.KSAMPLER
-        OUTPUTS = self.OUTPUTS
+        # INPUTS = self.INPUTS
+        # PARAMS = self.PARAMS
+        # KSAMPLER = self.KSAMPLER
+        # OUTPUTS = self.OUTPUTS
         
         # PARAMS.grid_prompts, OUTPUTS.output_tiles, OUTPUTS.grid_tiles_to_process = self.refine(self.OUTPUTS.image, "Upscaling")
                 
@@ -621,15 +599,12 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
             int(end_time - start_time)
         )
 
+        mc_boaty_pipe = self.set_mc_boaty_pipe()
+
         log("McBoaty (Refiner) is done with its magic", None, None, f"Node {self.INFO.id}")
         
         return (
-            (
-                INPUTS,
-                PARAMS,
-                KSAMPLER,
-                OUTPUTS,
-            ),
+            mc_boaty_pipe,
             (
                 self.OUTPUTS.tiles,
             ),            
@@ -640,12 +615,10 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     @classmethod
     def init(self, **kwargs):
         
-        self.INFO = SimpleNamespace(
-            id = kwargs.get('id', None),
-        )
-        
-        pipe = kwargs.get('pipe', (None,) * len(self.PIPE_ATTRIBUTES))
+        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(self.PIPE_ATTRIBUTES))
         self.set_pipe_values(pipe)
+
+        self.INFO.id = kwargs.get('id', None)        
 
         _tiles_to_process = kwargs.get('tiles_to_process', '')
         self.PARAMS.tiles_to_process = self.set_tiles_to_process(_tiles_to_process)
@@ -662,16 +635,15 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         # self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
         # self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
 
-        self.CONTROLNET = SimpleNamespace(
-            name = kwargs.get('control_net_name', 'None'),
-            path = None,
-            controlnet = None,
-            low_threshold = kwargs.get('low_threshold', None),
-            high_threshold = kwargs.get('high_threshold', None),
-            strength = kwargs.get('strength', None),
-            start_percent = kwargs.get('start_percent', None),
-            end_percent = kwargs.get('end_percent', None),
-        )
+        self.CONTROLNET.name = kwargs.get('control_net_name', 'None')
+        self.CONTROLNET.path = None
+        self.CONTROLNET.controlnet = None
+        self.CONTROLNET.low_threshold = kwargs.get('low_threshold', None)
+        self.CONTROLNET.high_threshold = kwargs.get('high_threshold', None)
+        self.CONTROLNET.strength = kwargs.get('strength', None)
+        self.CONTROLNET.start_percent = kwargs.get('start_percent', None)
+        self.CONTROLNET.end_percent = kwargs.get('end_percent', None)
+
         if self.CONTROLNET.name != "None":
             self.CONTROLNET.path = folder_paths.get_full_path("controlnet", self.CONTROLNET.name)
             self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)
@@ -845,6 +817,8 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
 class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
 
+    NAME = get_name('🐰 McBoaty Tile Prompter - v6')
+
     @classmethod
     def INPUT_TYPES(self):
         return {
@@ -887,27 +861,24 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
         
         log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {self.INFO.id}")
         
+        mc_boaty_pipe = self.set_mc_boaty_pipe()
 
         log("McBoaty (PromptEditor) is done with its magic", None, None, f"Node {self.INFO.id}")
                     
         return (
-            (
-                self.INPUTS,
-                self.PARAMS,
-                self.KSAMPLER,
-                self.OUTPUTS,
-            )
+            mc_boaty_pipe
         )
 
     @classmethod
     def init(self, **kwargs):
-        self.INFO = SimpleNamespace(
-            id = kwargs.get('id', 0),
-        )
+        
+        self.INFO.id = kwargs.get('id', None)
         
         self.output_dir = folder_paths.get_temp_directory()
 
 class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
+
+    NAME = get_name('🐰 McBoaty - v6')
 
     @classmethod
     def INPUT_TYPES(self):
@@ -953,13 +924,10 @@ class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
         
         start_time = time.time()
         
-        self.INFO = SimpleNamespace(
-            id = kwargs.get('id', None),
-        )        
+        self.INFO.id = kwargs.get('id', None)
         
         # Upscaling phase
-        upscaler_result = Mara_McBoaty_Configurator_v6.fn(**kwargs)
-        upscaler_pipe, _, upscaler_info = upscaler_result
+        upscaler_pipe, _, upscaler_info = Mara_McBoaty_Configurator_v6.fn(**kwargs)
 
         # Update kwargs with upscaler results for refiner
         kwargs.update({
