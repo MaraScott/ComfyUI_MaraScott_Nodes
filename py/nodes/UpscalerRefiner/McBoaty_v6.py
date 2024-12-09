@@ -116,6 +116,25 @@ class Mara_Common_v1():
         # Return a sorted list of unique valid values
         return sorted(result)
 
+    @classmethod
+    def override_tiles(self, tiles, new_tiles):
+        
+        for index, tile in enumerate(tiles):
+            if index >= len(new_tiles):
+                continue  # Skip if the index doesn't exist in the `tiles` list
+            
+            override_tile = new_tiles[index]
+
+            # Compare attributes and override only if they differ
+            for attr in vars(override_tile):  # Loop through attributes of the override tile
+                override_value = getattr(override_tile, attr)
+                if hasattr(tile, attr):  # Only override if the attribute exists in the master
+                    tile_value = getattr(tile, attr)
+                    override_value = getattr(override_tile, attr)
+                    if attr != 'tile' and tile_value != override_value:
+                        setattr(tile, attr, override_value)
+        return tiles
+
     
 class Mara_Tiler_v1(Mara_Common_v1):
     
@@ -387,8 +406,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
                 "model": ("MODEL", { "label": "Model" }),
                 "clip": ("CLIP", { "label": "Clip" }),
                 "vae": ("VAE", { "label": "VAE" }),
-                "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True }),
-                "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True }),
+                "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True, "default": "" }),
+                "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": "" }),
                 "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
                 "model_type": (self.MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
@@ -465,14 +484,12 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         
         mc_boaty_pipe = self.set_mc_boaty_pipe()
         
-        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles])
-
         log("McBoaty (Upscaler) is done with its magic", None, None, f"Node {self.INFO.id}")
 
         return (
             mc_boaty_pipe,
             (
-                output_tiles
+                self.KSAMPLER.tiles,
             ),
             output_info
         )
@@ -494,6 +511,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         
         self.PARAMS.tile_prompting_active = kwargs.get('tile_prompting_active', False)
 
+        self.KSAMPLER.positive = kwargs.get('positive', '')
+        self.KSAMPLER.negative = kwargs.get('negative', '')
         self.KSAMPLER.tiled = kwargs.get('vae_encode', None)
         self.KSAMPLER.tile_size_vae = kwargs.get('tile_size_vae', None)
         self.KSAMPLER.model = kwargs.get('model', None)
@@ -641,6 +660,12 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         self.init(**kwargs)
 
         log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {self.INFO.id}")
+
+        tiles = kwargs.get('pipe_prompty', ([],))[0]
+                
+        self.KSAMPLER.tiles = self.override_tiles(self.KSAMPLER.tiles, tiles)
+        
+        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles])
         
         # INPUTS = self.INPUTS
         # PARAMS = self.PARAMS
@@ -889,7 +914,7 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
                 "id":"UNIQUE_ID",
             },
             "required":{
-                "pipe": ("MC_PROMPTY_PIPE", {"label": "McPrompty Pipe" }),
+                "pipe_prompty": ("MC_PROMPTY_PIPE", {"label": "McPrompty Pipe" }),
                 "tiles_to_process": ("STRING", { "label": "Tile to process", "default": ""}),
                 "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True, "default": self.TILE_ATTRIBUTES.positive }),
                 "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": self.TILE_ATTRIBUTES.negative }),
@@ -920,8 +945,8 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
         
         start_time = time.time()
 
-        tiles = kwargs.get('pipe', [])[0]
-        
+        tiles = kwargs.get('pipe_prompty', ([],))[0]
+                
         id = kwargs.get('id', None)
         
         log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {id}")
@@ -935,17 +960,22 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
             'denoise': round(kwargs.get('denoise', tile_attributes.denoise), 2)
         }
         tiles_to_process = self.parse_tiles_to_process(kwargs.get('tiles_to_process', ""), len(tiles))
+        
+        if not tiles_to_process:  # This works for empty lists/arrays
+            tiles_to_process = list(range(1, len(tiles) + 1))
 
         for id in tiles_to_process:
             index = id - 1
             for attr, value in attributes.items():
                 if value != getattr(tile_attributes, attr) and value != getattr(tiles[index], attr) and value != '':
                     setattr(tiles[index], attr, value)
-        
-        log("McBoaty (PromptEditor) is done with its magic", None, None, f"Node {self.INFO.id}")
                     
+        log("McBoaty (PromptEditor) is done with its magic", None, None, f"Node {id}")
+        
         return (
-            tiles
+            (
+                tiles,
+            ),
         )
 
                 
