@@ -348,7 +348,11 @@ class Mara_Untiler_v1(Mara_Common_v1):
                 image_ref = self.INPUTS.image
             self.OUTPUTS.image = nodes.ImageScale().upscale(self.OUTPUTS.image, self.PARAMS.upscale_method, int(image_ref.shape[2] * self.PARAMS.upscale_size), int(image_ref.shape[1] * self.PARAMS.upscale_size), False)[0]
 
-        end_time = time.time()        
+        # log((self.INPUTS.image, self.OUTPUTS.image))
+        # if self.PARAMS.color_match_method != 'none':
+        #     self.OUTPUTS.image = ColorMatch().colormatch(self.INPUTS.image, self.OUTPUTS.image, self.PARAMS.color_match_method)[0]
+
+        end_time = time.time()
         self.INFO.execution_time = int(end_time - start_time)
 
         return (
@@ -462,16 +466,11 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         
         log("McBoaty (Upscaler) is starting to do its magic", None, None, f"Node {self.INFO.id}")
         
-        positive = kwargs.get('positive', '')
-        negative = kwargs.get('negative', '')
-        cfg = kwargs.get('cfg', self.TILE_ATTRIBUTES.cfg)
-        denoise = kwargs.get('denoise', self.TILE_ATTRIBUTES.denoise)
-                
         for tile in self.KSAMPLER.tiles:
-            tile.positive = positive
-            tile.negative = negative
-            tile.cfg = cfg
-            tile.denoise = denoise
+            tile.positive = self.KSAMPLER.positive
+            tile.negative = self.KSAMPLER.negative
+            tile.cfg = self.KSAMPLER.cfg
+            tile.denoise = self.KSAMPLER.denoise
 
         end_time = time.time()
 
@@ -519,12 +518,23 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.KSAMPLER.clip = kwargs.get('clip', None)
         self.KSAMPLER.vae = kwargs.get('vae', None)
         self.KSAMPLER.noise_seed = kwargs.get('seed', None)
-        self.KSAMPLER.sampler_name = None
-        self.KSAMPLER.scheduler = None
         self.KSAMPLER.add_noise = True
-        self.KSAMPLER.sigmas_type = None
-        self.KSAMPLER.model_type = None
-        self.KSAMPLER.steps = None
+
+        self.KSAMPLER.sigmas_type = kwargs.get('sigmas_type', None)
+        self.KSAMPLER.model_type = kwargs.get('model_type', None)
+        self.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type]
+        self.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
+        self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
+        self.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
+        self.KSAMPLER.steps = kwargs.get('steps', None)
+        self.KSAMPLER.positive = kwargs.get('positive', '')
+        self.KSAMPLER.negative = kwargs.get('negative', '')
+        self.KSAMPLER.cfg = kwargs.get('cfg', self.TILE_ATTRIBUTES.cfg)
+        self.KSAMPLER.denoise = kwargs.get('denoise', self.TILE_ATTRIBUTES.denoise)
+        
+        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+        # self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+
         self.KSAMPLER.control_net_name = None
         self.KSAMPLER.control = None
 
@@ -537,7 +547,22 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.OUTPUTS.output_info = ["No info"]
         self.OUTPUTS.grid_tiles_to_process = []
     
+    @classmethod
+    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
+        if sigmas_type == "SDTurboScheduler":
+            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
+            sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
+        elif sigmas_type == "AlignYourStepsScheduler":
+            SigmaScheduler = AlignYourStepsScheduler
+            if model_type == "SD3" or model_type == "FLUX1":
+                model_type = "SDXL"
+            sigmas = SigmaScheduler().get_sigmas(model_type, steps, denoise)[0]
+        else: # BasicScheduler
+            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
+            sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
         
+        return sigmas    
+         
     @classmethod
     def _get_info(self, image_width, image_height, image_divisible_by_8, execution_duration):
         
@@ -662,23 +687,11 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {self.INFO.id}")
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
-                
+        log(self.KSAMPLER.tiles[1].tile)
         self.KSAMPLER.tiles = self.override_tiles(self.KSAMPLER.tiles, tiles)
-        
-        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles])
-        
-        # INPUTS = self.INPUTS
-        # PARAMS = self.PARAMS
-        # KSAMPLER = self.KSAMPLER
-        # OUTPUTS = self.OUTPUTS
-        
-        # PARAMS.grid_prompts, OUTPUTS.output_tiles, OUTPUTS.grid_tiles_to_process = self.refine(self.OUTPUTS.image, "Upscaling")
-                
-        # output_tiles = torch.cat(self.OUTPUTS.grid_images)
-
-        # if self.PARAMS.color_match_method != 'none':
-        #     self.OUTPUTS.image = ColorMatch().colormatch(self.INPUTS.image, self.OUTPUTS.image, self.PARAMS.color_match_method)[0]
-
+        log(self.KSAMPLER.tiles[1].tile)
+        self.KSAMPLER.tiles = self.refine(self.KSAMPLER.tiles, "Upscaling")
+        log(self.KSAMPLER.tiles[1].tile)
         end_time = time.time()
 
         output_info = self._get_info(
@@ -687,16 +700,16 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
         mc_boaty_pipe = self.set_mc_boaty_pipe()
         
-        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles], dim=0)
+        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles])
 
         log("McBoaty (Refiner) is done with its magic", None, None, f"Node {self.INFO.id}")
-        
+        log(self.KSAMPLER.tiles)
         return (
             mc_boaty_pipe,
             (
                 self.KSAMPLER.tiles,
             ),            
-            output_tiles, 
+            output_tiles,
             output_info, 
         )
         
@@ -712,17 +725,6 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         self.PARAMS.tiles_to_process = self.set_tiles_to_process(_tiles_to_process)
         self.PARAMS.color_match_method = kwargs.get('color_match_method', 'none'),
         
-        self.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
-        self.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
-        self.KSAMPLER.sigmas_type = kwargs.get('sigmas_type', None)
-        self.KSAMPLER.model_type = kwargs.get('model_type', None)
-        self.KSAMPLER.steps = kwargs.get('steps', None)
-                
-        # self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
-        # self.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type]
-        # self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
-        # self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
-
         self.CONTROLNET.name = kwargs.get('control_net_name', 'None')
         self.CONTROLNET.path = None
         self.CONTROLNET.controlnet = None
@@ -734,24 +736,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
         if self.CONTROLNET.name != "None":
             self.CONTROLNET.path = folder_paths.get_full_path("controlnet", self.CONTROLNET.name)
-            self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)
-        
-    @classmethod    
-    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
-        if sigmas_type == "SDTurboScheduler":
-            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
-            sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
-        elif sigmas_type == "AlignYourStepsScheduler":
-            SigmaScheduler = AlignYourStepsScheduler
-            if model_type == "SD3" or model_type == "FLUX1":
-                model_type = "SDXL"
-            sigmas = SigmaScheduler().get_sigmas(model_type, steps, denoise)[0]
-        else: # BasicScheduler
-            SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
-            sigmas = SigmaScheduler().get_sigmas(model, scheduler, steps, denoise)[0]
-        
-        return sigmas    
-    
+            self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)   
             
     @classmethod
     def set_tiles_to_process(self, tiles_to_process=''):
@@ -816,43 +801,40 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 """]        
         
     @classmethod
-    def refine(self, image, iteration):
+    def refine(self, tiles, iteration):
         
         grid_latents = []
         grid_latent_outputs = []
-        output_images = []
-        total = len(self.OUTPUTS.grid_images)
+        total = len(tiles)
         
-        for index, upscaled_image_grid in enumerate(self.OUTPUTS.grid_images):
+        for index, tile in enumerate(tiles):
             latent_image = None
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
                 if self.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled {iteration}")
-                    latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
+                    latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, tile.tile, self.KSAMPLER.tile_size_vae)[0]
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding {iteration}")
-                    latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
+                    latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, tile.tile)[0]
             grid_latents.append(latent_image)
         
         for index, latent_image in enumerate(grid_latents):
             latent_output = None
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
 
-                positive = self.KSAMPLER.positive
-                negative = self.KSAMPLER.negative
-
                 sigmas = self.KSAMPLER.sigmas
-                if self.OUTPUTS.grid_denoises[index] != self.KSAMPLER.denoise:
-                    denoise = self.OUTPUTS.grid_denoises[index]
-                    sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.OUTPUTS.grid_denoises[index], self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+                if tiles[index].denoise != self.KSAMPLER.denoise:
+                    denoise = tiles[index].denoise
+                    sigmas = Mara_McBoaty_Configurator_v6._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, tiles[index].denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
                 else:
                     denoise = self.KSAMPLER.denoise
                     
-                log(f"tile {index + 1}/{total} : {denoise} / {self.OUTPUTS.grid_prompts[index]}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding {iteration}")
-                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.OUTPUTS.grid_prompts[index])[0]
+                log(f"tile {index + 1}/{total} : {denoise} / {tiles[index].positive}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding {iteration}")
+                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, tiles[index].positive)[0]
+                negative = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, tiles[index].negative)[0]
                 if self.CONTROLNET.controlnet is not None:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny {iteration}")
-                    canny_image = Canny().detect_edge(self.OUTPUTS.grid_images[index], self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
+                    canny_image = Canny().detect_edge(tiles[index].tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply {iteration}")
                     positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, canny_image, self.CONTROLNET.strength, self.CONTROLNET.start_percent, self.CONTROLNET.end_percent, self.KSAMPLER.vae )
                     
@@ -861,9 +843,9 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                     self.KSAMPLER.model, 
                     self.KSAMPLER.add_noise, 
                     self.KSAMPLER.noise_seed, 
-                    self.KSAMPLER.cfg, 
-                    positive, 
-                    negative, 
+                    tiles[index].cfg, 
+                    positive,
+                    negative,
                     self.KSAMPLER.sampler, 
                     sigmas, 
                     latent_image
@@ -871,7 +853,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
             grid_latent_outputs.append(latent_output)
 
         for index, latent_output in enumerate(grid_latent_outputs):            
-            output = None
+            output = tiles[index].tile
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
                 if self.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecodingTiled {iteration}")
@@ -879,29 +861,9 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding {iteration}")
                     output = (nodes.VAEDecode().decode(self.KSAMPLER.vae, latent_output)[0].unsqueeze(0))[0]            
-            output_images.append(output)
+            tiles[index].tile = output
 
-        if len(self.PARAMS.tiles_to_process) > 0 and len(self.OUTPUTS.grid_tiles_to_process) == 0:
-            log("!!! WARNING !!! you are processing specific tiles without a fully refined image, we suggest to pass through a full refiner first", None, COLORS['YELLOW'], f"Node {self.INFO.id} {iteration}")
-            self.OUTPUTS.grid_tiles_to_process = self.OUTPUTS.grid_images
-
-        if len(self.PARAMS.tiles_to_process) > 0:
-            _grid_tiles_to_process = list(self.OUTPUTS.grid_tiles_to_process)
-            for index, output_image in enumerate(output_images):
-                if output_image is None:
-                    output_images[index] = _grid_tiles_to_process[index]
-                    
-        output_images = tuple(output_images)
-
-        # _tiles_order = tuple(output for _, output, _ in tiles_order)
-        # tiles_order.sort(key=lambda x: x[0])
-        # output_tiles = tuple(output for _, output, _ in tiles_order)
-        # output_tiles = torch.cat(output_tiles)
-        output_tiles = output
-        # output_prompts = tuple(prompt for _, _, prompt in tiles_order)
-        output_prompts = tuple("")
-
-        return output_prompts, output_tiles
+        return tiles
 
 class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
 
