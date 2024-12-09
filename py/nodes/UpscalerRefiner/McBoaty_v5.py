@@ -636,27 +636,50 @@ class McBoaty_Refiner_v5():
 
         if len(self.PARAMS.tiles_to_process) > 0:
             _grid_tiles_to_process = list(self.OUTPUTS.grid_tiles_to_process)
+            log(f"Processing selected tiles with color matching method: {self.PARAMS.color_match_method}", None, None, f"Node {self.INFO.id}")
             for index, output_image in enumerate(output_images):
                 if output_image is None:
                     output_images[index] = _grid_tiles_to_process[index]
-                    
+                # Only apply color matching to processed tiles, using their original versions from grid_tiles_to_process
+                if self.PARAMS.color_match_method != 'none' and output_image is not None and index in self.PARAMS.tiles_to_process:
+                    log(f"tile {index + 1}/{total} - Applying color matching", None, None, f"Node {self.INFO.id} - Color Matching {iteration}")
+                    try:
+                        # Use the original (unrefined) tile from grid_tiles_to_process for color matching
+                        original_tile = _grid_tiles_to_process[index]
+                        output_images[index] = ColorMatch().colormatch(
+                            original_tile,
+                            output_image,
+                            self.PARAMS.color_match_method
+                        )[0]
+                        log(f"tile {index + 1}/{total} - Color matching completed", None, None, f"Node {self.INFO.id} - Color Matching {iteration}")
+                    except Exception as e:
+                        log(f"tile {index + 1}/{total} - Color matching failed: {str(e)}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
+        
         output_images = tuple(output_images)
 
         feather_mask = self.PARAMS.feather_mask
         output_image, tiles_order = MS_Image().rebuild_image_from_parts(iteration, output_images, image, self.PARAMS.grid_specs, feather_mask, self.PARAMS.upscale_model.scale, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.OUTPUTS.grid_prompts)
-
-        if self.PARAMS.color_match_method != 'none':
+        
+        if self.PARAMS.color_match_method != 'none' and len(self.PARAMS.tiles_to_process) == 0:
+            log(f"Applying global color matching with method: {self.PARAMS.color_match_method}", None, None, f"Node {self.INFO.id} - Color Matching {iteration}")
             output_image = ColorMatch().colormatch(image, output_image, self.PARAMS.color_match_method)[0]
-
+            log(f"Global color matching completed", None, None, f"Node {self.INFO.id} - Color Matching {iteration}")
+      
         if not self.PARAMS.upscale_size_type:
-            output_image = nodes.ImageScale().upscale(output_image, self.PARAMS.upscale_method, int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), False)[0]
-
+            output_image = nodes.ImageScale().upscale(
+                output_image, 
+                self.PARAMS.upscale_method, 
+                int(self.OUTPUTS.image.shape[2] * self.PARAMS.upscale_size), 
+                int(self.OUTPUTS.image.shape[1] * self.PARAMS.upscale_size), 
+                False
+            )[0]
+      
         _tiles_order = tuple(output for _, output, _ in tiles_order)
         tiles_order.sort(key=lambda x: x[0])
         output_tiles = tuple(output for _, output, _ in tiles_order)
         output_tiles = torch.cat(output_tiles)
         output_prompts = tuple(prompt for _, _, prompt in tiles_order)
-
+      
         return output_prompts, output_image, output_tiles, _tiles_order
 
 class McBoaty_TilePrompter_v5():
