@@ -10,6 +10,7 @@
 import os
 import sys
 import time
+import copy
 import glob
 import torch
 import math
@@ -42,6 +43,8 @@ from ...utils.log import log, get_log, COLORS
 class Mara_Common_v1():
 
     NAME = get_name('🐰 McBoaty Set - v6')
+    
+    MAX_TILES = 16384
 
     PIPE_ATTRIBUTES = (
         'INPUTS', 
@@ -52,6 +55,13 @@ class Mara_Common_v1():
         'CONTROLNET',
         'KSAMPLER', 
         'LLM', 
+    )
+    
+    TILE_ATTRIBUTES = SimpleNamespace(
+        positive = '',
+        negative = '',
+        cfg = 2.5,
+        denoise = 0.27,
     )
     
     def __init__(self):
@@ -68,6 +78,44 @@ class Mara_Common_v1():
     @classmethod
     def set_mc_boaty_pipe(self):
         return tuple(getattr(self, attr, None) for attr in self.PIPE_ATTRIBUTES)
+    
+    @classmethod
+    def parse_tiles_to_process(self, tiles_to_process = "", MAX_TILES = 16384):
+        result = set()  # Initialize an empty set for results
+        
+        if not tiles_to_process or tiles_to_process.strip() == '':
+            return []  # Handle empty or invalid input immediately
+
+        try:
+            # Split by comma to handle numbers and ranges
+            parts = tiles_to_process.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:  # Handle ranges
+                    try:
+                        range_parts = part.split('-')
+                        if len(range_parts) != 2:
+                            continue  # Skip invalid ranges
+                        start, end = map(int, range_parts)
+                        if start > end:
+                            start, end = end, start  # Swap if range is reversed
+                        result.update(num for num in range(start, end + 1) if 1 <= num <= MAX_TILES)
+                    except ValueError:
+                        continue  # Skip invalid ranges
+                else:  # Handle single numbers
+                    try:
+                        num = int(part)
+                        if 1 <= num <= MAX_TILES:  # Ignore out-of-range numbers
+                            result.add(num)
+                    except ValueError:
+                        continue  # Skip invalid numbers
+
+        except Exception:
+            pass  # Ignore unexpected errors but allow processing to continue
+
+        # Return a sorted list of unique valid values
+        return sorted(result)
+
     
 class Mara_Tiler_v1(Mara_Common_v1):
     
@@ -126,16 +174,26 @@ class Mara_Tiler_v1(Mara_Common_v1):
         self.INFO.image_height = self.OUTPUTS.upscaled_image.shape[2]
 
         self.OUTPUTS.tiles, self.PARAMS.grid_specs = self.get_tiles(image=self.OUTPUTS.upscaled_image)
-        self.OUTPUTS.tiles = torch.cat(self.OUTPUTS.tiles)
+        
+        tiles = []
+        for index, tile in enumerate(self.OUTPUTS.tiles):
+            _tile = copy.deepcopy(self.TILE_ATTRIBUTES)
+            _tile.id = index + 1
+            _tile.tile = tile
+            tiles.append(_tile)
+            
+        self.KSAMPLER.tiles = tiles
 
         end_time = time.time()        
         self.INFO.execution_time = int(end_time - start_time)
         
         mc_boaty_pipe = self.set_mc_boaty_pipe()
         
+        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles], dim=0)
+        
         return (
             mc_boaty_pipe,
-            self.OUTPUTS.tiles,
+            output_tiles,
         )
 
     @classmethod
@@ -171,8 +229,8 @@ class Mara_Tiler_v1(Mara_Common_v1):
         cols_qty = math.ceil(cols_qty_float)
 
         tiles_qty = rows_qty * cols_qty        
-        if tiles_qty > 16384 :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 16384 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - {self.NAME}")
+        if tiles_qty > self.MAX_TILES :
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {self.MAX_TILES} ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - {self.NAME}")
             raise ValueError(msg)
 
         self.PARAMS.rows_qty = rows_qty
@@ -337,8 +395,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
                 "seed": ("INT", { "label": "Seed", "default": 42, "min": 0, "max": 0xffffffffffffffff}),
-                "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
-                "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "cfg": ("FLOAT", { "label": "CFG", "default": self.TILE_ATTRIBUTES.cfg, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
+                "denoise": ("FLOAT", { "label": "Denoise", "default": self.TILE_ATTRIBUTES.denoise, "min": 0.0, "max": 1.0, "step": 0.01}),
 
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 256, "max": 4096, "step": 64}),
@@ -384,13 +442,18 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.init(**kwargs)
         
         log("McBoaty (Upscaler) is starting to do its magic", None, None, f"Node {self.INFO.id}")
+        
+        positive = kwargs.get('positive', '')
+        negative = kwargs.get('negative', '')
+        cfg = kwargs.get('cfg', self.TILE_ATTRIBUTES.cfg)
+        denoise = kwargs.get('denoise', self.TILE_ATTRIBUTES.denoise)
                 
-        # self.PARAMS.grid_specs, self.OUTPUTS.grid_images, self.OUTPUTS.grid_prompts = self.upscale(self.INPUTS.tiles, "Upscaling")
+        for tile in self.KSAMPLER.tiles:
+            tile.positive = positive
+            tile.negative = negative
+            tile.cfg = cfg
+            tile.denoise = denoise
 
-        # self.OUTPUTS.tiles = torch.cat(self.OUTPUTS.grid_images)
-        
-        # self.OUTPUTS.tiles = self.INPUTS.tiles
-        
         end_time = time.time()
 
         output_info = self._get_info(
@@ -401,13 +464,15 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         )
         
         mc_boaty_pipe = self.set_mc_boaty_pipe()
+        
+        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles])
 
         log("McBoaty (Upscaler) is done with its magic", None, None, f"Node {self.INFO.id}")
 
         return (
             mc_boaty_pipe,
             (
-                self.OUTPUTS.tiles
+                output_tiles
             ),
             output_info
         )
@@ -437,14 +502,10 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.KSAMPLER.noise_seed = kwargs.get('seed', None)
         self.KSAMPLER.sampler_name = None
         self.KSAMPLER.scheduler = None
-        self.KSAMPLER.positive = kwargs.get('positive', None)
-        self.KSAMPLER.negative = kwargs.get('negative', None)
         self.KSAMPLER.add_noise = True
         self.KSAMPLER.sigmas_type = None
         self.KSAMPLER.model_type = None
         self.KSAMPLER.steps = None
-        self.KSAMPLER.cfg = kwargs.get('cfg', None)
-        self.KSAMPLER.denoise = kwargs.get('denoise', None)
         self.KSAMPLER.control_net_name = None
         self.KSAMPLER.control = None
 
@@ -489,8 +550,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         cols_qty = math.ceil(cols_qty_float)
 
         tiles_qty = rows_qty * cols_qty        
-        if tiles_qty > 16384 :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than 16384 ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - Mara_McBoaty_Configurator_v6")
+        if tiles_qty > self.MAX_TILES :
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {self.MAX_TILES} ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - Mara_McBoaty_Configurator_v6")
             raise ValueError(msg)
 
         upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
@@ -600,15 +661,17 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         )
 
         mc_boaty_pipe = self.set_mc_boaty_pipe()
+        
+        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles], dim=0)
 
         log("McBoaty (Refiner) is done with its magic", None, None, f"Node {self.INFO.id}")
         
         return (
             mc_boaty_pipe,
             (
-                self.OUTPUTS.tiles,
+                self.KSAMPLER.tiles,
             ),            
-            self.OUTPUTS.tiles, 
+            output_tiles, 
             output_info, 
         )
         
@@ -669,9 +732,9 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     def set_tiles_to_process(self, tiles_to_process=''):
 
         max_tiles = len(self.OUTPUTS.grid_tiles_to_process)
-        max = max_tiles if max_tiles > 0 else 16384
+        max = max_tiles if max_tiles > 0 else self.MAX_TILES
         
-        def is_valid_index(index, max = 16384):
+        def is_valid_index(index, max = self.MAX_TILES):
             return 1 <= index <= max
         def to_computer_index(human_index):
             return human_index - 1
@@ -827,11 +890,11 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
             },
             "required":{
                 "pipe": ("MC_PROMPTY_PIPE", {"label": "McPrompty Pipe" }),
-                "tiles_to_process": ("STRING", { "label": "Tile to process", "default": ''}),
-                "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True }),
-                "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True }),
-                "cfg": ("FLOAT", { "label": "CFG", "default": 2.5, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
-                "denoise": ("FLOAT", { "label": "Denoise", "default": 0.27, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "tiles_to_process": ("STRING", { "label": "Tile to process", "default": ""}),
+                "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True, "default": self.TILE_ATTRIBUTES.positive }),
+                "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": self.TILE_ATTRIBUTES.negative }),
+                "cfg": ("FLOAT", { "label": "CFG", "default": self.TILE_ATTRIBUTES.cfg, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
+                "denoise": ("FLOAT", { "label": "Denoise", "default": self.TILE_ATTRIBUTES.denoise, "min": 0.0, "max": 1.0, "step": 0.01}),
             },
         }
 
@@ -854,28 +917,38 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
 
     @classmethod    
     def fn(self, **kwargs):
-                        
-        input_tiles = kwargs.get('pipe', (None, None))
-
-        self.init(**kwargs)
         
-        log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {self.INFO.id}")
-        
-        mc_boaty_pipe = self.set_mc_boaty_pipe()
+        start_time = time.time()
 
+        tiles = kwargs.get('pipe', [])[0]
+        
+        id = kwargs.get('id', None)
+        
+        log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {id}")
+        
+        tile_attributes = copy.deepcopy(self.TILE_ATTRIBUTES)
+
+        attributes = {
+            'positive': kwargs.get('positive', tile_attributes.positive),
+            'negative': kwargs.get('negative', tile_attributes.negative),
+            'cfg': round(kwargs.get('cfg', tile_attributes.cfg), 2),
+            'denoise': round(kwargs.get('denoise', tile_attributes.denoise), 2)
+        }
+        tiles_to_process = self.parse_tiles_to_process(kwargs.get('tiles_to_process', ""), len(tiles))
+
+        for id in tiles_to_process:
+            index = id - 1
+            for attr, value in attributes.items():
+                if value != getattr(tile_attributes, attr) and value != getattr(tiles[index], attr) and value != '':
+                    setattr(tiles[index], attr, value)
+        
         log("McBoaty (PromptEditor) is done with its magic", None, None, f"Node {self.INFO.id}")
                     
         return (
-            mc_boaty_pipe
+            tiles
         )
 
-    @classmethod
-    def init(self, **kwargs):
-        
-        self.INFO.id = kwargs.get('id', None)
-        
-        self.output_dir = folder_paths.get_temp_directory()
-
+                
 class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
 
     NAME = get_name('🐰 McBoaty - v6')
@@ -891,30 +964,18 @@ class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
         combined_inputs['optional'] = {**upscaler_inputs.get('optional', {}), **refiner_inputs.get('optional', {})}
         combined_inputs['hidden'] = {"id":"UNIQUE_ID",}
         
-        combined_inputs['required'].pop('pipe', None)
-        combined_inputs['optional'].pop('pipe_prompty', None)
-        
+        combined_inputs['optional'].pop('pipe_prompty', None)        
         combined_inputs['required'].pop('tiles_to_process', None)
         
         return combined_inputs
 
-    RETURN_TYPES = (
-        "MC_BOATY_PIPE",
-        "MC_PROMPTY_PIPE",
-        "IMAGE",
-        "STRING"
-    )
+    RETURN_TYPES = Mara_McBoaty_Refiner_v6.RETURN_TYPES
     
-    RETURN_NAMES = (
-        "McBoaty Pipe",
-        "McPrompty Pipe",
-        "tiles",
-        "info"
-    )
+    RETURN_NAMES = Mara_McBoaty_Refiner_v6.RETURN_NAMES
     
     OUTPUT_IS_LIST = (False,) * len(RETURN_TYPES)
     
-    OUTPUT_NODE = True
+    OUTPUT_NODE = Mara_McBoaty_Refiner_v6.OUTPUT_NODE
     CATEGORY = get_category('Upscaling/v6')
     DESCRIPTION = "An \"UPSCALER REFINER\" Node"
     FUNCTION = "fn"
@@ -935,7 +996,7 @@ class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
         })
 
         # Refining phase
-        refiner_pipe, refiner_prompty_pipe, output_image, original_resized, output_tiles, grid_prompts, refiner_info = Mara_McBoaty_Refiner_v6.fn(**kwargs)
+        mc_boaty_pipe, mc_boaty_pipe_prompty, tiles, refiner_info = Mara_McBoaty_Refiner_v6.fn(**kwargs)
 
         end_time = time.time()
         total_time = int(end_time - start_time)
@@ -944,13 +1005,10 @@ class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
         combined_info = self._combine_info(upscaler_info, refiner_info, total_time)
 
         return (
-            refiner_pipe,
-            refiner_prompty_pipe,
-            output_image,
-            original_resized,
-            output_tiles,
-            grid_prompts,
-            combined_info
+            mc_boaty_pipe,
+            mc_boaty_pipe_prompty,            
+            tiles, 
+            combined_info,
         )
 
     @staticmethod

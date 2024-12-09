@@ -196,8 +196,8 @@ class MS_Image_v2(MS_Image):
         width_feather_seam = feather_mask
         height_feather_seam = feather_mask
         
-        tile_width = output_images[0].shape[1]
-        tile_height = output_images[0].shape[0]
+        tile_width = output_images[0].shape[2]
+        tile_height = output_images[0].shape[1]
             
         grid_mask = comfy_extras.nodes_mask.SolidMask().solid(1, tile_width, tile_height)[0]
         grid_feathermask_vertical = comfy_extras.nodes_mask.FeatherMask().feather( 
@@ -244,7 +244,7 @@ class MS_Image_v2(MS_Image):
             row, col, order, x_start, y_start, width_inc, height_inc = grid_spec
             prompt = grid_prompts[index] if 0 <= index < len(grid_prompts) else ""
             tiles_order.append((order, output_images[index], prompt))
-            _image = output_images[index].unsqueeze(0)
+            _image = output_images[index]
             if col == 0:
                 outputRow = nodes.ImagePadForOutpaint().expand_image(_image, 0, 0, image_width, 0, 0)[0]
             elif col == last_tile_col_index:
