@@ -123,16 +123,21 @@ class Mara_Common_v1():
             if index >= len(new_tiles):
                 continue  # Skip if the index doesn't exist in the `tiles` list
             
-            override_tile = new_tiles[index]
+            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
+                override_tile = new_tiles[index]
 
-            # Compare attributes and override only if they differ
-            for attr in vars(override_tile):  # Loop through attributes of the override tile
-                override_value = getattr(override_tile, attr)
-                if hasattr(tile, attr):  # Only override if the attribute exists in the master
-                    tile_value = getattr(tile, attr)
+                # Compare attributes and override only if they differ
+                for attr in vars(override_tile):  # Loop through attributes of the override tile
                     override_value = getattr(override_tile, attr)
-                    if attr != 'tile' and tile_value != override_value:
-                        setattr(tile, attr, override_value)
+                    if hasattr(tile, attr):  # Only override if the attribute exists in the master
+                        tile_value = getattr(tile, attr)
+                        override_value = getattr(override_tile, attr)
+                        if isinstance(tile_value, torch.Tensor) and isinstance(override_value, torch.Tensor):
+                            if not torch.equal(tile_value, override_value):
+                                setattr(tiles[index], attr, override_value)                
+                        else:
+                            if tile_value != override_value:
+                                setattr(tiles[index], attr, override_value)                
         return tiles
 
     
@@ -208,11 +213,11 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
         mc_boaty_pipe = self.set_mc_boaty_pipe()
         
-        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles], dim=0)
+        self.OUTPUTS.tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles], dim=0)
         
         return (
             mc_boaty_pipe,
-            output_tiles,
+            self.OUTPUTS.tiles,
         )
 
     @classmethod
@@ -293,13 +298,13 @@ class Mara_Untiler_v1(Mara_Common_v1):
             },
             "required":{
                 "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
-                "tiles": ("IMAGE", {"label": "Image" }),
                 "output_upscale_method": (self.UPSCALE_METHODS, { "label": "Custom Output Upscale Method", "default": "bicubic"}),
                 "output_size_ref": (self.UPSCALE_SIZE_REF, { "label": "Output Size Ref", "default": "Output Image"}),
                 "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 0.10, "max": 16.00, "step":0.01, "round": 0.01}),
                 
             },
             "optional": {
+                "tiles": ("IMAGE", {"label": "Image" }),
             }
         }
 
@@ -372,11 +377,6 @@ class Mara_Untiler_v1(Mara_Common_v1):
         self.PARAMS.upscale_size_ref = kwargs.get('output_size_ref', False)
         self.PARAMS.upscale_size = kwargs.get('output_size', 1.00)
         self.PARAMS.upscale_method = kwargs.get('output_upscale_method', "lanczos")
-
-        if self.INPUTS.tiles is None:
-            raise ValueError(f"{self.NAME} id {self.INFO.id}: No image provided")
-        if not isinstance(self.INPUTS.tiles, torch.Tensor):
-            raise ValueError(f"{self.NAME} id {self.INFO.id}: Image provided is not a Tensor")
         
 class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
@@ -687,12 +687,10 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {self.INFO.id}")
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
-        log(self.KSAMPLER.tiles[1].tile)
+        tiles = self.refine(tiles, "Upscaling")
         self.KSAMPLER.tiles = self.override_tiles(self.KSAMPLER.tiles, tiles)
-        log(self.KSAMPLER.tiles[1].tile)
-        self.KSAMPLER.tiles = self.refine(self.KSAMPLER.tiles, "Upscaling")
-        log(self.KSAMPLER.tiles[1].tile)
         end_time = time.time()
+        
 
         output_info = self._get_info(
             int(end_time - start_time)
@@ -700,16 +698,16 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
         mc_boaty_pipe = self.set_mc_boaty_pipe()
         
-        output_tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles])
+        self.OUTPUTS.tiles = torch.cat([t.tile for t in self.KSAMPLER.tiles], dim=0)
 
         log("McBoaty (Refiner) is done with its magic", None, None, f"Node {self.INFO.id}")
-        log(self.KSAMPLER.tiles)
+
         return (
             mc_boaty_pipe,
             (
                 self.KSAMPLER.tiles,
             ),            
-            output_tiles,
+            self.OUTPUTS.tiles,
             output_info, 
         )
         
