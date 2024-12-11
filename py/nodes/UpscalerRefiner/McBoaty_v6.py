@@ -62,6 +62,9 @@ class Mara_Common_v1():
         negative = '',
         cfg = 2.5,
         denoise = 0.27,
+        strength = 0.76,
+        start_percent = 0.000,
+        end_percent = 1.000,
     )
     
     def __init__(self):
@@ -144,6 +147,9 @@ class Mara_Common_v1():
 class Mara_Tiler_v1(Mara_Common_v1):
     
     NAME = get_name('🐰 Image to tiles - v1')
+    
+    CONTROLNETS = folder_paths.get_filename_list("controlnet")
+    CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
 
     @classmethod
     def INPUT_TYPES(self):
@@ -155,6 +161,14 @@ class Mara_Tiler_v1(Mara_Common_v1):
                 "image": ("IMAGE", {"label": "Image" }),
                 "upscale_model": (["None"]+folder_paths.get_filename_list("upscale_models"), { "label": "Upscale Model" }),
                 "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
+
+                "control_net_name": (self.CONTROLNET_CANNY_ONLY , { "label": "ControlNet (Canny only)", "default": "None" }),
+                "low_threshold": ("FLOAT", {"label": "Low Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
+                "high_threshold": ("FLOAT", {"label": "High Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
+                "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.76, "min": 0.0, "max": 10.0, "step": 0.01}),
+                "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 0.76, "min": 0.0, "max": 1.0, "step": 0.001}),
+
             },
             "optional": {
             }
@@ -163,18 +177,20 @@ class Mara_Tiler_v1(Mara_Common_v1):
     RETURN_TYPES = (
         "MC_BOATY_PIPE",
         "IMAGE",
+        "IMAGE",
     )
     
     RETURN_NAMES = (
         "McBoayty Pipe",
         "tiles",
+        "tiles - canny",
     )
     
     OUTPUT_IS_LIST = (
         False,
         False,
+        False,
     )
-    
     
     OUTPUT_NODE = True
     DESCRIPTION = "An \"Tiler\" Node"
@@ -200,10 +216,20 @@ class Mara_Tiler_v1(Mara_Common_v1):
         self.OUTPUTS.tiles, self.PARAMS.grid_specs = self.get_tiles(image=self.OUTPUTS.upscaled_image)
         
         tiles = []
+        total = len(self.OUTPUTS.tiles)
         for index, tile in enumerate(self.OUTPUTS.tiles):
             _tile = copy.deepcopy(self.TILE_ATTRIBUTES)
             _tile.id = index + 1
             _tile.tile = tile
+            _tile.canny = torch.zeros((3, _tile.tile.shape[1], _tile.tile.shape[2]), dtype=torch.float16)
+            _tile.strength = self.CONTROLNET.strength
+            _tile.start_percent = self.CONTROLNET.start_percent
+            _tile.end_percent = self.CONTROLNET.end_percent
+            if self.CONTROLNET.controlnet is not None:
+                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny")
+                _tile.canny = Canny().detect_edge(_tile.tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
+
+            
             tiles.append(_tile)
             
         self.KSAMPLER.tiles = tiles
@@ -214,10 +240,12 @@ class Mara_Tiler_v1(Mara_Common_v1):
         mc_boaty_pipe = self.set_mc_boaty_pipe()
         
         self.OUTPUTS.tiles = [t.tile for t in self.KSAMPLER.tiles]
+        self.OUTPUTS.cannies = [t.canny for t in self.KSAMPLER.tiles]
         
         return (
             mc_boaty_pipe,
             torch.cat(self.OUTPUTS.tiles),
+            torch.cat(self.OUTPUTS.cannies),
         )
 
     @classmethod
@@ -243,6 +271,19 @@ class Mara_Tiler_v1(Mara_Common_v1):
         if self.PARAMS.upscale_model_name != 'None':
             self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
             self.PARAMS.upscale_model_scale = self.PARAMS.upscale_model.scale
+
+        self.CONTROLNET.name = kwargs.get('control_net_name', 'None')
+        self.CONTROLNET.low_threshold = kwargs.get('low_threshold', None)
+        self.CONTROLNET.high_threshold = kwargs.get('high_threshold', None)
+        self.CONTROLNET.strength = kwargs.get('strength', None)
+        self.CONTROLNET.start_percent = kwargs.get('start_percent', None)
+        self.CONTROLNET.end_percent = kwargs.get('end_percent', None)
+
+        self.CONTROLNET.path = None
+        self.CONTROLNET.controlnet = None
+        if self.CONTROLNET.name != "None":
+            self.CONTROLNET.path = folder_paths.get_full_path("controlnet", self.CONTROLNET.name)
+            self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)   
     
     @classmethod
     def get_tiles(self, image):
@@ -354,16 +395,16 @@ class Mara_Untiler_v1(Mara_Common_v1):
             self.OUTPUTS.image = nodes.ImageScale().upscale(self.OUTPUTS.image, self.PARAMS.upscale_method, int(image_ref.shape[2] * self.PARAMS.upscale_size), int(image_ref.shape[1] * self.PARAMS.upscale_size), False)[0]
 
         output_latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
-                    self.KSAMPLER.model, 
-                    self.KSAMPLER.add_noise, 
-                    self.KSAMPLER.noise_seed, 
-                    self.KSAMPLER.cfg, 
-                    nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.KSAMPLER.positive)[0],
-                    nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.KSAMPLER.negative)[0],
-                    self.KSAMPLER.sampler, 
-                    Mara_McBoaty_Configurator_v6._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 0.35, self.KSAMPLER.scheduler, self.KSAMPLER.model_type), 
-                    nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, self.OUTPUTS.image, self.KSAMPLER.tile_size_vae)[0]
-                )[0]
+            self.KSAMPLER.model, 
+            self.KSAMPLER.add_noise, 
+            self.KSAMPLER.noise_seed, 
+            self.KSAMPLER.cfg, 
+            nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.KSAMPLER.positive)[0],
+            nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.KSAMPLER.negative)[0],
+            self.KSAMPLER.sampler, 
+            Mara_McBoaty_Configurator_v6._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 0.35, self.KSAMPLER.scheduler, self.KSAMPLER.model_type), 
+            nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, self.OUTPUTS.image, self.KSAMPLER.tile_size_vae)[0]
+        )[0]
         self.OUTPUTS.image = nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, output_latent, self.KSAMPLER.tile_size_vae, 64)[0]
 
         if self.PARAMS.color_match_method != 'none':
@@ -409,7 +450,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
     }
     
     MODEL_TYPES = list(MODEL_TYPE_SIZES.keys())
-        
+    
     @classmethod
     def INPUT_TYPES(self):
         return {
@@ -435,7 +476,6 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 256, "max": 4096, "step": 64}),
-
 
             },
             "optional": {
@@ -520,7 +560,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.LLM.vision_model = kwargs.get('FL2MODEL', None)
         self.LLM.model = kwargs.get('llm_model', None)
         
-        self.PARAMS.tile_prompting_active = kwargs.get('tile_prompting_active', False)
+        self.PARAMS.tile_prompting_active = kwargs.get('tile_prompting_active', False)        
 
         self.KSAMPLER.positive = kwargs.get('positive', '')
         self.KSAMPLER.negative = kwargs.get('negative', '')
@@ -546,9 +586,6 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         
         self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
         # self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
-
-        self.KSAMPLER.control_net_name = None
-        self.KSAMPLER.control = None
 
         # TODO : make the feather_mask proportional to tile size ?
         # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
@@ -598,7 +635,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 """]        
     
     @classmethod
-    def upscale(self, image, iteration):
+    def upscale(self, image):
         
         rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model_scale) / self.KSAMPLER.tile_size
         cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model_scale) / self.KSAMPLER.tile_size
@@ -615,7 +652,6 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.PARAMS.rows_qty = rows_qty
         self.PARAMS.cols_qty = cols_qty
         
-        
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, self.PARAMS.feather_mask)[0]
         grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.PARAMS.feather_mask)[0]
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
@@ -627,9 +663,9 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         for index, grid_image in enumerate(grid_images):
             prompt_tile = prompt_context
             if self.PARAMS.tile_prompting_active:
-                log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Node {self.INFO.id} - Prompting {iteration}")
+                log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Node {self.INFO.id} - Prompting")
                 prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
-            log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Node {self.INFO.id} - Prompting {iteration}")
+            log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Node {self.INFO.id} - Prompting")
             grid_prompts.append(prompt_tile)
                             
         return grid_specs, grid_images, grid_prompts
@@ -705,7 +741,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
         self.KSAMPLER.tiles = self.override_tiles(self.KSAMPLER.tiles, tiles)
-        self.KSAMPLER.tiles = self.refine(self.KSAMPLER.tiles, "Upscaling")
+        self.KSAMPLER.tiles = self.refine(self.KSAMPLER.tiles)
         end_time = time.time()
 
         output_info = self._get_info(
@@ -737,21 +773,8 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
         _tiles_to_process = kwargs.get('tiles_to_process', '')
         self.PARAMS.tiles_to_process = self.set_tiles_to_process(_tiles_to_process)
-        self.PARAMS.color_match_method = kwargs.get('color_match_method', 'none'),
-        
-        self.CONTROLNET.name = kwargs.get('control_net_name', 'None')
-        self.CONTROLNET.path = None
-        self.CONTROLNET.controlnet = None
-        self.CONTROLNET.low_threshold = kwargs.get('low_threshold', None)
-        self.CONTROLNET.high_threshold = kwargs.get('high_threshold', None)
-        self.CONTROLNET.strength = kwargs.get('strength', None)
-        self.CONTROLNET.start_percent = kwargs.get('start_percent', None)
-        self.CONTROLNET.end_percent = kwargs.get('end_percent', None)
-
-        if self.CONTROLNET.name != "None":
-            self.CONTROLNET.path = folder_paths.get_full_path("controlnet", self.CONTROLNET.name)
-            self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)   
-            
+        self.PARAMS.color_match_method = kwargs.get('color_match_method', 'none')
+                    
     @classmethod
     def set_tiles_to_process(self, tiles_to_process=''):
 
@@ -815,7 +838,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 """]        
         
     @classmethod
-    def refine(self, tiles, iteration):
+    def refine(self, tiles):
         
         total = len(tiles)
         
@@ -823,10 +846,10 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
             tile.new_tile = tile.tile
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
                 if self.KSAMPLER.tiled:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled")
                     tile.latent = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, tile.tile, self.KSAMPLER.tile_size_vae)[0]
                 else:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding")
                     tile.latent = nodes.VAEEncode().encode(self.KSAMPLER.vae, tile.tile)[0]
         
                 sigmas = self.KSAMPLER.sigmas
@@ -836,16 +859,14 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                 else:
                     denoise = self.KSAMPLER.denoise
                     
-                log(f"tile {index + 1}/{total} : {denoise} / {tile.positive}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding {iteration}")
+                log(f"tile {index + 1}/{total} : {denoise} / {tile.positive}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding")
                 positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, tile.positive)[0]
                 negative = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, tile.negative)[0]
                 if self.CONTROLNET.controlnet is not None:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny {iteration}")
-                    canny_image = Canny().detect_edge(tile.tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply {iteration}")
-                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, canny_image, self.CONTROLNET.strength, self.CONTROLNET.start_percent, self.CONTROLNET.end_percent, self.KSAMPLER.vae )
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply")
+                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, tile.canny, tile.strength, tile.start_percent, tile.end_percent, self.KSAMPLER.vae )
                     
-                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining {iteration}")
+                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining")
                 _latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                     self.KSAMPLER.model, 
                     self.KSAMPLER.add_noise, 
@@ -859,10 +880,10 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                 )[0]
 
                 if self.KSAMPLER.tiled:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecodingTiled {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecodingTiled")
                     tile.new_tile = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, _latent, self.KSAMPLER.tile_size_vae, 0)[0].unsqueeze(0))[0]
                 else:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding {iteration}")
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding")
                     tile.new_tile = (nodes.VAEDecode().decode(self.KSAMPLER.vae, _latent)[0].unsqueeze(0))[0]            
 
         return tiles
@@ -884,6 +905,9 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
                 "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": self.TILE_ATTRIBUTES.negative }),
                 "cfg": ("FLOAT", { "label": "CFG", "default": self.TILE_ATTRIBUTES.cfg, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": self.TILE_ATTRIBUTES.denoise, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.76, "min": 0.0, "max": 10.0, "step": 0.01}),
+                "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 0.76, "min": 0.0, "max": 1.0, "step": 0.001}),
             },
         }
 
@@ -910,7 +934,7 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
         start_time = time.time()
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
-                
+        
         id = kwargs.get('id', None)
         
         log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {id}")
@@ -921,7 +945,10 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
             'positive': kwargs.get('positive', tile_attributes.positive),
             'negative': kwargs.get('negative', tile_attributes.negative),
             'cfg': round(kwargs.get('cfg', tile_attributes.cfg), 2),
-            'denoise': round(kwargs.get('denoise', tile_attributes.denoise), 2)
+            'denoise': round(kwargs.get('denoise', tile_attributes.denoise), 2),
+            'strength': round(kwargs.get('strength', tile_attributes.strength), 2),
+            'start_percent': round(kwargs.get('start_percent', tile_attributes.start_percent), 3),
+            'end_percent': round(kwargs.get('end_percent', tile_attributes.end_percent), 3)
         }
         tiles_to_process = self.parse_tiles_to_process(kwargs.get('tiles_to_process', ""), len(tiles))
         
