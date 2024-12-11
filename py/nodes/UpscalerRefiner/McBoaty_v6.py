@@ -588,8 +588,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         # self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
 
         # TODO : make the feather_mask proportional to tile size ?
-        self.PARAMS.feather_mask = self.PARAMS.tile_size // 16
-        # self.PARAMS.feather_mask = 0
+        # self.PARAMS.feather_mask = self.PARAMS.tile_size // 16
+        self.PARAMS.feather_mask = 0
 
         self.OUTPUTS.grid_images = []
         self.OUTPUTS.grid_prompts = [self.KSAMPLER.positive for _ in self.PARAMS.grid_specs]
