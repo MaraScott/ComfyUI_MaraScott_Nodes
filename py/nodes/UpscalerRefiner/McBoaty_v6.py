@@ -588,8 +588,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         # self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
 
         # TODO : make the feather_mask proportional to tile size ?
-        # self.PARAMS.feather_mask = self.KSAMPLER.tile_size // 16
-        self.PARAMS.feather_mask = 0
+        self.PARAMS.feather_mask = self.PARAMS.tile_size // 16
+        # self.PARAMS.feather_mask = 0
 
         self.OUTPUTS.grid_images = []
         self.OUTPUTS.grid_prompts = [self.KSAMPLER.positive for _ in self.PARAMS.grid_specs]
@@ -637,8 +637,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
     @classmethod
     def upscale(self, image):
         
-        rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model_scale) / self.KSAMPLER.tile_size
-        cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model_scale) / self.KSAMPLER.tile_size
+        rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model_scale) / self.PARAMS.tile_size
+        cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model_scale) / self.PARAMS.tile_size
         rows_qty = math.ceil(rows_qty_float)
         cols_qty = math.ceil(cols_qty_float)
 
@@ -653,7 +653,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.PARAMS.cols_qty = cols_qty
         
         # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, self.PARAMS.feather_mask)[0]
-        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.KSAMPLER.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.PARAMS.feather_mask)[0]
+        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.PARAMS.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.PARAMS.feather_mask)[0]
         grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
         grid_prompts = []
