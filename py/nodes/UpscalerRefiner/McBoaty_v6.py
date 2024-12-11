@@ -402,7 +402,7 @@ class Mara_Untiler_v1(Mara_Common_v1):
             nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.KSAMPLER.positive)[0],
             nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.KSAMPLER.negative)[0],
             self.KSAMPLER.sampler, 
-            Mara_McBoaty_Configurator_v6._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 0.35, self.KSAMPLER.scheduler, self.KSAMPLER.model_type), 
+            Mara_McBoaty_Configurator_v6._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 0.10, self.KSAMPLER.scheduler, self.KSAMPLER.model_type), 
             nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, self.OUTPUTS.image, self.KSAMPLER.tile_size_vae)[0]
         )[0]
         self.OUTPUTS.image = nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, output_latent, self.KSAMPLER.tile_size_vae, 64)[0]
