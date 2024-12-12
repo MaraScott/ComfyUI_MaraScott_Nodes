@@ -19,6 +19,8 @@ from ...inc.profiles.any import Node as ProfileNodeAny
 # from ..inc.profiles.pipe_detailer import Node as ProfileNodePipeDetailer
 
 class AnyBus_v2:
+    
+    NAME = get_name('AnyBus - UniversalBus', 2, "*")
 
     @classmethod
     def INPUT_TYPES(cls):

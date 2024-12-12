@@ -19,7 +19,7 @@ from ..Util.Model import GetModelBlocks_v1
 any_type = AnyType("*")
 
 class DisplayInfo_v2:
-    NAME = get_name('Display Any')
+    NAME = get_name('Display Any', 2, "i")
 
     @classmethod
     def INPUT_TYPES(s):

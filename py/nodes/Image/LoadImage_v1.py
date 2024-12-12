@@ -84,7 +84,7 @@ class LoadImage_v1(nodes_LoadImage_v1):
     def __init__(self):
         super().__init__()
 
-    NAME = get_name("Load Image")
+    NAME = get_name("Load Image", 1, "i")
 
     @classmethod
     def _INPUT_TYPES(s):

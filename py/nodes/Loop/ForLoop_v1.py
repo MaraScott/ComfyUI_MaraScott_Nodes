@@ -14,8 +14,11 @@ any_type = AlwaysEqualProxy("*")
 NUM_FLOW_SOCKETS = 5
 @VariantSupport()
 class ForLoopOpen_v1:
+    
     def __init__(self):
         pass
+
+    NAME = get_name("For Loop Open", 1, "l")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -50,8 +53,11 @@ class ForLoopOpen_v1:
 
 @VariantSupport()
 class ForLoopClose_v1:
+    
     def __init__(self):
         pass
+
+    NAME = get_name("For Loop Close", 1, "l")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -88,8 +94,11 @@ class ForLoopClose_v1:
 
 @VariantSupport()
 class ForLoopWhileOpen_v1:
+    
     def __init__(self):
         pass
+
+    NAME = get_name("For Loop While Open", 1, "l")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -118,8 +127,11 @@ class ForLoopWhileOpen_v1:
 
 @VariantSupport()
 class ForLoopWhileClose_v1:
+    
     def __init__(self):
         pass
+
+    NAME = get_name("For Loop While Close", 1, "l")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -218,8 +230,11 @@ class ForLoopWhileClose_v1:
         }
 
 class ForLoopIntMathOperation_v1:
+    
     def __init__(self):
         pass
+
+    NAME = get_name("For Loop IntMathOperation", 1, "l")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -251,8 +266,11 @@ class ForLoopIntMathOperation_v1:
             return (a ** b,)
 
 class ForLoopToBoolNode_v1:
+    
     def __init__(self):
         pass
+
+    NAME = get_name("For Loop ToBoolNode", 1, "l")
 
     @classmethod
     def INPUT_TYPES(cls):

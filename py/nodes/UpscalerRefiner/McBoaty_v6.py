@@ -42,7 +42,7 @@ from ...utils.log import log, get_log, COLORS
 
 class Mara_Common_v1():
 
-    NAME = get_name('🐰 McBoaty Set - v6')
+    NAME = get_name('McBoaty Set', 6, "m")
     
     MAX_TILES = 16384
 
@@ -146,7 +146,7 @@ class Mara_Common_v1():
     
 class Mara_Tiler_v1(Mara_Common_v1):
     
-    NAME = get_name('🐰 Image to tiles - v1')
+    NAME = get_name('Image to tiles', 1, "m")
     
     CONTROLNETS = folder_paths.get_filename_list("controlnet")
     CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
@@ -310,7 +310,7 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
 class Mara_Untiler_v1(Mara_Common_v1):
     
-    NAME = get_name('🐰 Tiles to Image - v1')
+    NAME = get_name('Tiles to Image', 1, "m")
     
     UPSCALE_METHODS = [
         "area", 
@@ -433,7 +433,7 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
 class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
-    NAME = get_name('🐰 McBoaty Configurator - v6')
+    NAME = get_name('McBoaty Configurator', 6, "m")
     
     SIGMAS_TYPES = [
         'BasicScheduler', 
@@ -672,7 +672,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
 class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     
-    NAME = get_name('🐰 McBoaty Refiner - v6')
+    NAME = get_name('McBoaty Refiner', 6, "m")
 
     COLOR_MATCH_METHODS = [   
         'none',
@@ -890,7 +890,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
 class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
 
-    NAME = get_name('🐰 McBoaty Tile Prompter - v6')
+    NAME = get_name('McBoaty Tile Prompter', 6, "m")
 
     @classmethod
     def INPUT_TYPES(self):
@@ -972,7 +972,7 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
                 
 class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
 
-    NAME = get_name('🐰 McBoaty - v6')
+    NAME = get_name('McBoaty', 6, "m")
 
     @classmethod
     def INPUT_TYPES(self):

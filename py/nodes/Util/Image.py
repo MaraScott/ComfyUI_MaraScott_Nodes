@@ -7,6 +7,8 @@ from ...utils.log import log
 
 class ImageToGradient_v1:
     
+    NAME = get_name('Image To Gradient', 1, "i")    
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -21,7 +23,6 @@ class ImageToGradient_v1:
     RETURN_NAMES = ("gradient",)
     FUNCTION = "fn"
 
-    NAME = get_name('Image to gradient')    
     CATEGORY = get_category("Utils")
     
     COLOR_MATCH_METHOD = 'mkl'

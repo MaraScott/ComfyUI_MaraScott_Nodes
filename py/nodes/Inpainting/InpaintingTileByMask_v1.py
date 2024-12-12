@@ -26,6 +26,8 @@ from ...vendor.ComfyUI_Impact_Pack.modules.impact.util_nodes import RemoveNoiseM
 from ...utils.log import log, get_log
 
 class KSampler_setInpaintingTileByMask_v1:
+    
+    NAME = get_name("Set Inpainting Tile by mask - McInpainty [1/2]", 1, "i")
 
     @classmethod
     def INPUT_TYPES(s):
@@ -312,6 +314,8 @@ class KSampler_setInpaintingTileByMask_v1:
         s.tile.inpainted = VAEDecodeTiled().decode(s.ksampler.vae, latent, tile_size=tile_size, overlap=tile_size // 4)[0]
 
 class KSampler_pasteInpaintingTileByMask_v1:
+
+    NAME = get_name("Paste Inpainting Tile by mask - McInpainty [2/2]", 1, "i")
 
     @classmethod
     def INPUT_TYPES(s):
