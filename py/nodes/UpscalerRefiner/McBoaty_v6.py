@@ -718,6 +718,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         "MC_BOATY_PIPE", 
         "MC_PROMPTY_PIPE", 
         "IMAGE",
+        "IMAGE",
         "STRING"
     )
     
@@ -725,10 +726,12 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         "McBoaty Pipe", 
         "McPrompty Pipe",
         "tiles", 
+        "tiles - cannies", 
         "info", 
     )
     
     OUTPUT_IS_LIST = (
+        False,
         False,
         False,
         False,
@@ -762,6 +765,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         mc_boaty_pipe = self.set_mc_boaty_pipe()
         
         self.OUTPUTS.tiles = [t.new_tile for t in self.KSAMPLER.tiles]
+        self.OUTPUTS.cannies = [t.canny for t in self.KSAMPLER.tiles]
 
         log("McBoaty (Refiner) is done with its magic", None, None, f"Node {self.INFO.id}")
 
@@ -771,6 +775,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                 self.KSAMPLER.tiles,
             ),            
             torch.cat(self.OUTPUTS.tiles),
+            torch.cat(self.OUTPUTS.cannies),
             output_info, 
         )
         
@@ -852,7 +857,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     def refine(self, tiles):
         
         total = len(tiles)
-        
+        latentTileUpscale = nodes.LatentUpscale()
         for index, tile in enumerate(tiles):
             tile.new_tile = tile.tile
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
@@ -873,11 +878,14 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                 log(f"tile {index + 1}/{total} : {denoise} / {tile.positive}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding")
                 positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, tile.positive)[0]
                 negative = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, tile.negative)[0]
-                if self.CONTROLNET.controlnet is not None:
+                tile.controlnet = True
+                if self.CONTROLNET.controlnet is not None and tile.controlnet:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply")
+                    tile.canny = Canny().detect_edge(tile.tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
                     positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, tile.canny, tile.strength, tile.start_percent, tile.end_percent, self.KSAMPLER.vae )
                     
                 log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining")
+                latent = latentTileUpscale.upscale(tile.latent, 'bicubic', self.PARAMS.tile_size, self.PARAMS.tile_size, None)[0]
                 _latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                     self.KSAMPLER.model, 
                     self.KSAMPLER.add_noise, 
@@ -887,15 +895,16 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                     negative,
                     self.KSAMPLER.sampler, 
                     sigmas, 
-                    tile.latent
+                    latent
                 )[0]
+                tile.latent = latentTileUpscale.upscale(_latent, 'bicubic', tile.tile.shape[2], tile.tile.shape[1], None)[0]
 
                 if self.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecodingTiled")
-                    tile.new_tile = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, _latent, self.KSAMPLER.tile_size_vae, 0)[0].unsqueeze(0))[0]
+                    tile.new_tile = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, tile.latent, self.KSAMPLER.tile_size_vae, 0)[0].unsqueeze(0))[0]
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding")
-                    tile.new_tile = (nodes.VAEDecode().decode(self.KSAMPLER.vae, _latent)[0].unsqueeze(0))[0]            
+                    tile.new_tile = (nodes.VAEDecode().decode(self.KSAMPLER.vae, tile.latent)[0].unsqueeze(0))[0]            
 
         return tiles
 
@@ -1030,18 +1039,19 @@ class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
         })
 
         # Refining phase
-        mc_boaty_pipe, mc_boaty_pipe_prompty, tiles, refiner_info = Mara_McBoaty_Refiner_v6.fn(**kwargs)
+        mc_boaty_pipe, mc_boaty_pipe_prompty, tiles, cannies, refiner_info = Mara_McBoaty_Refiner_v6.fn(**kwargs)
 
         end_time = time.time()
         total_time = int(end_time - start_time)
 
         # Combine info from both phases
         combined_info = self._combine_info(upscaler_info, refiner_info, total_time)
-
+        
         return (
             mc_boaty_pipe,
             mc_boaty_pipe_prompty,            
             tiles, 
+            cannies,
             combined_info,
         )
 
