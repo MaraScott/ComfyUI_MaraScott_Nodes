@@ -12,7 +12,8 @@ from ...utils.constants import get_name, get_category
 
 class TextConcatenate_v1:
 
-    NAME = get_name('Text Concatenate', "t")
+    NAME = "Text Concatenate"
+    SHORTCUT = "t"
 
     @classmethod
     def INPUT_TYPES(s):

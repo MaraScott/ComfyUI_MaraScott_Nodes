@@ -41,7 +41,8 @@ from ...utils.log import log, get_log, COLORS
 
 class McBoaty_Upscaler_v5():
     
-    NAME = get_name("Upscaler - McBoaty [1/3]", "u")    
+    NAME = "Upscaler - McBoaty [1/3]"
+    SHORTCUT = "u"    
 
     UPSCALE_METHODS = [
         "area", 
@@ -304,7 +305,8 @@ class McBoaty_Upscaler_v5():
 
 class McBoaty_Refiner_v5():
 
-    NAME = get_name("Refiner - McBoaty [3/3]", "u")
+    NAME = "Refiner - McBoaty [3/3]"
+    SHORTCUT = "u"
 
     SIGMAS_TYPES = [
         'BasicScheduler', 
@@ -666,7 +668,8 @@ class McBoaty_Refiner_v5():
 
 class McBoaty_TilePrompter_v5():
 
-    NAME = get_name("Tile Prompter - McBoaty [2/3]", "u")
+    NAME = "Tile Prompter - McBoaty [2/3]"
+    SHORTCUT = "u"
 
     @classmethod
     def INPUT_TYPES(self):
@@ -882,7 +885,8 @@ async def tile_prompt(request):
 
 class McBoaty_UpscalerRefiner_v5(McBoaty_Upscaler_v5, McBoaty_Refiner_v5):
     
-    NAME = get_name("Large Refiner - McBoaty [1/3]", "u")
+    NAME = "Large Refiner - McBoaty [1/3]"
+    SHORTCUT = "u"
     
     @classmethod
     def INPUT_TYPES(self):

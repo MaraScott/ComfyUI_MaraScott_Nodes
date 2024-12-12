@@ -17,7 +17,8 @@ from ...inc.lib.llm import MS_Llm
 
 class PromptFromImage_v1:
     
-    NAME = get_name('Prompt From Image - McPrompty', "p")
+    NAME = "Prompt From Image - McPrompty"
+    SHORTCUT = "p"
 
     @classmethod
     def INPUT_TYPES(s):

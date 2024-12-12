@@ -20,7 +20,8 @@ from ...inc.profiles.any import Node as ProfileNodeAny
 
 class AnyBus_v2:
     
-    NAME = get_name('AnyBus - UniversalBus', "*")
+    NAME = "AnyBus - UniversalBus"
+    SHORTCUT = "*"
 
     @classmethod
     def INPUT_TYPES(cls):

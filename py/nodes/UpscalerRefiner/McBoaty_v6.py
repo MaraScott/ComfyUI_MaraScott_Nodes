@@ -39,6 +39,8 @@ from ...inc.lib.cache import MS_Cache
 
 from ...utils.log import log, get_log, COLORS
 
+from ...vendor.ComfyUI_Florence2.nodes import Florence2Run
+
 
 class Mara_Common_v1():
 
@@ -144,7 +146,8 @@ class Mara_Common_v1():
     
 class Mara_Tiler_v1(Mara_Common_v1):
     
-    NAME = get_name('Image to tiles', "m")
+    NAME = "Image to tiles"
+    SHORTCUT = "m"
     
     CONTROLNETS = folder_paths.get_filename_list("controlnet")
     CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
@@ -308,7 +311,8 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
 class Mara_Untiler_v1(Mara_Common_v1):
     
-    NAME = get_name('Tiles to Image', "m")
+    NAME = "Tiles to Image"
+    SHORTCUT = "m"
     
     UPSCALE_METHODS = [
         "area", 
@@ -431,7 +435,8 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
 class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
-    NAME = get_name('McBoaty Configurator', "m")
+    NAME = "McBoaty Configurator"
+    SHORTCUT = "m"
     
     SIGMAS_TYPES = [
         'BasicScheduler', 
@@ -516,8 +521,15 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         
         log("McBoaty (Upscaler) is starting to do its magic", None, None, f"Node {self.INFO.id}")
         
+        self.KSAMPLER.positive = self.INPUTS.positive
+        self.KSAMPLER.negative = self.INPUTS.negative
+        if self.KSAMPLER.positive != "" and self.LLM.vision_model is not None:
+            _, _, self.KSAMPLER.positive, _ = Florence2Run().encode(self.INPUTS.image, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=False, seed = 42 )
+        
+        log(self.KSAMPLER.positive)
         for tile in self.KSAMPLER.tiles:
-            tile.positive = self.KSAMPLER.positive
+            _, _, tile.positive, _ = Florence2Run().encode(tile.tile, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=True, seed = 42 )
+            log(tile.positive)
             tile.negative = self.KSAMPLER.negative
             tile.cfg = self.KSAMPLER.cfg
             tile.denoise = self.KSAMPLER.denoise
@@ -554,14 +566,15 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.INPUTS.tiles = kwargs.get('tiles', None)
         if self.INPUTS.tiles is not None and not isinstance(self.INPUTS.tiles, torch.Tensor):
             raise ValueError(f"{self.NAME} id {self.INFO.id}: tiles provided are not Tensors")
+
+        self.INPUTS.positive = kwargs.get('positive', '')
+        self.INPUTS.negative = kwargs.get('negative', '')
                 
-        self.LLM.vision_model = kwargs.get('FL2MODEL', None)
+        self.LLM.vision_model = kwargs.get('Florence2', None)
         self.LLM.model = kwargs.get('llm_model', None)
         
         self.PARAMS.tile_prompting_active = kwargs.get('tile_prompting_active', False)        
 
-        self.KSAMPLER.positive = kwargs.get('positive', '')
-        self.KSAMPLER.negative = kwargs.get('negative', '')
         self.KSAMPLER.tiled = kwargs.get('vae_encode', None)
         self.KSAMPLER.tile_size_vae = kwargs.get('tile_size_vae', None)
         self.KSAMPLER.model = kwargs.get('model', None)
@@ -589,7 +602,6 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         # self.PARAMS.feather_mask = self.PARAMS.tile_size // 16
         self.PARAMS.feather_mask = 0
 
-        self.OUTPUTS.grid_images = []
         self.OUTPUTS.grid_prompts = [self.KSAMPLER.positive for _ in self.PARAMS.grid_specs]
         self.OUTPUTS.output_info = ["No info"]
         self.OUTPUTS.grid_tiles_to_process = []
@@ -670,7 +682,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
 class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     
-    NAME = get_name('McBoaty Refiner', "m")
+    NAME = "McBoaty Refiner"
+    SHORTCUT = "m"
 
     COLOR_MATCH_METHODS = [   
         'none',
@@ -888,7 +901,8 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
 class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
 
-    NAME = get_name('McBoaty Tile Prompter', "m")
+    NAME = "McBoaty Tile Prompter"
+    SHORTCUT = "m"
 
     @classmethod
     def INPUT_TYPES(self):
@@ -970,7 +984,8 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
                 
 class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
 
-    NAME = get_name('McBoaty', "m")
+    NAME = "McBoaty"
+    SHORTCUT = "m"
 
     @classmethod
     def INPUT_TYPES(self):

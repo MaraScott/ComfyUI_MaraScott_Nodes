@@ -19,7 +19,8 @@ from ..Util.Model import GetModelBlocks_v1
 any_type = AnyType("*")
 
 class DisplayInfo_v2:
-    NAME = get_name('Display Any', "i")
+    NAME = "Display Any"
+    SHORTCUT = "i"
 
     @classmethod
     def INPUT_TYPES(s):

@@ -9,7 +9,8 @@ any_type = AlwaysEqualProxy("*")
 
 class GetModelBlocks_v1:
 
-    NAME = get_name('Get Model Blocks', "m")
+    NAME = "Get Model Blocks"
+    SHORTCUT = "m"
 
     @classmethod
     def INPUT_TYPES(s):

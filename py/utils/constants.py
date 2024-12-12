@@ -1,26 +1,19 @@
 import inspect 
 import re 
 
+from .log import log
+
 NAMESPACE='MaraScott'
 ICON='🐰'
 
-def _get_version():
-    frame = inspect.currentframe()
-    try:
-        class_name = frame.f_back.f_globals.get('__qualname__', None)
-        if not class_name:
-            class_name = frame.f_back.f_code.co_name
-    finally:
-        del frame
-
-    version_match = re.search(r'_v(\d+)', class_name) if class_name else None
+def _get_version(classOject):
+    version_match = re.search(r'_v(\d+)', classOject.__name__)
     version = version_match.group(1) if version_match else None
-    
     return version
 
-def get_name(name, shortcut = "", vendor = ""):
-
-    version = _get_version()
+def get_name(classOject, name, shortcut = "", vendor = ""):
+    
+    version = _get_version(classOject)
     v = f" - v{version}" if version is not None else ""
     s = f" /{shortcut}" if shortcut != "" else ""
     vd = f" (from {vendor})" if vendor != "" else ""

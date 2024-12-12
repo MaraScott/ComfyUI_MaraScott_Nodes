@@ -29,7 +29,8 @@ from ...utils.log import log, get_log
 import time
 class UpscalerRefiner_McBoaty_v3():
     
-    NAME = get_name("Large Refiner - McBoaty", "u")    
+    NAME = "Large Refiner - McBoaty"
+    SHORTCUT = "u"    
 
     UPSCALE_METHODS = [
         "area", 

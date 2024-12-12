@@ -7,7 +7,8 @@ from ...utils.log import log
 
 class ImageToGradient_v1:
     
-    NAME = get_name('Image To Gradient', "i")    
+    NAME = "Image To Gradient"
+    SHORTCUT = "i"    
 
     @classmethod
     def INPUT_TYPES(cls):

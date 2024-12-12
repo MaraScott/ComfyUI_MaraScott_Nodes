@@ -18,7 +18,8 @@ class ForLoopOpen_v1:
     def __init__(self):
         pass
 
-    NAME = get_name("For Loop Open", "l")
+    NAME = "For Loop Open"
+    SHORTCUT = "l"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -57,7 +58,8 @@ class ForLoopClose_v1:
     def __init__(self):
         pass
 
-    NAME = get_name("For Loop Close", "l")
+    NAME = "For Loop Close"
+    SHORTCUT = "l"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -98,7 +100,8 @@ class ForLoopWhileOpen_v1:
     def __init__(self):
         pass
 
-    NAME = get_name("For Loop While Open", "l")
+    NAME = "For Loop While Open"
+    SHORTCUT = "l"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -131,7 +134,8 @@ class ForLoopWhileClose_v1:
     def __init__(self):
         pass
 
-    NAME = get_name("For Loop While Close", "l")
+    NAME = "For Loop While Close"
+    SHORTCUT = "l"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -234,7 +238,8 @@ class ForLoopIntMathOperation_v1:
     def __init__(self):
         pass
 
-    NAME = get_name("For Loop IntMathOperation", "l")
+    NAME = "For Loop IntMathOperation"
+    SHORTCUT = "l"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -270,7 +275,8 @@ class ForLoopToBoolNode_v1:
     def __init__(self):
         pass
 
-    NAME = get_name("For Loop ToBoolNode", "l")
+    NAME = "For Loop ToBoolNode"
+    SHORTCUT = "l"
 
     @classmethod
     def INPUT_TYPES(cls):

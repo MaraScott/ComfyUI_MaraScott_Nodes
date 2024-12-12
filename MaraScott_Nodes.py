@@ -7,7 +7,7 @@
 #
 ###
 
-from .py.utils.constants import NAMESPACE, get_name
+from .py.utils.constants import NAMESPACE, get_name, get_category
 
 from .py.nodes.Image.LoadImage_v1 import LoadImage_v1
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
@@ -69,7 +69,9 @@ NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}GetModelBlocks_v1": GetModelBlocks_v1,
 
     f"{NAMESPACE}LoadImage_v1": LoadImage_v1,
+}
 
+VENDOR_NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}_Kijai_TokenCounter_v1": TokenCounter_v1,
     f"{NAMESPACE}_Kijai_DownloadAndLoadFlorence2Model_v1": DownloadAndLoadFlorence2Model_v1,
     f"{NAMESPACE}_Kijai_Florence2Run_v1": Florence2Run_v1,    
@@ -80,21 +82,29 @@ NODE_CLASS_MAPPINGS = {
 # active : \ud83d\udc30
 # deprecated : \u274C
 
-[setattr(value, 'get_name', get_name) for key, value in NODE_CLASS_MAPPINGS.items()]
+# Define getter and setter functions
+def _get_CATEGORY(cls):
+    return cls._CATEGORY
+
+def _set_CATEGORY(cls, value):
+    cls._CATEGORY = value
+    
+for key, value in VENDOR_NODE_CLASS_MAPPINGS.items():
+    setattr(value, 'CATEGORY', property(classmethod(_get_CATEGORY), classmethod(_set_CATEGORY)))
+    value.CATEGORY = get_category("vendor")
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    key: getattr(value, "NAME", value.__name__) for key, value in NODE_CLASS_MAPPINGS.items()
+    key: get_name(value, getattr(value, "NAME", value.__name__), getattr(value, "SHORTCUT", "")) for key, value in NODE_CLASS_MAPPINGS.items()
 }
 
-STATIC_NODE_DISPLAY_NAME_MAPPINGS = {
-
-    "MaraScott_Kijai_TokenCounter_v1": get_name("TokenCounter", "v", "kijai"),
-    "MaraScott_Kijai_DownloadAndLoadFlorence2Model_v1": get_name("DownloadAndLoadFlorence2Model", "v", "Kijai"),
-    "MaraScott_Kijai_Florence2Run_v1": get_name("Florence2Run", "v", "Kijai"),
-    "MaraScott_laksjdjf_Hires_v1": get_name("Apply Kohya's HiresFix - sd1.5 only", "v", "laksjdjf"),
-
+VENDOR_NODE_DISPLAY_NAME_MAPPINGS = {
+    "MaraScott_Kijai_TokenCounter_v1": get_name(TokenCounter_v1, "TokenCounter", "v", "kijai"),
+    "MaraScott_Kijai_DownloadAndLoadFlorence2Model_v1": get_name(DownloadAndLoadFlorence2Model_v1, "DownloadAndLoadFlorence2Model", "v", "Kijai"),
+    "MaraScott_Kijai_Florence2Run_v1": get_name(Florence2Run_v1, "Florence2Run", "v", "Kijai"),
+    "MaraScott_laksjdjf_Hires_v1": get_name(Hires_v1, "Apply Kohya's HiresFix - sd1.5 only", "v", "laksjdjf"),
 }
 
-NODE_DISPLAY_NAME_MAPPINGS.update(STATIC_NODE_DISPLAY_NAME_MAPPINGS)
+NODE_CLASS_MAPPINGS.update(VENDOR_NODE_CLASS_MAPPINGS)
+NODE_DISPLAY_NAME_MAPPINGS.update(VENDOR_NODE_DISPLAY_NAME_MAPPINGS)
 
 print('\033[34m[MaraScott] \033[92mLoaded\033[0m')
