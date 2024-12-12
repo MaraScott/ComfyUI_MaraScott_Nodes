@@ -27,7 +27,7 @@ from ...utils.log import log, get_log
 
 class KSampler_setInpaintingTileByMask_v1:
     
-    NAME = get_name("Set Inpainting Tile by mask - McInpainty [1/2]", 1, "i")
+    NAME = get_name("Set Inpainting Tile by mask - McInpainty [1/2]", "i")
 
     @classmethod
     def INPUT_TYPES(s):
@@ -315,7 +315,7 @@ class KSampler_setInpaintingTileByMask_v1:
 
 class KSampler_pasteInpaintingTileByMask_v1:
 
-    NAME = get_name("Paste Inpainting Tile by mask - McInpainty [2/2]", 1, "i")
+    NAME = get_name("Paste Inpainting Tile by mask - McInpainty [2/2]", "i")
 
     @classmethod
     def INPUT_TYPES(s):

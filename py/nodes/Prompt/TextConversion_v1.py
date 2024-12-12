@@ -11,7 +11,7 @@ from ...utils.constants import get_name, get_category
 
 class TextConversion_StringToList_v1:
 
-    NAME = get_name('Multiline to List', 1, "t")
+    NAME = get_name('Multiline to List', "t")
 
     @classmethod
     def INPUT_TYPES(s):

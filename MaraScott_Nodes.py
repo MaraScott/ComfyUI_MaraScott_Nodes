@@ -7,7 +7,7 @@
 #
 ###
 
-from .py.utils.constants import ICON, NAMESPACE, get_name
+from .py.utils.constants import NAMESPACE, get_name
 
 from .py.nodes.Image.LoadImage_v1 import LoadImage_v1
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
@@ -80,19 +80,18 @@ NODE_CLASS_MAPPINGS = {
 # active : \ud83d\udc30
 # deprecated : \u274C
 
+[setattr(value, 'get_name', get_name) for key, value in NODE_CLASS_MAPPINGS.items()]
+
 NODE_DISPLAY_NAME_MAPPINGS = {
     key: getattr(value, "NAME", value.__name__) for key, value in NODE_CLASS_MAPPINGS.items()
 }
-STATIC_NODE_DISPLAY_NAME_MAPPINGS = {
-    "MaraScottMcBoatyUpscaler_v4": get_name("Upscaler - McBoaty [1/3]", 4, "u"),
-    "MaraScottMcBoatyTilePrompter_v4": get_name("Tile Prompter - McBoaty [2/3]", 4, "u"),
-    "MaraScottMcBoatyRefiner_v4": get_name("Refiner - McBoaty [3/3]", 4, "u"),
-    "MaraScottMcBoatyUpscalerRefinerNode_v3": get_name("Large Refiner - McBoaty", 3, "u"),
 
-    "MaraScott_Kijai_TokenCounter_v1": get_name("TokenCounter", 1, "v", "kijai"),
-    "MaraScott_Kijai_DownloadAndLoadFlorence2Model_v1": get_name("DownloadAndLoadFlorence2Model", 1, "v", "Kijai"),
-    "MaraScott_Kijai_Florence2Run_v1": get_name("Florence2Run", 1, "v", "Kijai"),
-    "MaraScott_laksjdjf_Hires_v1": get_name("Apply Kohya's HiresFix - sd1.5 only", 1, "v", "laksjdjf"),
+STATIC_NODE_DISPLAY_NAME_MAPPINGS = {
+
+    "MaraScott_Kijai_TokenCounter_v1": get_name("TokenCounter", "v", "kijai"),
+    "MaraScott_Kijai_DownloadAndLoadFlorence2Model_v1": get_name("DownloadAndLoadFlorence2Model", "v", "Kijai"),
+    "MaraScott_Kijai_Florence2Run_v1": get_name("Florence2Run", "v", "Kijai"),
+    "MaraScott_laksjdjf_Hires_v1": get_name("Apply Kohya's HiresFix - sd1.5 only", "v", "laksjdjf"),
 
 }
 

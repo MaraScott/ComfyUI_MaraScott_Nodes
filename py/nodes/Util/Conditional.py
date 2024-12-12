@@ -6,7 +6,7 @@ any_type = AlwaysEqualProxy("*")
 
 class IsEqual_v1:
 
-    NAME = get_name('Is Equal ?', 1, "c")
+    NAME = get_name('Is Equal ?', "c")
 
     @classmethod
     def INPUT_TYPES(s):
@@ -29,7 +29,7 @@ class IsEqual_v1:
 
 class IsNone_v1:
     
-    NAME = get_name('Is None ?', 1, "c")
+    NAME = get_name('Is None ?', "c")
     
     @classmethod
     def INPUT_TYPES(s):
@@ -51,7 +51,7 @@ class IsNone_v1:
 
 class IsEmpty_v1:
     
-    NAME = get_name('Is Empty ?', 1, "c")
+    NAME = get_name('Is Empty ?', "c")
     
     @classmethod
     def INPUT_TYPES(s):
@@ -73,7 +73,7 @@ class IsEmpty_v1:
 
 class IsEmptyOrNone_v1:
     
-    NAME = get_name('Is Empty Or None ?', 1, "c")
+    NAME = get_name('Is Empty Or None ?', "c")
     
     @classmethod
     def INPUT_TYPES(s):

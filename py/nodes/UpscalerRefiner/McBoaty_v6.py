@@ -42,8 +42,6 @@ from ...utils.log import log, get_log, COLORS
 
 class Mara_Common_v1():
 
-    NAME = get_name('McBoaty Set', 6, "m")
-    
     MAX_TILES = 16384
 
     PIPE_ATTRIBUTES = (
@@ -146,7 +144,7 @@ class Mara_Common_v1():
     
 class Mara_Tiler_v1(Mara_Common_v1):
     
-    NAME = get_name('Image to tiles', 1, "m")
+    NAME = get_name('Image to tiles', "m")
     
     CONTROLNETS = folder_paths.get_filename_list("controlnet")
     CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
@@ -310,7 +308,7 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
 class Mara_Untiler_v1(Mara_Common_v1):
     
-    NAME = get_name('Tiles to Image', 1, "m")
+    NAME = get_name('Tiles to Image', "m")
     
     UPSCALE_METHODS = [
         "area", 
@@ -433,7 +431,7 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
 class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
-    NAME = get_name('McBoaty Configurator', 6, "m")
+    NAME = get_name('McBoaty Configurator', "m")
     
     SIGMAS_TYPES = [
         'BasicScheduler', 
@@ -672,7 +670,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
 class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     
-    NAME = get_name('McBoaty Refiner', 6, "m")
+    NAME = get_name('McBoaty Refiner', "m")
 
     COLOR_MATCH_METHODS = [   
         'none',
@@ -890,7 +888,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 
 class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
 
-    NAME = get_name('McBoaty Tile Prompter', 6, "m")
+    NAME = get_name('McBoaty Tile Prompter', "m")
 
     @classmethod
     def INPUT_TYPES(self):
@@ -972,7 +970,7 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
                 
 class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
 
-    NAME = get_name('McBoaty', 6, "m")
+    NAME = get_name('McBoaty', "m")
 
     @classmethod
     def INPUT_TYPES(self):
