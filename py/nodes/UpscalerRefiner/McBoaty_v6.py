@@ -868,7 +868,17 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         for index, tile in enumerate(tiles):
             _tile = tile.tile
             _tile = _tile.squeeze(0).permute(2, 0, 1)
-            new_tile, tile_padding = MS_Image.pad_to_square(_tile, self.PARAMS.tile_size)
+            _, h, w = _tile.shape
+            dim_max = max(h, w)
+            if dim_max < self.PARAMS.tile_size:
+                dim_max = self.PARAMS.tile_size
+            else:
+                _tile, _, _, self.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=tile.tile)
+                _tile = _tile.squeeze(0).permute(2, 0, 1)
+                _, h, w = _tile.shape
+                dim_max = max(h, w)
+
+            new_tile, tile_padding = MS_Image.pad_to_square(_tile, dim_max)
             new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
                 if self.KSAMPLER.tiled:
@@ -915,9 +925,11 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding")
                     new_tile = nodes.VAEDecode().decode(self.KSAMPLER.vae, tile.latent)[0]
+                _new_tile = new_tile
                 new_tile = new_tile.squeeze(0).permute(2, 0, 1)
                 new_tile = MS_Image.crop_to_original(new_tile, _tile.shape, tile_padding)
                 tile.new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)                
+                log((_tile.shape, dim_max, tile_padding, _new_tile.shape, new_tile.shape))
         
         return tiles
 
