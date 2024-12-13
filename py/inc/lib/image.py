@@ -95,7 +95,6 @@ class MS_Image():
         Returns:
             torch.Tensor: The cropped image.
         """
-        log(image.shape)
         _, orig_h, orig_w = original_size
         pad_left, pad_top, pad_right, pad_bottom = padding
         start_h = pad_top
