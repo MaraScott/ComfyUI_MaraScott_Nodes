@@ -40,6 +40,7 @@ from ...inc.lib.cache import MS_Cache
 from ...utils.log import log, get_log, COLORS
 
 from ...vendor.ComfyUI_Florence2.nodes import Florence2Run
+from ...vendor.ComfyUI_essentials.image import ImageTile, ImageUntile
 
 
 class Mara_Common_v1():
@@ -214,15 +215,16 @@ class Mara_Tiler_v1(Mara_Common_v1):
         self.INFO.image_width = self.OUTPUTS.upscaled_image.shape[1]
         self.INFO.image_height = self.OUTPUTS.upscaled_image.shape[2]
 
-        self.OUTPUTS.tiles, self.PARAMS.grid_specs = self.get_tiles(image=self.OUTPUTS.upscaled_image)
+        self.OUTPUTS.tiles, self.PARAMS.tile_w, self.PARAMS.tile_h, self.PARAMS.overlap_x,  self.PARAMS.overlap_y, self.PARAMS.rows_qty, self.PARAMS.cols_qty = self.get_tiles(image=self.OUTPUTS.upscaled_image)
         
         tiles = []
         total = len(self.OUTPUTS.tiles)
         for index, tile in enumerate(self.OUTPUTS.tiles):
             _tile = copy.deepcopy(self.TILE_ATTRIBUTES)
             _tile.id = index + 1
-            _tile.tile = tile
-            _tile.canny = torch.zeros((3, _tile.tile.shape[1], _tile.tile.shape[2]), dtype=torch.float16)
+            _tile.tile = tile.unsqueeze(0)
+            _tile.canny = torch.zeros((1, _tile.tile.shape[1], _tile.tile.shape[2], 3), dtype=torch.float16)
+            log(_tile.canny.shape)
             _tile.strength = self.CONTROLNET.strength
             _tile.start_percent = self.CONTROLNET.start_percent
             _tile.end_percent = self.CONTROLNET.end_percent
@@ -230,7 +232,6 @@ class Mara_Tiler_v1(Mara_Common_v1):
                 log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny")
                 _tile.canny = Canny().detect_edge(_tile.tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
 
-            
             tiles.append(_tile)
             
         self.KSAMPLER.tiles = tiles
@@ -245,8 +246,8 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
         return (
             mc_boaty_pipe,
-            torch.cat(self.OUTPUTS.tiles),
-            torch.cat(self.OUTPUTS.cannies),
+            torch.cat(self.OUTPUTS.tiles, dim=0),
+            torch.cat(self.OUTPUTS.cannies, dim=0),
         )
 
     @classmethod
@@ -254,21 +255,27 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
         self.INFO.id = kwargs.get('id', None)
         self.INPUTS.image = kwargs.get('image', None)
-        self.OUTPUTS.image = self.INPUTS.image
-        self.OUTPUTS.tiles = self.INPUTS.image
 
         if self.INPUTS.image is None:
             raise ValueError(f"{self.NAME} id {self.INFO.id}: No image provided")
         if not isinstance(self.INPUTS.image, torch.Tensor):
             raise ValueError(f"{self.NAME} id {self.INFO.id}: Image provided is not a Tensor")
 
+        self.OUTPUTS.image = self.INPUTS.image
+        self.OUTPUTS.tiles = self.INPUTS.image
+
         self.PARAMS.upscale_model_name = kwargs.get('upscale_model', 'None')
         self.PARAMS.upscale_model = None
         self.PARAMS.upscale_model_scale = 1
         self.PARAMS.tile_size = kwargs.get('tile_size', None)
+        self.PARAMS.overlap = 0.10
+        self.PARAMS.tile_w = 512
+        self.PARAMS.tile_h = 512
+        self.PARAMS.overlap_x = 0 
+        self.PARAMS.overlap_y = 0
         self.PARAMS.rows_qty = 1
         self.PARAMS.cols_qty = 1
-
+        
         if self.PARAMS.upscale_model_name != 'None':
             self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
             self.PARAMS.upscale_model_scale = self.PARAMS.upscale_model.scale
@@ -288,7 +295,6 @@ class Mara_Tiler_v1(Mara_Common_v1):
     
     @classmethod
     def get_tiles(self, image):
-        
         rows_qty_float = (image.shape[1]) / self.PARAMS.tile_size
         cols_qty_float = (image.shape[2]) / self.PARAMS.tile_size
         rows_qty = math.ceil(rows_qty_float)
@@ -298,15 +304,11 @@ class Mara_Tiler_v1(Mara_Common_v1):
         if tiles_qty > self.MAX_TILES :
             msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {self.MAX_TILES} ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - {self.NAME}")
             raise ValueError(msg)
+        
+        # return grid_images, grid_specs
+        tiles, tile_w, tile_h, overlap_x, overlap_y = ImageTile().execute(image, rows_qty, cols_qty, self.PARAMS.overlap, 0, 0)
 
-        self.PARAMS.rows_qty = rows_qty
-        self.PARAMS.cols_qty = cols_qty
-        
-        grid_specs = MS_Image().get_dynamic_grid_specs(image.shape[2], image.shape[1], self.PARAMS.rows_qty, self.PARAMS.cols_qty, 0)[0]
-        # grid_specs = MS_Image().get_tiled_grid_specs(image, self.PARAMS.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, 0)[0]
-        grid_images = MS_Image().get_grid_images(image, grid_specs)
-        
-        return grid_images, grid_specs
+        return (tiles, tile_w, tile_h, overlap_x, overlap_y, rows_qty, cols_qty,)
         
         
 class Mara_Untiler_v1(Mara_Common_v1):
@@ -378,18 +380,25 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
         log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {self.INFO.id}")
         
-        self.OUTPUTS.image, tiles_order = MS_Image().rebuild_image_from_parts(
-            0, 
+        self.OUTPUTS.tiles = [t.new_tile for t in self.KSAMPLER.tiles]
+        self.OUTPUTS.tiles = torch.cat(self.OUTPUTS.tiles, dim=0)        
+        log(self.OUTPUTS.tiles.shape)
+            
+        self.OUTPUTS.image = ImageUntile().execute(
             self.OUTPUTS.tiles, 
-            self.OUTPUTS.image, 
-            self.PARAMS.grid_specs, 
-            self.PARAMS.feather_mask, 
-            self.PARAMS.upscale_model_scale, 
+            self.PARAMS.overlap_x, 
+            self.PARAMS.overlap_y, 
             self.PARAMS.rows_qty, 
-            self.PARAMS.cols_qty, 
-            self.OUTPUTS.grid_prompts
-        )
-
+            self.PARAMS.cols_qty
+        )[0]
+        self.OUTPUTS.image = comfy_extras.nodes_images.ImageCrop().crop(
+            self.OUTPUTS.image, 
+            (self.INPUTS.image.shape[2] * self.PARAMS.upscale_model_scale), 
+            (self.INPUTS.image.shape[1] * self.PARAMS.upscale_model_scale), 
+            0, 
+            0
+        )[0]
+        
         if not (self.PARAMS.upscale_size_ref == self.UPSCALE_SIZE_REF[0] and self.PARAMS.upscale_size == 1.00):
             image_ref = self.OUTPUTS.image
             if self.PARAMS.upscale_size_ref != self.UPSCALE_SIZE_REF[0]:
@@ -407,7 +416,7 @@ class Mara_Untiler_v1(Mara_Common_v1):
             Mara_McBoaty_Configurator_v6._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 0.10, self.KSAMPLER.scheduler, self.KSAMPLER.model_type), 
             nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, self.OUTPUTS.image, self.KSAMPLER.tile_size_vae)[0]
         )[0]
-        self.OUTPUTS.image = nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, output_latent, self.KSAMPLER.tile_size_vae, 64)[0]
+        self.OUTPUTS.image = nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, output_latent, self.KSAMPLER.tile_size_vae, int(self.KSAMPLER.tile_size_vae * self.PARAMS.overlap) )[0]
 
         if self.PARAMS.color_match_method != 'none':
             self.OUTPUTS.image = ColorMatch().colormatch(self.INPUTS.image, self.OUTPUTS.image, self.PARAMS.color_match_method)[0]
@@ -526,7 +535,6 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         if self.KSAMPLER.positive != "" and self.LLM.vision_model is not None:
             _, _, self.KSAMPLER.positive, _ = Florence2Run().encode(self.INPUTS.image, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=False, seed = 42 )
         
-        log(self.KSAMPLER.positive)
         for tile in self.KSAMPLER.tiles:
             _, _, tile.positive, _ = Florence2Run().encode(tile.tile, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=True, seed = 42 )
             log(tile.positive)
@@ -602,7 +610,6 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         # self.PARAMS.feather_mask = self.PARAMS.tile_size // 16
         self.PARAMS.feather_mask = 0
 
-        self.OUTPUTS.grid_prompts = [self.KSAMPLER.positive for _ in self.PARAMS.grid_specs]
         self.OUTPUTS.output_info = ["No info"]
         self.OUTPUTS.grid_tiles_to_process = []
     
@@ -774,8 +781,8 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
             (
                 self.KSAMPLER.tiles,
             ),            
-            torch.cat(self.OUTPUTS.tiles),
-            torch.cat(self.OUTPUTS.cannies),
+            torch.cat(self.OUTPUTS.tiles, dim=0),
+            torch.cat(self.OUTPUTS.cannies, dim=0),
             output_info, 
         )
         
@@ -885,7 +892,8 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                     positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, tile.canny, tile.strength, tile.start_percent, tile.end_percent, self.KSAMPLER.vae )
                     
                 log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining")
-                latent = latentTileUpscale.upscale(tile.latent, 'bicubic', self.PARAMS.tile_size, self.PARAMS.tile_size, None)[0]
+                _latent = tile.latent
+                # latent = latentTileUpscale.upscale(tile.latent, 'bicubic', self.PARAMS.tile_size, self.PARAMS.tile_size, None)[0]
                 _latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                     self.KSAMPLER.model, 
                     self.KSAMPLER.add_noise, 
@@ -895,13 +903,14 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                     negative,
                     self.KSAMPLER.sampler, 
                     sigmas, 
-                    latent
+                    _latent
                 )[0]
-                tile.latent = latentTileUpscale.upscale(_latent, 'bicubic', tile.tile.shape[2], tile.tile.shape[1], None)[0]
+                tile.latent = _latent
+                # tile.latent = latentTileUpscale.upscale(_latent, 'bicubic', tile.tile.shape[2], tile.tile.shape[1], None)[0]
 
                 if self.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecodingTiled")
-                    tile.new_tile = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, tile.latent, self.KSAMPLER.tile_size_vae, 0)[0].unsqueeze(0))[0]
+                    tile.new_tile = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, tile.latent, self.KSAMPLER.tile_size_vae, int(self.KSAMPLER.tile_size_vae * self.PARAMS.overlap))[0].unsqueeze(0))[0]
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding")
                     tile.new_tile = (nodes.VAEDecode().decode(self.KSAMPLER.vae, tile.latent)[0].unsqueeze(0))[0]            

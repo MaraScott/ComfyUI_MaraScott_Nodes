@@ -356,6 +356,7 @@ I would like to thank my [AI Classroom Discord](discord.gg/t28yZEewrp) buddies w
 - DrLtData with his [ImpactPack](https://github.com/ltdrdata/ComfyUI-Impact-Pack),
 - Kijai with his [ColorMatch node](https://github.com/kijai/ComfyUI-KJNodes/blob/main/nodes/image_nodes.py)
 - Kijai with his [Florence2 set](https://github.com/kijai/ComfyUI-Florence2),
+- Matt3o with his [Image(Un)Tile](https://github.com/cubiq/ComfyUI_essentials),
 
 ### McInpainty
 
