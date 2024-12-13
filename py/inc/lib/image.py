@@ -3,22 +3,22 @@
 #
 ###
 
-import comfy_extras.nodes_images
-import torch
+import torchvision.transforms as T
+import torchvision.transforms.functional as F
 # import torch.nn.functional as F
 import math
 import numpy as np
 from PIL import Image
 
+import torch
 import nodes
-# import comfy
 import comfy_extras
 
 from .array import MS_Array
-
 from ...utils.log import log
 
-class MS_Image:
+class MS_Image():
+    
     @classmethod
     def is_divisible_by_8(self, image):
         width, height = image.shape[2], image.shape[1]
@@ -63,6 +63,47 @@ class MS_Image:
     def pil2tensor(image:Image) -> torch.Tensor:
         return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
 
+    @staticmethod
+    def pad_to_square(image:Image, max_dim):
+        """
+        Pads a tensor image to make it square without deformation.
+        Args:
+            image (torch.Tensor): The input image (C, H, W).
+        Returns:
+            torch.Tensor: The squared padded image.
+            tuple: Padding applied in the form (pad_left, pad_right, pad_top, pad_bottom).
+        """
+        _, h, w = image.shape
+        pad_h = max_dim - h
+        pad_top = math.floor(pad_h / 2)
+        pad_bottom = pad_h - pad_top
+        pad_w = max_dim - w
+        pad_left = math.floor(pad_w / 2)
+        pad_right = pad_w - pad_left
+        padding = (pad_left, pad_top, pad_right, pad_bottom)  # left, right, top, bottom
+        padded_image = F.pad(image, padding, fill=0)  # Assuming padding with black (0)
+        return padded_image, padding
+
+    @staticmethod
+    def crop_to_original(image:Image, original_size, padding):
+        """
+        Crops the central region of the image to match the original size.
+        Args:
+            image (torch.Tensor): The image to crop.
+            original_size (tuple): The original size (height, width).
+            padding (tuple): The padding applied.
+        Returns:
+            torch.Tensor: The cropped image.
+        """
+        log(image.shape)
+        _, orig_h, orig_w = original_size
+        pad_left, pad_top, pad_right, pad_bottom = padding
+        start_h = pad_top
+        end_h = -pad_bottom if pad_bottom > 0 else None  # Negative index for bottom padding
+        start_w = pad_left
+        end_w = -pad_right if pad_right > 0 else None   # Negative index for right padding
+        cropped_image = image[:, start_h:end_h, start_w:end_w]
+        return cropped_image
     
 class MS_Image_v2(MS_Image):
 

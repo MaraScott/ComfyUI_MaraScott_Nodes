@@ -536,7 +536,8 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
             _, _, self.KSAMPLER.positive, _ = Florence2Run().encode(self.INPUTS.image, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=False, seed = 42 )
         
         for tile in self.KSAMPLER.tiles:
-            _, _, tile.positive, _ = Florence2Run().encode(tile.tile, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=True, seed = 42 )
+            if self.KSAMPLER.positive != "" and self.LLM.vision_model is not None:
+                _, _, tile.positive, _ = Florence2Run().encode(tile.tile, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=True, seed = 42 )
             log(tile.positive)
             tile.negative = self.KSAMPLER.negative
             tile.cfg = self.KSAMPLER.cfg
@@ -864,16 +865,18 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     def refine(self, tiles):
         
         total = len(tiles)
-        latentTileUpscale = nodes.LatentUpscale()
         for index, tile in enumerate(tiles):
-            tile.new_tile = tile.tile
+            _tile = tile.tile
+            _tile = _tile.squeeze(0).permute(2, 0, 1)
+            new_tile, tile_padding = MS_Image.pad_to_square(_tile, self.PARAMS.tile_size)
+            new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
                 if self.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled")
-                    tile.latent = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, tile.tile, self.KSAMPLER.tile_size_vae)[0]
+                    tile.latent = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, new_tile, self.KSAMPLER.tile_size_vae)[0]
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding")
-                    tile.latent = nodes.VAEEncode().encode(self.KSAMPLER.vae, tile.tile)[0]
+                    tile.latent = nodes.VAEEncode().encode(self.KSAMPLER.vae, new_tile)[0]
         
                 sigmas = self.KSAMPLER.sigmas
                 if tile.denoise != self.KSAMPLER.denoise:
@@ -888,12 +891,11 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                 tile.controlnet = True
                 if self.CONTROLNET.controlnet is not None and tile.controlnet:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply")
-                    tile.canny = Canny().detect_edge(tile.tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
+                    tile.canny = Canny().detect_edge(new_tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
                     positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, tile.canny, tile.strength, tile.start_percent, tile.end_percent, self.KSAMPLER.vae )
                     
                 log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining")
                 _latent = tile.latent
-                # latent = latentTileUpscale.upscale(tile.latent, 'bicubic', self.PARAMS.tile_size, self.PARAMS.tile_size, None)[0]
                 _latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                     self.KSAMPLER.model, 
                     self.KSAMPLER.add_noise, 
@@ -906,15 +908,17 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                     _latent
                 )[0]
                 tile.latent = _latent
-                # tile.latent = latentTileUpscale.upscale(_latent, 'bicubic', tile.tile.shape[2], tile.tile.shape[1], None)[0]
 
                 if self.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecodingTiled")
-                    tile.new_tile = (nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, tile.latent, self.KSAMPLER.tile_size_vae, int(self.KSAMPLER.tile_size_vae * self.PARAMS.overlap))[0].unsqueeze(0))[0]
+                    new_tile = nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, tile.latent, self.KSAMPLER.tile_size_vae, int(self.KSAMPLER.tile_size_vae * self.PARAMS.overlap))[0]
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding")
-                    tile.new_tile = (nodes.VAEDecode().decode(self.KSAMPLER.vae, tile.latent)[0].unsqueeze(0))[0]            
-
+                    new_tile = nodes.VAEDecode().decode(self.KSAMPLER.vae, tile.latent)[0]
+                new_tile = new_tile.squeeze(0).permute(2, 0, 1)
+                new_tile = MS_Image.crop_to_original(new_tile, _tile.shape, tile_padding)
+                tile.new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)                
+        
         return tiles
 
 class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
