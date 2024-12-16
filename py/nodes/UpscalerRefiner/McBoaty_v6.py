@@ -23,6 +23,7 @@ from comfy_extras.nodes_canny import Canny
 import nodes
 from server import PromptServer
 from aiohttp import web
+from ollama import Client
 import folder_paths
 
 from PIL import Image
@@ -39,8 +40,25 @@ from ...inc.lib.cache import MS_Cache
 
 from ...utils.log import log, get_log, COLORS
 
-from ...vendor.ComfyUI_Florence2.nodes import Florence2Run
+# from ...vendor.ComfyUI_Florence2.nodes import Florence2Run
 from ...vendor.ComfyUI_essentials.image import ImageTile, ImageUntile
+from ...vendor.comfyui_ollama.CompfyuiOllama import Mara_OllamaVision_v1
+
+@PromptServer.instance.routes.post("/marascott/McBoaty_v6/get_prompts")
+async def get_prompts_endpoint(request):
+    data = await request.json()
+
+    tiles = data.get("tiles")
+    client = Client(host=url)
+
+    models = client.list().get('models', [])
+
+    try:
+        models = [model['model'] for model in models]
+        return web.json_response(models)
+    except Exception as e:
+        models = [model['name'] for model in models]
+        return web.json_response(models)
 
 
 class Mara_Common_v1():
@@ -224,7 +242,6 @@ class Mara_Tiler_v1(Mara_Common_v1):
             _tile.id = index + 1
             _tile.tile = tile.unsqueeze(0)
             _tile.canny = torch.zeros((1, _tile.tile.shape[1], _tile.tile.shape[2], 3), dtype=torch.float16)
-            log(_tile.canny.shape)
             _tile.strength = self.CONTROLNET.strength
             _tile.start_percent = self.CONTROLNET.start_percent
             _tile.end_percent = self.CONTROLNET.end_percent
@@ -492,8 +509,18 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
             },
             "optional": {
                 "tiles": ("IMAGE", {"label": "Tiles" }),
-                "Florence2": ("FL2MODEL", { "label": "Florence2" }),
-                "Llm_party": ("CUSTOM", { "label": "LLM Model" }),
+                # "Florence2": ("FL2MODEL", { "label": "Florence2" }),
+                # "Llm_party": ("CUSTOM", { "label": "LLM Model" }),
+                "vlm_query": ("STRING", {
+                    "multiline": True,
+                    "default": "generate a single paragraph prompt of max 77 token to match the red rectangle area. do not comment."
+                }),
+                "ollama_url": ("STRING", {
+                    "multiline": False,
+                    "default": "http://127.0.0.1:11434"
+                }),
+                "vlm_model": ((), { "default": "llama3.2-vision:latest"}),
+                "ollama_keep_alive": ("INT", {"default": 5, "min": -1, "max": 60, "step": 1}),
             }
         }
 
@@ -532,12 +559,15 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         
         self.KSAMPLER.positive = self.INPUTS.positive
         self.KSAMPLER.negative = self.INPUTS.negative
-        if self.KSAMPLER.positive != "" and self.LLM.vision_model is not None:
-            _, _, self.KSAMPLER.positive, _ = Florence2Run().encode(self.INPUTS.image, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=False, seed = 42 )
+                
+        if self.KSAMPLER.positive == "" and self.LLM.vision_model is not None:
+            self.KSAMPLER.positive = Mara_OllamaVision_v1().ollama_vision(self.INPUTS.image, query=self.LLM.vision_query, debug="disable", url=self.LLM.ollama_url, model=self.LLM.vision_model, seed=self.KSAMPLER.noise_seed, keep_alive=self.LLM.ollama_keep_alive , format="text")[0]
+        log(self.KSAMPLER.positive)
         
         for tile in self.KSAMPLER.tiles:
-            if self.KSAMPLER.positive != "" and self.LLM.vision_model is not None:
-                _, _, tile.positive, _ = Florence2Run().encode(tile.tile, "", self.LLM.vision_model, 'more_detailed_caption', fill_mask = False, keep_model_loaded=True, seed = 42 )
+            tile.positive = self.KSAMPLER.positive
+            if self.KSAMPLER.positive == "" and self.LLM.vision_model is not None:
+                tile.positive = Mara_OllamaVision_v1().ollama_vision(tile.tile, query=self.LLM.vision_query, debug="disable", url=self.LLM.ollama_url, model=self.LLM.vision_model, seed=self.KSAMPLER.noise_seed, keep_alive=self.LLM.ollama_keep_alive , format="text")[0]
             log(tile.positive)
             tile.negative = self.KSAMPLER.negative
             tile.cfg = self.KSAMPLER.cfg
@@ -579,8 +609,10 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         self.INPUTS.positive = kwargs.get('positive', '')
         self.INPUTS.negative = kwargs.get('negative', '')
                 
-        self.LLM.vision_model = kwargs.get('Florence2', None)
-        self.LLM.model = kwargs.get('llm_model', None)
+        self.LLM.vision_query = kwargs.get("vlm_query", None)
+        self.LLM.ollama_url = kwargs.get("ollama_url", None)
+        self.LLM.vision_model = kwargs.get("vlm_model", None)
+        self.LLM.ollama_keep_alive = kwargs.get("ollama_keep_alive", None)        
         
         self.PARAMS.tile_prompting_active = kwargs.get('tile_prompting_active', False)        
 
@@ -652,41 +684,41 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
 """]        
     
-    @classmethod
-    def upscale(self, image):
+    # @classmethod
+    # def upscale(self, image):
         
-        rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model_scale) / self.PARAMS.tile_size
-        cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model_scale) / self.PARAMS.tile_size
-        rows_qty = math.ceil(rows_qty_float)
-        cols_qty = math.ceil(cols_qty_float)
+    #     rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model_scale) / self.PARAMS.tile_size
+    #     cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model_scale) / self.PARAMS.tile_size
+    #     rows_qty = math.ceil(rows_qty_float)
+    #     cols_qty = math.ceil(cols_qty_float)
 
-        tiles_qty = rows_qty * cols_qty        
-        if tiles_qty > self.MAX_TILES :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {self.MAX_TILES} ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - Mara_McBoaty_Configurator_v6")
-            raise ValueError(msg)
+    #     tiles_qty = rows_qty * cols_qty        
+    #     if tiles_qty > self.MAX_TILES :
+    #         msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {self.MAX_TILES} ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - Mara_McBoaty_Configurator_v6")
+    #         raise ValueError(msg)
 
-        upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
+    #     upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
 
-        self.PARAMS.rows_qty = rows_qty
-        self.PARAMS.cols_qty = cols_qty
+    #     self.PARAMS.rows_qty = rows_qty
+    #     self.PARAMS.cols_qty = cols_qty
         
-        # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, self.PARAMS.feather_mask)[0]
-        grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.PARAMS.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.PARAMS.feather_mask)[0]
-        grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
+    #     # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, self.PARAMS.feather_mask)[0]
+    #     grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.PARAMS.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.PARAMS.feather_mask)[0]
+    #     grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
-        grid_prompts = []
-        llm = MS_Llm(self.LLM.vision_model, self.LLM.model)
-        prompt_context = llm.vision_llm.generate_prompt(image)
-        total = len(grid_images)
-        for index, grid_image in enumerate(grid_images):
-            prompt_tile = prompt_context
-            if self.PARAMS.tile_prompting_active:
-                log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Node {self.INFO.id} - Prompting")
-                prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
-            log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Node {self.INFO.id} - Prompting")
-            grid_prompts.append(prompt_tile)
+    #     grid_prompts = []
+    #     llm = MS_Llm(self.LLM.vision_model, self.LLM.model)
+    #     prompt_context = llm.vision_llm.generate_prompt(image)
+    #     total = len(grid_images)
+    #     for index, grid_image in enumerate(grid_images):
+    #         prompt_tile = prompt_context
+    #         if self.PARAMS.tile_prompting_active:
+    #             log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Node {self.INFO.id} - Prompting")
+    #             prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
+    #         log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Node {self.INFO.id} - Prompting")
+    #         grid_prompts.append(prompt_tile)
                             
-        return grid_specs, grid_images, grid_prompts
+    #     return grid_specs, grid_images, grid_prompts
 
 class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     

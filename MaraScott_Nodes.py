@@ -27,6 +27,7 @@ from .py.nodes.Util.Model import GetModelBlocks_v1
 from .py.vendor.ComfyUI_JNodes.blob.main.py.prompting_nodes import TokenCounter as TokenCounter_v1
 from .py.vendor.ComfyUI_Florence2.nodes import DownloadAndLoadFlorence2Model as DownloadAndLoadFlorence2Model_v1, Florence2Run as Florence2Run_v1
 from .py.vendor.kohya_hiresfix.kohya_hiresfix import Hires as Hires_v1
+# from .py.vendor.comfyui_ollama.CompfyuiOllama import Mara_OllamaVision_v1
 
 WEB_DIRECTORY = "./web/assets/js"
 
@@ -76,6 +77,7 @@ VENDOR_NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}_Kijai_DownloadAndLoadFlorence2Model_v1": DownloadAndLoadFlorence2Model_v1,
     f"{NAMESPACE}_Kijai_Florence2Run_v1": Florence2Run_v1,    
     f"{NAMESPACE}_laksjdjf_Hires_v1": Hires_v1,
+    # f"{NAMESPACE}_stavsap_OllamaVision_v1": Mara_OllamaVision_v1,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes 
