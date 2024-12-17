@@ -44,21 +44,80 @@ from ...utils.log import log, get_log, COLORS
 from ...vendor.ComfyUI_essentials.image import ImageTile, ImageUntile
 from ...vendor.comfyui_ollama.CompfyuiOllama import Mara_OllamaVision_v1
 
+class Store:
+    
+    empty_data = {"positive": "", "negative": ""}
+    
+    def __init__(self, initial_state=None):
+        self._state = initial_state or {}
+        self._subscribers = []  # List of subscribers for change notification
+        
+    def has_index(self, index_id):
+        index_id = str(index_id)
+        """Check if an index exists in the store."""
+        return index_id in self._state
+
+    def add_item(self, index_id, index_prompt, value):
+        index_id = str(index_id)
+        index_prompt = str(index_prompt)        
+        """Add or update an item under a specific index and prompt."""
+        if index_id not in self._state:
+            self._state[index_id] = {}  # Initialize if index_id doesn't exist
+        self._state[index_id][index_prompt] = value
+
+    def get_item(self, index_id, index_prompt = None):
+        index_id = str(index_id)
+        index_prompt = str(index_prompt)
+        """Get an item by index and optional prompt."""
+        data = self._state.get(index_id, { "all": self.empty_data })
+        if index_prompt:
+            data = data.get(index_prompt, self.empty_data)
+        return data
+
+    def get_state(self):
+        """Get the current state."""
+        return self._state
+
+    def set_state(self, new_state):
+        """Update the state and notify subscribers."""
+        self._state.update(new_state)
+        self._notify_subscribers()
+
+    def subscribe(self, callback):
+        """Add a subscriber callback to notify on state changes."""
+        self._subscribers.append(callback)
+
+    def _notify_subscribers(self):
+        """Notify all subscribers about the state change."""
+        for callback in self._subscribers:
+            callback(self._state)
+
+
+# Example Usage
+store = Store(initial_state={})
+
+def on_state_change(new_state):
+    log(new_state, None, None, "Prompts")
+
+store.subscribe(on_state_change)
+
 @PromptServer.instance.routes.post("/marascott/McBoaty_v6/get_prompts")
 async def get_prompts_endpoint(request):
     data = await request.json()
 
-    tiles = data.get("tiles")
-    client = Client(host=url)
-
-    models = client.list().get('models', [])
+    tiles = data.get("tiles", "all")
+    id = data.get("parentId", None)
+    tiles = Mara_Common_v1.parse_tiles_to_process(tiles)
+    tiles = ["all"] if len(tiles) == 0 else tiles
+    prompts = Store.empty_data
+    if id is not None and len(tiles) > 0:
+        prompts = store.get_item(id, tiles[0])
 
     try:
-        models = [model['model'] for model in models]
-        return web.json_response(models)
+        return web.json_response(prompts)
     except Exception as e:
-        models = [model['name'] for model in models]
-        return web.json_response(models)
+        prompts = [{"positive": "", "negative": ""}]
+        return web.json_response(prompts)
 
 
 class Mara_Common_v1():
@@ -398,8 +457,7 @@ class Mara_Untiler_v1(Mara_Common_v1):
         log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {self.INFO.id}")
         
         self.OUTPUTS.tiles = [t.new_tile for t in self.KSAMPLER.tiles]
-        self.OUTPUTS.tiles = torch.cat(self.OUTPUTS.tiles, dim=0)        
-        log(self.OUTPUTS.tiles.shape)
+        self.OUTPUTS.tiles = torch.cat(self.OUTPUTS.tiles, dim=0)
             
         self.OUTPUTS.image = ImageUntile().execute(
             self.OUTPUTS.tiles, 
@@ -559,20 +617,27 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
         
         self.KSAMPLER.positive = self.INPUTS.positive
         self.KSAMPLER.negative = self.INPUTS.negative
-                
+        store.add_item(self.INFO.id, "all", {"positive": self.KSAMPLER.positive, "negative": self.KSAMPLER.negative})
+                        
         if self.KSAMPLER.positive == "" and self.LLM.vision_model is not None:
+            log("Initiate Image Analysis", None, None, f"Node {self.INFO.id} - OllamaVision - Entire Image")
             self.KSAMPLER.positive = Mara_OllamaVision_v1().ollama_vision(self.INPUTS.image, query=self.LLM.vision_query, debug="disable", url=self.LLM.ollama_url, model=self.LLM.vision_model, seed=self.KSAMPLER.noise_seed, keep_alive=self.LLM.ollama_keep_alive , format="text")[0]
-        log(self.KSAMPLER.positive)
+            log(f"{self.KSAMPLER.positive}", None, None, f"Node {self.INFO.id} - OllamaVision - Entire Image")
+            log("End Image Analysis", None, None, f"Node {self.INFO.id} - OllamaVision - Entire Image")
+            store.add_item(self.INFO.id, "all", {"positive": self.KSAMPLER.positive, "negative": self.KSAMPLER.negative})
         
-        for tile in self.KSAMPLER.tiles:
+        for index, tile in enumerate(self.KSAMPLER.tiles):
             tile.positive = self.KSAMPLER.positive
-            if self.KSAMPLER.positive == "" and self.LLM.vision_model is not None:
+            if self.LLM.vision_model is not None:
+                log(f"Initiate Tile {index} Analysis", None, None, f"Node {self.INFO.id} - OllamaVision - Tile")
                 tile.positive = Mara_OllamaVision_v1().ollama_vision(tile.tile, query=self.LLM.vision_query, debug="disable", url=self.LLM.ollama_url, model=self.LLM.vision_model, seed=self.KSAMPLER.noise_seed, keep_alive=self.LLM.ollama_keep_alive , format="text")[0]
-            log(tile.positive)
+                log(f"Tile {index} : {tile.positive}", None, None, f"Node {self.INFO.id} - OllamaVision - Tile")
+                log(f"End Tile {index} Analysis", None, None, f"Node {self.INFO.id} - OllamaVision - Tile")
             tile.negative = self.KSAMPLER.negative
             tile.cfg = self.KSAMPLER.cfg
             tile.denoise = self.KSAMPLER.denoise
-
+            store.add_item(self.INFO.id, index, {"positive": self.KSAMPLER.positive, "negative": self.KSAMPLER.negative})
+            
         end_time = time.time()
 
         output_info = self._get_info(
@@ -960,8 +1025,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                 _new_tile = new_tile
                 new_tile = new_tile.squeeze(0).permute(2, 0, 1)
                 new_tile = MS_Image.crop_to_original(new_tile, _tile.shape, tile_padding)
-                tile.new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)                
-                log((_tile.shape, dim_max, tile_padding, _new_tile.shape, new_tile.shape))
+                tile.new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
         
         return tiles
 
@@ -1013,9 +1077,9 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
         
-        id = kwargs.get('id', None)
+        nodeid = kwargs.get('id', None)
         
-        log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {id}")
+        log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {nodeid}")
         
         tile_attributes = copy.deepcopy(self.TILE_ATTRIBUTES)
 
@@ -1038,7 +1102,11 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
             for attr, value in attributes.items():
                 if value != getattr(tile_attributes, attr) and value != getattr(tiles[index], attr) and value != '':
                     setattr(tiles[index], attr, value)
-                    
+            store.add_item(nodeid, index, {"positive": tiles[index].positive, "negative": tiles[index].negative})
+
+        end_time = time.time()
+        preocess_time = int(end_time - start_time)
+
         log("McBoaty (PromptEditor) is done with its magic", None, None, f"Node {id}")
         
         return (
