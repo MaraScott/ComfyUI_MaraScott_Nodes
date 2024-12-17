@@ -7,11 +7,11 @@
 #
 ###
 
-import os
-import sys
+# import os
+# import sys
 import time
 import copy
-import glob
+# import glob
 import torch
 import math
 from types import SimpleNamespace
@@ -23,20 +23,20 @@ from comfy_extras.nodes_canny import Canny
 import nodes
 from server import PromptServer
 from aiohttp import web
-from ollama import Client
+# from ollama import Client
 import folder_paths
 
-from PIL import Image
-import numpy as np
+# from PIL import Image
+# import numpy as np
 
-from .... import root_dir, __MARASCOTT_TEMP__
+# from .... import root_dir, __MARASCOTT_TEMP__
 from ...utils.constants import get_name, get_category
 
 from ...utils.version import VERSION
 from ...inc.lib.image import MS_Image_v2 as MS_Image
 from ...vendor.ComfyUI_KJNodes.nodes.image_nodes import ColorMatch as ColorMatch
-from ...inc.lib.llm import MS_Llm
-from ...inc.lib.cache import MS_Cache
+# from ...inc.lib.llm import MS_Llm
+# from ...inc.lib.cache import MS_Cache
 
 from ...utils.log import log, get_log, COLORS
 
@@ -52,10 +52,10 @@ class Store:
         self._state = initial_state or {}
         self._subscribers = []  # List of subscribers for change notification
         
-    def has_index(self, index_id):
+    def has_index(cls, index_id):
         index_id = str(index_id)
         """Check if an index exists in the store."""
-        return index_id in self._state
+        return index_id in cls._state
 
     def add_item(self, index_id, index_prompt, value):
         index_id = str(index_id)
@@ -145,23 +145,26 @@ class Mara_Common_v1():
         end_percent = 1.000,
     )
     
-    def __init__(self):
+    @staticmethod
+    def init(local_PIPE=SimpleNamespace()):
         # Dynamically create attributes from PIPE_ATTRIBUTES
-        for attr in self.PIPE_ATTRIBUTES:
-            if not hasattr(type(self), attr):  # Only set the attribute if it doesn't already exist
-                setattr(type(self), attr, SimpleNamespace())
+        for attr in copy.deepcopy(Mara_Common_v1.PIPE_ATTRIBUTES):
+            if not hasattr(local_PIPE, attr):  # Only set the attribute if it doesn't already exist
+                setattr(local_PIPE, attr, SimpleNamespace())
+        return local_PIPE
 
-    @classmethod
-    def set_pipe_values(self, pipe):
-        for name, value in zip(self.PIPE_ATTRIBUTES, pipe):
-            setattr(self, name, value)
+    @staticmethod
+    def set_pipe_values(local_PIPE, pipe):
+        for name, value in zip(copy.deepcopy(Mara_Common_v1.PIPE_ATTRIBUTES), pipe):
+            setattr(local_PIPE, name, value)
+        return local_PIPE
 
-    @classmethod
-    def set_mc_boaty_pipe(self):
-        return tuple(getattr(self, attr, None) for attr in self.PIPE_ATTRIBUTES)
+    @staticmethod
+    def set_mc_boaty_pipe(local_PIPE):
+        return tuple(getattr(local_PIPE, attr, None) for attr in copy.deepcopy(Mara_Common_v1.PIPE_ATTRIBUTES))
     
-    @classmethod
-    def parse_tiles_to_process(self, tiles_to_process = "", MAX_TILES = 16384):
+    @staticmethod
+    def parse_tiles_to_process(tiles_to_process = "", MAX_TILES = 16384):
         result = set()  # Initialize an empty set for results
         
         if not tiles_to_process or tiles_to_process.strip() == '':
@@ -197,14 +200,14 @@ class Mara_Common_v1():
         # Return a sorted list of unique valid values
         return sorted(result)
 
-    @classmethod
-    def override_tiles(self, tiles, new_tiles):
+    @staticmethod
+    def override_tiles(cls, tiles, new_tiles):
         
         for index, tile in enumerate(tiles):
             if index >= len(new_tiles):
                 continue  # Skip if the index doesn't exist in the `tiles` list
             
-            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
+            if len(cls.PARAMS.tiles_to_process) == 0 or index in cls.PARAMS.tiles_to_process:
                 override_tile = new_tiles[index]
 
                 # Compare attributes and override only if they differ
@@ -217,12 +220,18 @@ class Mara_Common_v1():
                             if not torch.equal(tile_value, override_value):
                                 setattr(tiles[index], attr, override_value)                
                         else:
-                            if tile_value != override_value:
-                                setattr(tiles[index], attr, override_value)                
+                            # Compare non-tensor attributes
+                            if isinstance(override_value, dict):
+                                # If override_value is a dict, manually compare each key-value pair
+                                for k, v in override_value.items():
+                                    if k in tile_value and not torch.equal(tile_value[k], v):
+                                        tile_value[k] = v
+                            elif tile_value != override_value:
+                                setattr(tiles[index], attr, override_value)
         return tiles
 
     
-class Mara_Tiler_v1(Mara_Common_v1):
+class Mara_Tiler_v1():
     
     NAME = "Image to tiles"
     SHORTCUT = "m"
@@ -231,7 +240,7 @@ class Mara_Tiler_v1(Mara_Common_v1):
     CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
 
     @classmethod
-    def INPUT_TYPES(self):
+    def INPUT_TYPES(cls):
         return {
             "hidden": {
                 "id":"UNIQUE_ID",
@@ -241,7 +250,7 @@ class Mara_Tiler_v1(Mara_Common_v1):
                 "upscale_model": (["None"]+folder_paths.get_filename_list("upscale_models"), { "label": "Upscale Model" }),
                 "tile_size": ("INT", { "label": "Tile Size", "default": 512, "min": 320, "max": 4096, "step": 64}),
 
-                "control_net_name": (self.CONTROLNET_CANNY_ONLY , { "label": "ControlNet (Canny only)", "default": "None" }),
+                "control_net_name": (cls.CONTROLNET_CANNY_ONLY , { "label": "ControlNet (Canny only)", "default": "None" }),
                 "low_threshold": ("FLOAT", {"label": "Low Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
                 "high_threshold": ("FLOAT", {"label": "High Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
                 "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.76, "min": 0.0, "max": 10.0, "step": 0.01}),
@@ -281,113 +290,117 @@ class Mara_Tiler_v1(Mara_Common_v1):
         
         start_time = time.time()
 
-        self.init(**kwargs)
+        local_PIPE = self.init(**kwargs)
         
-        log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {self.INFO.id}")
+        log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {local_PIPE.INFO.id}")
         
-        self.OUTPUTS.image, _, _, self.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=self.INPUTS.image)
-        self.OUTPUTS.upscaled_image = self.OUTPUTS.image 
-        if self.PARAMS.upscale_model is not None:
-            self.OUTPUTS.upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, self.OUTPUTS.upscaled_image)[0]
-        self.INFO.image_width = self.OUTPUTS.upscaled_image.shape[1]
-        self.INFO.image_height = self.OUTPUTS.upscaled_image.shape[2]
+        local_PIPE.OUTPUTS.image, _, _, local_PIPE.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=local_PIPE.INPUTS.image)
+        local_PIPE.OUTPUTS.upscaled_image = local_PIPE.OUTPUTS.image 
+        if local_PIPE.PARAMS.upscale_model is not None:
+            local_PIPE.OUTPUTS.upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(local_PIPE.PARAMS.upscale_model, local_PIPE.OUTPUTS.upscaled_image)[0]
+        local_PIPE.INFO.image_width = local_PIPE.OUTPUTS.upscaled_image.shape[1]
+        local_PIPE.INFO.image_height = local_PIPE.OUTPUTS.upscaled_image.shape[2]
 
-        self.OUTPUTS.tiles, self.PARAMS.tile_w, self.PARAMS.tile_h, self.PARAMS.overlap_x,  self.PARAMS.overlap_y, self.PARAMS.rows_qty, self.PARAMS.cols_qty = self.get_tiles(image=self.OUTPUTS.upscaled_image)
+        local_PIPE.OUTPUTS.tiles, local_PIPE.PARAMS.tile_w, local_PIPE.PARAMS.tile_h, local_PIPE.PARAMS.overlap_x,  local_PIPE.PARAMS.overlap_y, local_PIPE.PARAMS.rows_qty, local_PIPE.PARAMS.cols_qty = self.get_tiles(pipe=local_PIPE, image=local_PIPE.OUTPUTS.upscaled_image)
         
         tiles = []
-        total = len(self.OUTPUTS.tiles)
-        for index, tile in enumerate(self.OUTPUTS.tiles):
-            _tile = copy.deepcopy(self.TILE_ATTRIBUTES)
+        total = len(local_PIPE.OUTPUTS.tiles)
+        for index, tile in enumerate(local_PIPE.OUTPUTS.tiles):
+            _tile = copy.deepcopy(Mara_Common_v1.TILE_ATTRIBUTES)
             _tile.id = index + 1
             _tile.tile = tile.unsqueeze(0)
             _tile.canny = torch.zeros((1, _tile.tile.shape[1], _tile.tile.shape[2], 3), dtype=torch.float16)
-            _tile.strength = self.CONTROLNET.strength
-            _tile.start_percent = self.CONTROLNET.start_percent
-            _tile.end_percent = self.CONTROLNET.end_percent
-            if self.CONTROLNET.controlnet is not None:
-                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Canny")
-                _tile.canny = Canny().detect_edge(_tile.tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
+            _tile.strength = local_PIPE.CONTROLNET.strength
+            _tile.start_percent = local_PIPE.CONTROLNET.start_percent
+            _tile.end_percent = local_PIPE.CONTROLNET.end_percent
+            if local_PIPE.CONTROLNET.controlnet is not None:
+                log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - Canny")
+                _tile.canny = Canny().detect_edge(_tile.tile, local_PIPE.CONTROLNET.low_threshold, local_PIPE.CONTROLNET.high_threshold)[0]
 
             tiles.append(_tile)
             
-        self.KSAMPLER.tiles = tiles
+        local_PIPE.KSAMPLER.tiles = tiles
 
         end_time = time.time()        
-        self.INFO.execution_time = int(end_time - start_time)
+        local_PIPE.INFO.execution_time = int(end_time - start_time)
         
-        mc_boaty_pipe = self.set_mc_boaty_pipe()
+        mc_boaty_pipe = Mara_Common_v1.set_mc_boaty_pipe(local_PIPE)
         
-        self.OUTPUTS.tiles = [t.tile for t in self.KSAMPLER.tiles]
-        self.OUTPUTS.cannies = [t.canny for t in self.KSAMPLER.tiles]
+        tiles = [t.tile for t in local_PIPE.KSAMPLER.tiles]
+        cannies = [t.canny for t in local_PIPE.KSAMPLER.tiles]
         
         return (
             mc_boaty_pipe,
-            torch.cat(self.OUTPUTS.tiles, dim=0),
-            torch.cat(self.OUTPUTS.cannies, dim=0),
+            torch.cat(tiles, dim=0),
+            torch.cat(cannies, dim=0),
         )
 
     @classmethod
     def init(self, **kwargs):
         
-        self.INFO.id = kwargs.get('id', None)
-        self.INPUTS.image = kwargs.get('image', None)
-
-        if self.INPUTS.image is None:
-            raise ValueError(f"{self.NAME} id {self.INFO.id}: No image provided")
-        if not isinstance(self.INPUTS.image, torch.Tensor):
-            raise ValueError(f"{self.NAME} id {self.INFO.id}: Image provided is not a Tensor")
-
-        self.OUTPUTS.image = self.INPUTS.image
-        self.OUTPUTS.tiles = self.INPUTS.image
-
-        self.PARAMS.upscale_model_name = kwargs.get('upscale_model', 'None')
-        self.PARAMS.upscale_model = None
-        self.PARAMS.upscale_model_scale = 1
-        self.PARAMS.tile_size = kwargs.get('tile_size', None)
-        self.PARAMS.overlap = 0.10
-        self.PARAMS.tile_w = 512
-        self.PARAMS.tile_h = 512
-        self.PARAMS.overlap_x = 0 
-        self.PARAMS.overlap_y = 0
-        self.PARAMS.rows_qty = 1
-        self.PARAMS.cols_qty = 1
+        local_PIPE = Mara_Common_v1.init()
         
-        if self.PARAMS.upscale_model_name != 'None':
-            self.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(self.PARAMS.upscale_model_name)[0]
-            self.PARAMS.upscale_model_scale = self.PARAMS.upscale_model.scale
+        local_PIPE.INFO.id = kwargs.get('id', None)
+        local_PIPE.INPUTS.image = kwargs.get('image', None)
 
-        self.CONTROLNET.name = kwargs.get('control_net_name', 'None')
-        self.CONTROLNET.low_threshold = kwargs.get('low_threshold', None)
-        self.CONTROLNET.high_threshold = kwargs.get('high_threshold', None)
-        self.CONTROLNET.strength = kwargs.get('strength', None)
-        self.CONTROLNET.start_percent = kwargs.get('start_percent', None)
-        self.CONTROLNET.end_percent = kwargs.get('end_percent', None)
+        if local_PIPE.INPUTS.image is None:
+            raise ValueError(f"{self.NAME} id {local_PIPE.INFO.id}: No image provided")
+        if not isinstance(local_PIPE.INPUTS.image, torch.Tensor):
+            raise ValueError(f"{self.NAME} id {local_PIPE.INFO.id}: Image provided is not a Tensor")
 
-        self.CONTROLNET.path = None
-        self.CONTROLNET.controlnet = None
-        if self.CONTROLNET.name != "None":
-            self.CONTROLNET.path = folder_paths.get_full_path("controlnet", self.CONTROLNET.name)
-            self.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(self.CONTROLNET.path)   
+        local_PIPE.OUTPUTS.image = local_PIPE.INPUTS.image
+        local_PIPE.OUTPUTS.tiles = local_PIPE.INPUTS.image
+
+        local_PIPE.PARAMS.upscale_model_name = kwargs.get('upscale_model', 'None')
+        local_PIPE.PARAMS.upscale_model = None
+        local_PIPE.PARAMS.upscale_model_scale = 1
+        local_PIPE.PARAMS.tile_size = kwargs.get('tile_size', None)
+        local_PIPE.PARAMS.overlap = 0.10
+        local_PIPE.PARAMS.tile_w = 512
+        local_PIPE.PARAMS.tile_h = 512
+        local_PIPE.PARAMS.overlap_x = 0 
+        local_PIPE.PARAMS.overlap_y = 0
+        local_PIPE.PARAMS.rows_qty = 1
+        local_PIPE.PARAMS.cols_qty = 1
+        
+        if local_PIPE.PARAMS.upscale_model_name != 'None':
+            local_PIPE.PARAMS.upscale_model = comfy_extras.nodes_upscale_model.UpscaleModelLoader().load_model(local_PIPE.PARAMS.upscale_model_name)[0]
+            local_PIPE.PARAMS.upscale_model_scale = local_PIPE.PARAMS.upscale_model.scale
+
+        local_PIPE.CONTROLNET.name = kwargs.get('control_net_name', 'None')
+        local_PIPE.CONTROLNET.low_threshold = kwargs.get('low_threshold', None)
+        local_PIPE.CONTROLNET.high_threshold = kwargs.get('high_threshold', None)
+        local_PIPE.CONTROLNET.strength = kwargs.get('strength', None)
+        local_PIPE.CONTROLNET.start_percent = kwargs.get('start_percent', None)
+        local_PIPE.CONTROLNET.end_percent = kwargs.get('end_percent', None)
+
+        local_PIPE.CONTROLNET.path = None
+        local_PIPE.CONTROLNET.controlnet = None
+        if local_PIPE.CONTROLNET.name != "None":
+            local_PIPE.CONTROLNET.path = folder_paths.get_full_path("controlnet", local_PIPE.CONTROLNET.name)
+            local_PIPE.CONTROLNET.controlnet = comfy.controlnet.load_controlnet(local_PIPE.CONTROLNET.path)   
+            
+        return local_PIPE
     
     @classmethod
-    def get_tiles(self, image):
-        rows_qty_float = (image.shape[1]) / self.PARAMS.tile_size
-        cols_qty_float = (image.shape[2]) / self.PARAMS.tile_size
+    def get_tiles(self, pipe, image):
+        rows_qty_float = (image.shape[1]) / pipe.PARAMS.tile_size
+        cols_qty_float = (image.shape[2]) / pipe.PARAMS.tile_size
         rows_qty = math.ceil(rows_qty_float)
         cols_qty = math.ceil(cols_qty_float)
 
         tiles_qty = rows_qty * cols_qty        
-        if tiles_qty > self.MAX_TILES :
-            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {self.MAX_TILES} ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - {self.NAME}")
+        if tiles_qty > Mara_Common_v1.MAX_TILES :
+            msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {Mara_Common_v1.MAX_TILES} ({tiles_qty} for {pipe.PARAMS.cols_qty} cols and {pipe.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {pipe.INFO.id} - {self.NAME}")
             raise ValueError(msg)
         
         # return grid_images, grid_specs
-        tiles, tile_w, tile_h, overlap_x, overlap_y = ImageTile().execute(image, rows_qty, cols_qty, self.PARAMS.overlap, 0, 0)
+        tiles, tile_w, tile_h, overlap_x, overlap_y = ImageTile().execute(image, rows_qty, cols_qty, pipe.PARAMS.overlap, 0, 0)
 
         return (tiles, tile_w, tile_h, overlap_x, overlap_y, rows_qty, cols_qty,)
         
         
-class Mara_Untiler_v1(Mara_Common_v1):
+class Mara_Untiler_v1():
     
     NAME = "Tiles to Image"
     SHORTCUT = "m"
@@ -412,15 +425,15 @@ class Mara_Untiler_v1(Mara_Common_v1):
     INFO = {}
     
     @classmethod
-    def INPUT_TYPES(self):
+    def INPUT_TYPES(cls):
         return {
             "hidden": {
                 "id":"UNIQUE_ID",
             },
             "required":{
                 "pipe": ("MC_BOATY_PIPE", {"label": "McBoaty Pipe" }),
-                "output_upscale_method": (self.UPSCALE_METHODS, { "label": "Custom Output Upscale Method", "default": "bicubic"}),
-                "output_size_ref": (self.UPSCALE_SIZE_REF, { "label": "Output Size Ref", "default": "Output Image"}),
+                "output_upscale_method": (cls.UPSCALE_METHODS, { "label": "Custom Output Upscale Method", "default": "bicubic"}),
+                "output_size_ref": (cls.UPSCALE_SIZE_REF, { "label": "Output Size Ref", "default": "Output Image"}),
                 "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 0.10, "max": 16.00, "step":0.01, "round": 0.01}),
                 
             },
@@ -452,72 +465,76 @@ class Mara_Untiler_v1(Mara_Common_v1):
         
         start_time = time.time()
 
-        self.init(**kwargs)
+        local_PIPE = self.init(**kwargs)
         
-        log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {self.INFO.id}")
+        log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {local_PIPE.INFO.id}")
         
-        self.OUTPUTS.tiles = [t.new_tile for t in self.KSAMPLER.tiles]
-        self.OUTPUTS.tiles = torch.cat(self.OUTPUTS.tiles, dim=0)
+        local_PIPE.OUTPUTS.tiles = [t.new_tile for t in local_PIPE.KSAMPLER.tiles]
+        local_PIPE.OUTPUTS.tiles = torch.cat(local_PIPE.OUTPUTS.tiles, dim=0)
             
-        self.OUTPUTS.image = ImageUntile().execute(
-            self.OUTPUTS.tiles, 
-            self.PARAMS.overlap_x, 
-            self.PARAMS.overlap_y, 
-            self.PARAMS.rows_qty, 
-            self.PARAMS.cols_qty
+        local_PIPE.OUTPUTS.image = ImageUntile().execute(
+            local_PIPE.OUTPUTS.tiles, 
+            local_PIPE.PARAMS.overlap_x, 
+            local_PIPE.PARAMS.overlap_y, 
+            local_PIPE.PARAMS.rows_qty, 
+            local_PIPE.PARAMS.cols_qty
         )[0]
-        self.OUTPUTS.image = comfy_extras.nodes_images.ImageCrop().crop(
-            self.OUTPUTS.image, 
-            (self.INPUTS.image.shape[2] * self.PARAMS.upscale_model_scale), 
-            (self.INPUTS.image.shape[1] * self.PARAMS.upscale_model_scale), 
+        local_PIPE.OUTPUTS.image = comfy_extras.nodes_images.ImageCrop().crop(
+            local_PIPE.OUTPUTS.image, 
+            (local_PIPE.INPUTS.image.shape[2] * local_PIPE.PARAMS.upscale_model_scale), 
+            (local_PIPE.INPUTS.image.shape[1] * local_PIPE.PARAMS.upscale_model_scale), 
             0, 
             0
         )[0]
         
-        if not (self.PARAMS.upscale_size_ref == self.UPSCALE_SIZE_REF[0] and self.PARAMS.upscale_size == 1.00):
-            image_ref = self.OUTPUTS.image
-            if self.PARAMS.upscale_size_ref != self.UPSCALE_SIZE_REF[0]:
-                image_ref = self.INPUTS.image
-            self.OUTPUTS.image = nodes.ImageScale().upscale(self.OUTPUTS.image, self.PARAMS.upscale_method, int(image_ref.shape[2] * self.PARAMS.upscale_size), int(image_ref.shape[1] * self.PARAMS.upscale_size), False)[0]
+        if not (local_PIPE.PARAMS.upscale_size_ref == self.UPSCALE_SIZE_REF[0] and local_PIPE.PARAMS.upscale_size == 1.00):
+            image_ref = local_PIPE.OUTPUTS.image
+            if local_PIPE.PARAMS.upscale_size_ref != self.UPSCALE_SIZE_REF[0]:
+                image_ref = local_PIPE.INPUTS.image
+            local_PIPE.OUTPUTS.image = nodes.ImageScale().upscale(local_PIPE.OUTPUTS.image, local_PIPE.PARAMS.upscale_method, int(image_ref.shape[2] * local_PIPE.PARAMS.upscale_size), int(image_ref.shape[1] * local_PIPE.PARAMS.upscale_size), False)[0]
 
         output_latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
-            self.KSAMPLER.model, 
-            self.KSAMPLER.add_noise, 
-            self.KSAMPLER.noise_seed, 
-            self.KSAMPLER.cfg, 
-            nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.KSAMPLER.positive)[0],
-            nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, self.KSAMPLER.negative)[0],
-            self.KSAMPLER.sampler, 
-            Mara_McBoaty_Configurator_v6._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 0.10, self.KSAMPLER.scheduler, self.KSAMPLER.model_type), 
-            nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, self.OUTPUTS.image, self.KSAMPLER.tile_size_vae)[0]
+            local_PIPE.KSAMPLER.model, 
+            local_PIPE.KSAMPLER.add_noise, 
+            local_PIPE.KSAMPLER.noise_seed, 
+            local_PIPE.KSAMPLER.cfg, 
+            nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, local_PIPE.KSAMPLER.positive)[0],
+            nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, local_PIPE.KSAMPLER.negative)[0],
+            local_PIPE.KSAMPLER.sampler, 
+            Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, 0.10, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type), 
+            nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, local_PIPE.OUTPUTS.image, local_PIPE.KSAMPLER.tile_size_vae)[0]
         )[0]
-        self.OUTPUTS.image = nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, output_latent, self.KSAMPLER.tile_size_vae, int(self.KSAMPLER.tile_size_vae * self.PARAMS.overlap) )[0]
+        local_PIPE.OUTPUTS.image = nodes.VAEDecodeTiled().decode(local_PIPE.KSAMPLER.vae, output_latent, local_PIPE.KSAMPLER.tile_size_vae, int(local_PIPE.KSAMPLER.tile_size_vae * local_PIPE.PARAMS.overlap) )[0]
 
-        if self.PARAMS.color_match_method != 'none':
-            self.OUTPUTS.image = ColorMatch().colormatch(self.INPUTS.image, self.OUTPUTS.image, self.PARAMS.color_match_method)[0]
+        if local_PIPE.PARAMS.color_match_method != 'none':
+            local_PIPE.OUTPUTS.image = ColorMatch().colormatch(local_PIPE.INPUTS.image, local_PIPE.OUTPUTS.image, local_PIPE.PARAMS.color_match_method)[0]
 
         end_time = time.time()
-        self.INFO.execution_time = int(end_time - start_time)
+        local_PIPE.INFO.execution_time = int(end_time - start_time)
 
         return (
-            self.OUTPUTS.image,
+            copy.deepcopy(local_PIPE.OUTPUTS.image),
         )
         
     @classmethod
-    def init(self, **kwargs):
+    def init(cls, **kwargs):
 
-        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(self.PIPE_ATTRIBUTES))
-        self.set_pipe_values(pipe)
+        local_PIPE = Mara_Common_v1.init()
 
-        self.INFO.id = kwargs.get('id', None)
-        self.INPUTS.tiles = kwargs.get('tiles', None)
-        self.OUTPUTS.image = self.INPUTS.image
+        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
+        local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
 
-        self.PARAMS.upscale_size_ref = kwargs.get('output_size_ref', False)
-        self.PARAMS.upscale_size = kwargs.get('output_size', 1.00)
-        self.PARAMS.upscale_method = kwargs.get('output_upscale_method', "lanczos")
+        local_PIPE.INFO.id = kwargs.get('id', None)
+        local_PIPE.INPUTS.tiles = kwargs.get('tiles', None)
+        local_PIPE.OUTPUTS.image = local_PIPE.INPUTS.image
+
+        local_PIPE.PARAMS.upscale_size_ref = kwargs.get('output_size_ref', False)
+        local_PIPE.PARAMS.upscale_size = kwargs.get('output_size', 1.00)
+        local_PIPE.PARAMS.upscale_method = kwargs.get('output_upscale_method', "lanczos")
         
-class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
+        return local_PIPE
+        
+class Mara_McBoaty_Configurator_v6():
 
     NAME = "McBoaty Configurator"
     SHORTCUT = "m"
@@ -539,7 +556,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
     MODEL_TYPES = list(MODEL_TYPE_SIZES.keys())
     
     @classmethod
-    def INPUT_TYPES(self):
+    def INPUT_TYPES(cls):
         return {
             "hidden": {
                 "id":"UNIQUE_ID",
@@ -552,14 +569,14 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
                 "vae": ("VAE", { "label": "VAE" }),
                 "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True, "default": "" }),
                 "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": "" }),
-                "sigmas_type": (self.SIGMAS_TYPES, { "label": "Sigmas Type" }),
-                "model_type": (self.MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
+                "sigmas_type": (cls.SIGMAS_TYPES, { "label": "Sigmas Type" }),
+                "model_type": (cls.MODEL_TYPES, { "label": "Model Type", "default": "SDXL" }),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, { "label": "Sampler Name" }),
                 "basic_scheduler": (comfy.samplers.KSampler.SCHEDULERS, { "label": "Basic Scheduler" }),
                 "steps": ("INT", { "label": "Steps", "default": 10, "min": 1, "max": 10000}),
                 "seed": ("INT", { "label": "Seed", "default": 42, "min": 0, "max": 0xffffffffffffffff}),
-                "cfg": ("FLOAT", { "label": "CFG", "default": self.TILE_ATTRIBUTES.cfg, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
-                "denoise": ("FLOAT", { "label": "Denoise", "default": self.TILE_ATTRIBUTES.denoise, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "cfg": ("FLOAT", { "label": "CFG", "default": Mara_Common_v1.TILE_ATTRIBUTES.cfg, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
+                "denoise": ("FLOAT", { "label": "Denoise", "default": Mara_Common_v1.TILE_ATTRIBUTES.denoise, "min": 0.0, "max": 1.0, "step": 0.01}),
 
                 "vae_encode": ("BOOLEAN", { "label": "VAE Encode type", "default": True, "label_on": "tiled", "label_off": "standard"}),
                 "tile_size_vae": ("INT", { "label": "Tile Size (VAE)", "default": 512, "min": 256, "max": 4096, "step": 64}),
@@ -611,50 +628,50 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 
         start_time = time.time()
         
-        self.init(**kwargs)
+        local_PIPE = self.init(**kwargs)
         
-        log("McBoaty (Upscaler) is starting to do its magic", None, None, f"Node {self.INFO.id}")
+        log("McBoaty (Upscaler) is starting to do its magic", None, None, f"Node {local_PIPE.INFO.id}")
         
-        self.KSAMPLER.positive = self.INPUTS.positive
-        self.KSAMPLER.negative = self.INPUTS.negative
-        store.add_item(self.INFO.id, "all", {"positive": self.KSAMPLER.positive, "negative": self.KSAMPLER.negative})
-                        
-        if self.KSAMPLER.positive == "" and self.LLM.vision_model is not None:
-            log("Initiate Image Analysis", None, None, f"Node {self.INFO.id} - OllamaVision - Entire Image")
-            self.KSAMPLER.positive = Mara_OllamaVision_v1().ollama_vision(self.INPUTS.image, query=self.LLM.vision_query, debug="disable", url=self.LLM.ollama_url, model=self.LLM.vision_model, seed=self.KSAMPLER.noise_seed, keep_alive=self.LLM.ollama_keep_alive , format="text")[0]
-            log(f"{self.KSAMPLER.positive}", None, None, f"Node {self.INFO.id} - OllamaVision - Entire Image")
-            log("End Image Analysis", None, None, f"Node {self.INFO.id} - OllamaVision - Entire Image")
-            store.add_item(self.INFO.id, "all", {"positive": self.KSAMPLER.positive, "negative": self.KSAMPLER.negative})
+        local_PIPE.KSAMPLER.positive = local_PIPE.INPUTS.positive
+        local_PIPE.KSAMPLER.negative = local_PIPE.INPUTS.negative
+        store.add_item(local_PIPE.INFO.id, "all", {"positive": local_PIPE.KSAMPLER.positive, "negative": local_PIPE.KSAMPLER.negative})
+        generate_prompt = local_PIPE.KSAMPLER.positive == "" and local_PIPE.LLM.vision_model is not None
+        if generate_prompt:
+            log("Initiate Image Analysis", None, None, f"Node {local_PIPE.INFO.id} - OllamaVision - Entire Image")
+            local_PIPE.KSAMPLER.positive = Mara_OllamaVision_v1().ollama_vision(local_PIPE.INPUTS.image, query=local_PIPE.LLM.vision_query, debug="disable", url=local_PIPE.LLM.ollama_url, model=local_PIPE.LLM.vision_model, seed=local_PIPE.KSAMPLER.noise_seed, keep_alive=local_PIPE.LLM.ollama_keep_alive , format="text")[0]
+            log(f"{local_PIPE.KSAMPLER.positive}", None, None, f"Node {local_PIPE.INFO.id} - OllamaVision - Entire Image")
+            log("End Image Analysis", None, None, f"Node {local_PIPE.INFO.id} - OllamaVision - Entire Image")
+            store.add_item(local_PIPE.INFO.id, "all", {"positive": local_PIPE.KSAMPLER.positive, "negative": local_PIPE.KSAMPLER.negative})
         
-        for index, tile in enumerate(self.KSAMPLER.tiles):
-            tile.positive = self.KSAMPLER.positive
-            if self.LLM.vision_model is not None:
-                log(f"Initiate Tile {index} Analysis", None, None, f"Node {self.INFO.id} - OllamaVision - Tile")
-                tile.positive = Mara_OllamaVision_v1().ollama_vision(tile.tile, query=self.LLM.vision_query, debug="disable", url=self.LLM.ollama_url, model=self.LLM.vision_model, seed=self.KSAMPLER.noise_seed, keep_alive=self.LLM.ollama_keep_alive , format="text")[0]
-                log(f"Tile {index} : {tile.positive}", None, None, f"Node {self.INFO.id} - OllamaVision - Tile")
-                log(f"End Tile {index} Analysis", None, None, f"Node {self.INFO.id} - OllamaVision - Tile")
-            tile.negative = self.KSAMPLER.negative
-            tile.cfg = self.KSAMPLER.cfg
-            tile.denoise = self.KSAMPLER.denoise
-            store.add_item(self.INFO.id, index, {"positive": self.KSAMPLER.positive, "negative": self.KSAMPLER.negative})
+        for index, tile in enumerate(local_PIPE.KSAMPLER.tiles):
+            tile.positive = local_PIPE.KSAMPLER.positive
+            if generate_prompt:
+                log(f"Initiate Tile {index} Analysis", None, None, f"Node {local_PIPE.INFO.id} - OllamaVision - Tile")
+                tile.positive = Mara_OllamaVision_v1().ollama_vision(tile.tile, query=local_PIPE.LLM.vision_query, debug="disable", url=local_PIPE.LLM.ollama_url, model=local_PIPE.LLM.vision_model, seed=local_PIPE.KSAMPLER.noise_seed, keep_alive=local_PIPE.LLM.ollama_keep_alive , format="text")[0]
+                log(f"Tile {index} : {tile.positive}", None, None, f"Node {local_PIPE.INFO.id} - OllamaVision - Tile")
+                log(f"End Tile {index} Analysis", None, None, f"Node {local_PIPE.INFO.id} - OllamaVision - Tile")
+            tile.negative = local_PIPE.KSAMPLER.negative
+            tile.cfg = local_PIPE.KSAMPLER.cfg
+            tile.denoise = local_PIPE.KSAMPLER.denoise
+            store.add_item(local_PIPE.INFO.id, index, {"positive": local_PIPE.KSAMPLER.positive, "negative": local_PIPE.KSAMPLER.negative})
             
         end_time = time.time()
 
         output_info = self._get_info(
-            0, # self.INFO.image_width, 
-            0, # self.INFO.image_height, 
-            True, # self.INFO.image_divisible_by_8, 
+            0, # local_PIPE.INFO.image_width, 
+            0, # local_PIPE.INFO.image_height, 
+            True, # local_PIPE.INFO.image_divisible_by_8, 
             int(end_time - start_time)
         )
         
-        mc_boaty_pipe = self.set_mc_boaty_pipe()
+        mc_boaty_pipe = Mara_Common_v1.set_mc_boaty_pipe(local_PIPE)
         
-        log("McBoaty (Upscaler) is done with its magic", None, None, f"Node {self.INFO.id}")
+        log("McBoaty (Upscaler) is done with its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         return (
             mc_boaty_pipe,
             (
-                self.KSAMPLER.tiles,
+                copy.deepcopy(local_PIPE.KSAMPLER.tiles),
             ),
             output_info
         )
@@ -662,57 +679,61 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
     @classmethod
     def init(self, **kwargs):
 
-        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(self.PIPE_ATTRIBUTES))
-        self.set_pipe_values(pipe)
+        local_PIPE = Mara_Common_v1.init()
 
-        self.INFO.id = kwargs.get('id', None)
+        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
+        local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
+
+        local_PIPE.INFO.id = kwargs.get('id', None)
         
-        self.INPUTS.tiles = kwargs.get('tiles', None)
-        if self.INPUTS.tiles is not None and not isinstance(self.INPUTS.tiles, torch.Tensor):
-            raise ValueError(f"{self.NAME} id {self.INFO.id}: tiles provided are not Tensors")
+        local_PIPE.INPUTS.tiles = kwargs.get('tiles', None)
+        if local_PIPE.INPUTS.tiles is not None and not isinstance(local_PIPE.INPUTS.tiles, torch.Tensor):
+            raise ValueError(f"{self.NAME} id {local_PIPE.INFO.id}: tiles provided are not Tensors")
 
-        self.INPUTS.positive = kwargs.get('positive', '')
-        self.INPUTS.negative = kwargs.get('negative', '')
+        local_PIPE.INPUTS.positive = kwargs.get('positive', '')
+        local_PIPE.INPUTS.negative = kwargs.get('negative', '')
                 
-        self.LLM.vision_query = kwargs.get("vlm_query", None)
-        self.LLM.ollama_url = kwargs.get("ollama_url", None)
-        self.LLM.vision_model = kwargs.get("vlm_model", None)
-        self.LLM.ollama_keep_alive = kwargs.get("ollama_keep_alive", None)        
+        local_PIPE.LLM.vision_query = kwargs.get("vlm_query", None)
+        local_PIPE.LLM.ollama_url = kwargs.get("ollama_url", None)
+        local_PIPE.LLM.vision_model = kwargs.get("vlm_model", None)
+        local_PIPE.LLM.ollama_keep_alive = kwargs.get("ollama_keep_alive", None)        
         
-        self.PARAMS.tile_prompting_active = kwargs.get('tile_prompting_active', False)        
+        local_PIPE.PARAMS.tile_prompting_active = kwargs.get('tile_prompting_active', False)        
 
-        self.KSAMPLER.tiled = kwargs.get('vae_encode', None)
-        self.KSAMPLER.tile_size_vae = kwargs.get('tile_size_vae', None)
-        self.KSAMPLER.model = kwargs.get('model', None)
-        self.KSAMPLER.clip = kwargs.get('clip', None)
-        self.KSAMPLER.vae = kwargs.get('vae', None)
-        self.KSAMPLER.noise_seed = kwargs.get('seed', None)
-        self.KSAMPLER.add_noise = True
+        local_PIPE.KSAMPLER.tiled = kwargs.get('vae_encode', None)
+        local_PIPE.KSAMPLER.tile_size_vae = kwargs.get('tile_size_vae', None)
+        local_PIPE.KSAMPLER.model = kwargs.get('model', None)
+        local_PIPE.KSAMPLER.clip = kwargs.get('clip', None)
+        local_PIPE.KSAMPLER.vae = kwargs.get('vae', None)
+        local_PIPE.KSAMPLER.noise_seed = kwargs.get('seed', None)
+        local_PIPE.KSAMPLER.add_noise = True
 
-        self.KSAMPLER.sigmas_type = kwargs.get('sigmas_type', None)
-        self.KSAMPLER.model_type = kwargs.get('model_type', None)
-        self.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[self.KSAMPLER.model_type]
-        self.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
-        self.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(self.KSAMPLER.sampler_name)[0]
-        self.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
-        self.KSAMPLER.steps = kwargs.get('steps', None)
-        self.KSAMPLER.positive = kwargs.get('positive', '')
-        self.KSAMPLER.negative = kwargs.get('negative', '')
-        self.KSAMPLER.cfg = kwargs.get('cfg', self.TILE_ATTRIBUTES.cfg)
-        self.KSAMPLER.denoise = kwargs.get('denoise', self.TILE_ATTRIBUTES.denoise)
+        local_PIPE.KSAMPLER.sigmas_type = kwargs.get('sigmas_type', None)
+        local_PIPE.KSAMPLER.model_type = kwargs.get('model_type', None)
+        local_PIPE.KSAMPLER.tile_size_sampler = self.MODEL_TYPE_SIZES[local_PIPE.KSAMPLER.model_type]
+        local_PIPE.KSAMPLER.sampler_name = kwargs.get('sampler_name', None)
+        local_PIPE.KSAMPLER.sampler = comfy_extras.nodes_custom_sampler.KSamplerSelect().get_sampler(local_PIPE.KSAMPLER.sampler_name)[0]
+        local_PIPE.KSAMPLER.scheduler = kwargs.get('basic_scheduler', None)
+        local_PIPE.KSAMPLER.steps = kwargs.get('steps', None)
+        local_PIPE.KSAMPLER.positive = kwargs.get('positive', '')
+        local_PIPE.KSAMPLER.negative = kwargs.get('negative', '')
+        local_PIPE.KSAMPLER.cfg = kwargs.get('cfg', Mara_Common_v1.TILE_ATTRIBUTES.cfg)
+        local_PIPE.KSAMPLER.denoise = kwargs.get('denoise', Mara_Common_v1.TILE_ATTRIBUTES.denoise)
         
-        self.KSAMPLER.sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, self.KSAMPLER.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
-        # self.KSAMPLER.outpaint_sigmas = self._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, 1, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+        local_PIPE.KSAMPLER.sigmas = self._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, local_PIPE.KSAMPLER.denoise, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type)
+        # local_PIPE.KSAMPLER.outpaint_sigmas = self._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, 1, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type)
 
         # TODO : make the feather_mask proportional to tile size ?
-        # self.PARAMS.feather_mask = self.PARAMS.tile_size // 16
-        self.PARAMS.feather_mask = 0
+        # local_PIPE.PARAMS.feather_mask = local_PIPE.PARAMS.tile_size // 16
+        local_PIPE.PARAMS.feather_mask = 0
 
-        self.OUTPUTS.output_info = ["No info"]
-        self.OUTPUTS.grid_tiles_to_process = []
+        local_PIPE.OUTPUTS.output_info = ["No info"]
+        local_PIPE.OUTPUTS.grid_tiles_to_process = []
+        
+        return local_PIPE
     
     @classmethod
-    def _get_sigmas(self, sigmas_type, model, steps, denoise, scheduler, model_type):
+    def _get_sigmas(cls, sigmas_type, model, steps, denoise, scheduler, model_type):
         if sigmas_type == "SDTurboScheduler":
             SigmaScheduler = getattr(comfy_extras.nodes_custom_sampler, sigmas_type)
             sigmas = SigmaScheduler().get_sigmas(model, steps, denoise)[0]
@@ -750,42 +771,42 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
 """]        
     
     # @classmethod
-    # def upscale(self, image):
+    # def upscale(cls, image):
         
-    #     rows_qty_float = (image.shape[1] * self.PARAMS.upscale_model_scale) / self.PARAMS.tile_size
-    #     cols_qty_float = (image.shape[2] * self.PARAMS.upscale_model_scale) / self.PARAMS.tile_size
+    #     rows_qty_float = (image.shape[1] * cls.PARAMS.upscale_model_scale) / cls.PARAMS.tile_size
+    #     cols_qty_float = (image.shape[2] * cls.PARAMS.upscale_model_scale) / cls.PARAMS.tile_size
     #     rows_qty = math.ceil(rows_qty_float)
     #     cols_qty = math.ceil(cols_qty_float)
 
     #     tiles_qty = rows_qty * cols_qty        
-    #     if tiles_qty > self.MAX_TILES :
-    #         msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {self.MAX_TILES} ({tiles_qty} for {self.PARAMS.cols_qty} cols and {self.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {self.INFO.id} - Mara_McBoaty_Configurator_v6")
+    #     if tiles_qty > Mara_Common_v1.MAX_TILES :
+    #         msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {Mara_Common_v1.MAX_TILES} ({tiles_qty} for {cls.PARAMS.cols_qty} cols and {cls.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {cls.INFO.id} - Mara_McBoaty_Configurator_v6")
     #         raise ValueError(msg)
 
-    #     upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(self.PARAMS.upscale_model, image)[0]
+    #     upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(cls.PARAMS.upscale_model, image)[0]
 
-    #     self.PARAMS.rows_qty = rows_qty
-    #     self.PARAMS.cols_qty = cols_qty
+    #     cls.PARAMS.rows_qty = rows_qty
+    #     cls.PARAMS.cols_qty = cols_qty
         
-    #     # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, self.PARAMS.feather_mask)[0]
-    #     grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, self.PARAMS.tile_size, self.PARAMS.rows_qty, self.PARAMS.cols_qty, self.PARAMS.feather_mask)[0]
+    #     # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, cls.PARAMS.feather_mask)[0]
+    #     grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, cls.PARAMS.tile_size, cls.PARAMS.rows_qty, cls.PARAMS.cols_qty, cls.PARAMS.feather_mask)[0]
     #     grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
         
     #     grid_prompts = []
-    #     llm = MS_Llm(self.LLM.vision_model, self.LLM.model)
+    #     llm = MS_Llm(cls.LLM.vision_model, cls.LLM.model)
     #     prompt_context = llm.vision_llm.generate_prompt(image)
     #     total = len(grid_images)
     #     for index, grid_image in enumerate(grid_images):
     #         prompt_tile = prompt_context
-    #         if self.PARAMS.tile_prompting_active:
-    #             log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Node {self.INFO.id} - Prompting")
-    #             prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, self.KSAMPLER.noise_seed)
-    #         log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Node {self.INFO.id} - Prompting")
+    #         if cls.PARAMS.tile_prompting_active:
+    #             log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Node {cls.INFO.id} - Prompting")
+    #             prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, cls.KSAMPLER.noise_seed)
+    #         log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Node {cls.INFO.id} - Prompting")
     #         grid_prompts.append(prompt_tile)
                             
     #     return grid_specs, grid_images, grid_prompts
 
-class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
+class Mara_McBoaty_Refiner_v6():
     
     NAME = "McBoaty Refiner"
     SHORTCUT = "m"
@@ -804,7 +825,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
     CONTROLNET_CANNY_ONLY = ["None"]+[controlnet_name for controlnet_name in CONTROLNETS if controlnet_name is not None and ('canny' in controlnet_name.lower() or 'union' in controlnet_name.lower())]
     
     @classmethod
-    def INPUT_TYPES(self):
+    def INPUT_TYPES(cls):
         return {
             "hidden": {
                 "id":"UNIQUE_ID",
@@ -815,7 +836,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
             },
             "optional": {
                 "pipe_prompty": ("MC_PROMPTY_PIPE", {"label": "McPrompty Pipe" }),
-                "color_match_method": (self.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
+                "color_match_method": (cls.COLOR_MATCH_METHODS, { "label": "Color Match Method", "default": 'none'}),
             }
         }
 
@@ -854,55 +875,59 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         
         start_time = time.time()
         
-        self.init(**kwargs)
+        local_PIPE = self.init(**kwargs)
 
-        log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {self.INFO.id}")
+        log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
-        self.KSAMPLER.tiles = self.override_tiles(self.KSAMPLER.tiles, tiles)
-        self.KSAMPLER.tiles = self.refine(self.KSAMPLER.tiles)
+        local_PIPE.KSAMPLER.tiles = Mara_Common_v1.override_tiles(self, copy.deepcopy(local_PIPE.KSAMPLER.tiles), tiles)
+        local_PIPE.KSAMPLER.tiles = self.refine(local_PIPE, local_PIPE.KSAMPLER.tiles)
         end_time = time.time()
 
         output_info = self._get_info(
             int(end_time - start_time)
         )
 
-        mc_boaty_pipe = self.set_mc_boaty_pipe()
+        mc_boaty_pipe = Mara_Common_v1.set_mc_boaty_pipe(local_PIPE)
         
-        self.OUTPUTS.tiles = [t.new_tile for t in self.KSAMPLER.tiles]
-        self.OUTPUTS.cannies = [t.canny for t in self.KSAMPLER.tiles]
+        tiles = [t.new_tile for t in local_PIPE.KSAMPLER.tiles]
+        cannies = [t.canny for t in local_PIPE.KSAMPLER.tiles]
 
-        log("McBoaty (Refiner) is done with its magic", None, None, f"Node {self.INFO.id}")
+        log("McBoaty (Refiner) is done with its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         return (
             mc_boaty_pipe,
             (
-                self.KSAMPLER.tiles,
+                copy.deepcopy(local_PIPE.KSAMPLER.tiles),
             ),            
-            torch.cat(self.OUTPUTS.tiles, dim=0),
-            torch.cat(self.OUTPUTS.cannies, dim=0),
+            torch.cat(tiles, dim=0),
+            torch.cat(cannies, dim=0),
             output_info, 
         )
         
     @classmethod
     def init(self, **kwargs):
         
-        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(self.PIPE_ATTRIBUTES))
-        self.set_pipe_values(pipe)
+        local_PIPE = Mara_Common_v1.init()
 
-        self.INFO.id = kwargs.get('id', None)        
+        pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
+        local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
+
+        local_PIPE.INFO.id = kwargs.get('id', None)        
 
         _tiles_to_process = kwargs.get('tiles_to_process', '')
-        self.PARAMS.tiles_to_process = self.set_tiles_to_process(_tiles_to_process)
-        self.PARAMS.color_match_method = kwargs.get('color_match_method', 'none')
-                    
-    @classmethod
-    def set_tiles_to_process(self, tiles_to_process=''):
-
-        max_tiles = len(self.OUTPUTS.grid_tiles_to_process)
-        max = max_tiles if max_tiles > 0 else self.MAX_TILES
+        local_PIPE.PARAMS.tiles_to_process = Mara_McBoaty_Refiner_v6.set_tiles_to_process(local_PIPE, _tiles_to_process)
+        local_PIPE.PARAMS.color_match_method = kwargs.get('color_match_method', 'none')
         
-        def is_valid_index(index, max = self.MAX_TILES):
+        return local_PIPE
+                    
+    @staticmethod
+    def set_tiles_to_process(local_PIPE, tiles_to_process=''):
+
+        max_tiles = len(local_PIPE.OUTPUTS.grid_tiles_to_process)
+        max = max_tiles if max_tiles > 0 else Mara_Common_v1.MAX_TILES
+        
+        def is_valid_index(index, max = Mara_Common_v1.MAX_TILES):
             return 1 <= index <= max
         def to_computer_index(human_index):
             return human_index - 1
@@ -923,7 +948,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                     _tiles_to_process.extend(range(to_computer_index(start), to_computer_index(end) + 1))
                 else:
                     _tiles_to_process.append(-1)
-                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
+                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {cls.INFO.id}")
             else:
                 # Single index
                 try:
@@ -932,7 +957,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
                         _tiles_to_process.append(to_computer_index(index))
                     else:
                         _tiles_to_process.append(-1)
-                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {self.INFO.id}")
+                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {cls.INFO.id}")
                 except ValueError:
                     _tiles_to_process.append(-1)
                     # Ignore non-integer values
@@ -959,7 +984,7 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
 """]        
         
     @classmethod
-    def refine(self, tiles):
+    def refine(self, local_PIPE, tiles):
         
         total = len(tiles)
         for index, tile in enumerate(tiles):
@@ -967,61 +992,61 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
             _tile = _tile.squeeze(0).permute(2, 0, 1)
             _, h, w = _tile.shape
             dim_max = max(h, w)
-            if dim_max < self.PARAMS.tile_size:
-                dim_max = self.PARAMS.tile_size
+            if dim_max < local_PIPE.PARAMS.tile_size:
+                dim_max = local_PIPE.PARAMS.tile_size
             else:
-                _tile, _, _, self.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=tile.tile)
+                _tile, _, _, local_PIPE.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=tile.tile)
                 _tile = _tile.squeeze(0).permute(2, 0, 1)
                 _, h, w = _tile.shape
                 dim_max = max(h, w)
 
             new_tile, tile_padding = MS_Image.pad_to_square(_tile, dim_max)
             new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
-            if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
-                if self.KSAMPLER.tiled:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled")
-                    tile.latent = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, new_tile, self.KSAMPLER.tile_size_vae)[0]
+            if len(local_PIPE.PARAMS.tiles_to_process) == 0 or index in local_PIPE.PARAMS.tiles_to_process:
+                if local_PIPE.KSAMPLER.tiled:
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEEncodingTiled")
+                    tile.latent = nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, new_tile, local_PIPE.KSAMPLER.tile_size_vae)[0]
                 else:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding")
-                    tile.latent = nodes.VAEEncode().encode(self.KSAMPLER.vae, new_tile)[0]
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEEncoding")
+                    tile.latent = nodes.VAEEncode().encode(local_PIPE.KSAMPLER.vae, new_tile)[0]
         
-                sigmas = self.KSAMPLER.sigmas
-                if tile.denoise != self.KSAMPLER.denoise:
+                sigmas = local_PIPE.KSAMPLER.sigmas
+                if tile.denoise != local_PIPE.KSAMPLER.denoise:
                     denoise = tile.denoise
-                    sigmas = Mara_McBoaty_Configurator_v6._get_sigmas(self.KSAMPLER.sigmas_type, self.KSAMPLER.model, self.KSAMPLER.steps, tile.denoise, self.KSAMPLER.scheduler, self.KSAMPLER.model_type)
+                    sigmas = Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, tile.denoise, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type)
                 else:
-                    denoise = self.KSAMPLER.denoise
+                    denoise = local_PIPE.KSAMPLER.denoise
                     
-                log(f"tile {index + 1}/{total} : {denoise} / {tile.positive}", None, None, f"Node {self.INFO.id} - Denoise/ClipTextEncoding")
-                positive = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, tile.positive)[0]
-                negative = nodes.CLIPTextEncode().encode(self.KSAMPLER.clip, tile.negative)[0]
+                log(f"tile {index + 1}/{total} : {denoise} / {tile.positive}", None, None, f"Node {local_PIPE.INFO.id} - Denoise/ClipTextEncoding")
+                positive = nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, tile.positive)[0]
+                negative = nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, tile.negative)[0]
                 tile.controlnet = True
-                if self.CONTROLNET.controlnet is not None and tile.controlnet:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - ControlNetApply")
-                    tile.canny = Canny().detect_edge(new_tile, self.CONTROLNET.low_threshold, self.CONTROLNET.high_threshold)[0]
-                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, self.CONTROLNET.controlnet, tile.canny, tile.strength, tile.start_percent, tile.end_percent, self.KSAMPLER.vae )
+                if local_PIPE.CONTROLNET.controlnet is not None and tile.controlnet:
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - ControlNetApply")
+                    tile.canny = Canny().detect_edge(new_tile, local_PIPE.CONTROLNET.low_threshold, local_PIPE.CONTROLNET.high_threshold)[0]
+                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, local_PIPE.CONTROLNET.controlnet, tile.canny, tile.strength, tile.start_percent, tile.end_percent, local_PIPE.KSAMPLER.vae )
                     
-                log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - Refining")
+                log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - Refining")
                 _latent = tile.latent
                 _latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
-                    self.KSAMPLER.model, 
-                    self.KSAMPLER.add_noise, 
-                    self.KSAMPLER.noise_seed, 
+                    local_PIPE.KSAMPLER.model, 
+                    local_PIPE.KSAMPLER.add_noise, 
+                    local_PIPE.KSAMPLER.noise_seed, 
                     tile.cfg, 
                     positive,
                     negative,
-                    self.KSAMPLER.sampler, 
+                    local_PIPE.KSAMPLER.sampler, 
                     sigmas, 
                     _latent
                 )[0]
                 tile.latent = _latent
 
-                if self.KSAMPLER.tiled:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecodingTiled")
-                    new_tile = nodes.VAEDecodeTiled().decode(self.KSAMPLER.vae, tile.latent, self.KSAMPLER.tile_size_vae, int(self.KSAMPLER.tile_size_vae * self.PARAMS.overlap))[0]
+                if local_PIPE.KSAMPLER.tiled:
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEDecodingTiled")
+                    new_tile = nodes.VAEDecodeTiled().decode(local_PIPE.KSAMPLER.vae, tile.latent, local_PIPE.KSAMPLER.tile_size_vae, int(local_PIPE.KSAMPLER.tile_size_vae * local_PIPE.PARAMS.overlap))[0]
                 else:
-                    log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEDecoding")
-                    new_tile = nodes.VAEDecode().decode(self.KSAMPLER.vae, tile.latent)[0]
+                    log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEDecoding")
+                    new_tile = nodes.VAEDecode().decode(local_PIPE.KSAMPLER.vae, tile.latent)[0]
                 _new_tile = new_tile
                 new_tile = new_tile.squeeze(0).permute(2, 0, 1)
                 new_tile = MS_Image.crop_to_original(new_tile, _tile.shape, tile_padding)
@@ -1029,13 +1054,13 @@ class Mara_McBoaty_Refiner_v6(Mara_Common_v1):
         
         return tiles
 
-class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
+class Mara_McBoaty_TilePrompter_v6():
 
     NAME = "McBoaty Tile Prompter"
     SHORTCUT = "m"
 
     @classmethod
-    def INPUT_TYPES(self):
+    def INPUT_TYPES(cls):
         return {
             "hidden": {
                 "id":"UNIQUE_ID",
@@ -1043,10 +1068,10 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
             "required":{
                 "pipe_prompty": ("MC_PROMPTY_PIPE", {"label": "McPrompty Pipe" }),
                 "tiles_to_process": ("STRING", { "label": "Tile to process", "default": ""}),
-                "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True, "default": self.TILE_ATTRIBUTES.positive }),
-                "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": self.TILE_ATTRIBUTES.negative }),
-                "cfg": ("FLOAT", { "label": "CFG", "default": self.TILE_ATTRIBUTES.cfg, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
-                "denoise": ("FLOAT", { "label": "Denoise", "default": self.TILE_ATTRIBUTES.denoise, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True, "default": Mara_Common_v1.TILE_ATTRIBUTES.positive }),
+                "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": Mara_Common_v1.TILE_ATTRIBUTES.negative }),
+                "cfg": ("FLOAT", { "label": "CFG", "default": Mara_Common_v1.TILE_ATTRIBUTES.cfg, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
+                "denoise": ("FLOAT", { "label": "Denoise", "default": Mara_Common_v1.TILE_ATTRIBUTES.denoise, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.76, "min": 0.0, "max": 10.0, "step": 0.01}),
                 "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 0.76, "min": 0.0, "max": 1.0, "step": 0.001}),
@@ -1071,7 +1096,7 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
     FUNCTION = "fn"
 
     @classmethod    
-    def fn(self, **kwargs):
+    def fn(cls, **kwargs):
         
         start_time = time.time()
 
@@ -1081,7 +1106,7 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
         
         log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {nodeid}")
         
-        tile_attributes = copy.deepcopy(self.TILE_ATTRIBUTES)
+        tile_attributes = copy.deepcopy(Mara_Common_v1.TILE_ATTRIBUTES)
 
         attributes = {
             'positive': kwargs.get('positive', tile_attributes.positive),
@@ -1092,7 +1117,7 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
             'start_percent': round(kwargs.get('start_percent', tile_attributes.start_percent), 3),
             'end_percent': round(kwargs.get('end_percent', tile_attributes.end_percent), 3)
         }
-        tiles_to_process = self.parse_tiles_to_process(kwargs.get('tiles_to_process', ""), len(tiles))
+        tiles_to_process = Mara_Common_v1.parse_tiles_to_process(kwargs.get('tiles_to_process', ""), len(tiles))
         
         if not tiles_to_process:  # This works for empty lists/arrays
             tiles_to_process = list(range(1, len(tiles) + 1))
@@ -1116,13 +1141,13 @@ class Mara_McBoaty_TilePrompter_v6(Mara_Common_v1):
         )
 
                 
-class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
+class Mara_McBoaty_v6():
 
     NAME = "McBoaty"
     SHORTCUT = "m"
 
     @classmethod
-    def INPUT_TYPES(self):
+    def INPUT_TYPES(cls):
         upscaler_inputs = Mara_McBoaty_Configurator_v6.INPUT_TYPES()
         refiner_inputs = Mara_McBoaty_Refiner_v6.INPUT_TYPES()
         
@@ -1149,11 +1174,11 @@ class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
     FUNCTION = "fn"
 
     @classmethod
-    def fn(self, **kwargs):
+    def fn(cls, **kwargs):
         
         start_time = time.time()
         
-        self.INFO.id = kwargs.get('id', None)
+        cls.INFO.id = kwargs.get('id', None)
         
         # Upscaling phase
         upscaler_pipe, _, upscaler_info = Mara_McBoaty_Configurator_v6.fn(**kwargs)
@@ -1170,7 +1195,7 @@ class Mara_McBoaty_v6(Mara_McBoaty_Configurator_v6, Mara_McBoaty_Refiner_v6):
         total_time = int(end_time - start_time)
 
         # Combine info from both phases
-        combined_info = self._combine_info(upscaler_info, refiner_info, total_time)
+        combined_info = cls._combine_info(upscaler_info, refiner_info, total_time)
         
         return (
             mc_boaty_pipe,
@@ -1195,6 +1220,14 @@ Total Execution Time: {total_time} seconds
         return combined_info
 
     @classmethod
-    def init(self, **kwargs):
-        Mara_McBoaty_Configurator_v6.init(**kwargs)
-        Mara_McBoaty_Refiner_v6.init(**kwargs)
+    def init(cls, **kwargs):
+
+        local_PIPE = Mara_Common_v1.init()
+
+        local_PIPE = Mara_McBoaty_Configurator_v6.init(**kwargs)
+        
+        _tiles_to_process = kwargs.get('tiles_to_process', '')
+        local_PIPE.PARAMS.tiles_to_process = Mara_McBoaty_Refiner_v6.set_tiles_to_process(local_PIPE, _tiles_to_process)
+        local_PIPE.PARAMS.color_match_method = kwargs.get('color_match_method', 'none')
+        
+        return local_PIPE
