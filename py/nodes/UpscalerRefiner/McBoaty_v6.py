@@ -161,6 +161,7 @@ class Mara_Common_v1():
 
     @staticmethod
     def set_mc_boaty_pipe(local_PIPE):
+        local_PIPE = copy.deepcopy(local_PIPE)
         return tuple(getattr(local_PIPE, attr, None) for attr in copy.deepcopy(Mara_Common_v1.PIPE_ATTRIBUTES))
     
     @staticmethod
@@ -201,13 +202,15 @@ class Mara_Common_v1():
         return sorted(result)
 
     @staticmethod
-    def override_tiles(cls, tiles, new_tiles):
+    def override_tiles(local_PIPE, tiles, new_tiles):
+        
+        tiles = copy.deepcopy(tiles)
         
         for index, tile in enumerate(tiles):
             if index >= len(new_tiles):
                 continue  # Skip if the index doesn't exist in the `tiles` list
             
-            if len(cls.PARAMS.tiles_to_process) == 0 or index in cls.PARAMS.tiles_to_process:
+            if len(local_PIPE.PARAMS.tiles_to_process) == 0 or index in local_PIPE.PARAMS.tiles_to_process:
                 override_tile = new_tiles[index]
 
                 # Compare attributes and override only if they differ
@@ -338,7 +341,7 @@ class Mara_Tiler_v1():
     @classmethod
     def init(self, **kwargs):
         
-        local_PIPE = Mara_Common_v1.init()
+        local_PIPE = Mara_Common_v1().init()
         
         local_PIPE.INFO.id = kwargs.get('id', None)
         local_PIPE.INPUTS.image = kwargs.get('image', None)
@@ -473,7 +476,7 @@ class Mara_Untiler_v1():
         local_PIPE.OUTPUTS.tiles = torch.cat(local_PIPE.OUTPUTS.tiles, dim=0)
             
         local_PIPE.OUTPUTS.image = ImageUntile().execute(
-            local_PIPE.OUTPUTS.tiles, 
+            local_PIPE.OUTPUTS.tiles,
             local_PIPE.PARAMS.overlap_x, 
             local_PIPE.PARAMS.overlap_y, 
             local_PIPE.PARAMS.rows_qty, 
@@ -519,9 +522,13 @@ class Mara_Untiler_v1():
     @classmethod
     def init(cls, **kwargs):
 
-        local_PIPE = Mara_Common_v1.init()
+        local_PIPE = Mara_Common_v1().init()
 
         pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
+
+        id = kwargs.get('id', None)
+        # log(pipe[0], None, None, f"Node {id}") TODO
+        
         local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
 
         local_PIPE.INFO.id = kwargs.get('id', None)
@@ -679,7 +686,7 @@ class Mara_McBoaty_Configurator_v6():
     @classmethod
     def init(self, **kwargs):
 
-        local_PIPE = Mara_Common_v1.init()
+        local_PIPE = Mara_Common_v1().init()
 
         pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
         local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
@@ -876,11 +883,13 @@ class Mara_McBoaty_Refiner_v6():
         start_time = time.time()
         
         local_PIPE = self.init(**kwargs)
+        local_PIPE.KSAMPLER.tiles = copy.deepcopy(local_PIPE.KSAMPLER.tiles)
 
         log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
-        local_PIPE.KSAMPLER.tiles = Mara_Common_v1.override_tiles(self, copy.deepcopy(local_PIPE.KSAMPLER.tiles), tiles)
+        if len(tiles) > 0:
+            local_PIPE.KSAMPLER.tiles = Mara_Common_v1.override_tiles(local_PIPE, copy.deepcopy(local_PIPE.KSAMPLER.tiles), tiles)
         local_PIPE.KSAMPLER.tiles = self.refine(local_PIPE, local_PIPE.KSAMPLER.tiles)
         end_time = time.time()
 
@@ -908,12 +917,12 @@ class Mara_McBoaty_Refiner_v6():
     @classmethod
     def init(self, **kwargs):
         
-        local_PIPE = Mara_Common_v1.init()
+        local_PIPE = Mara_Common_v1().init()
 
         pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
         local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
 
-        local_PIPE.INFO.id = kwargs.get('id', None)        
+        local_PIPE.INFO.id = kwargs.get('id', None)
 
         _tiles_to_process = kwargs.get('tiles_to_process', '')
         local_PIPE.PARAMS.tiles_to_process = Mara_McBoaty_Refiner_v6.set_tiles_to_process(local_PIPE, _tiles_to_process)
@@ -1101,6 +1110,7 @@ class Mara_McBoaty_TilePrompter_v6():
         start_time = time.time()
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
+        tiles = copy.deepcopy(tiles)
         
         nodeid = kwargs.get('id', None)
         
@@ -1178,7 +1188,9 @@ class Mara_McBoaty_v6():
         
         start_time = time.time()
         
-        cls.INFO.id = kwargs.get('id', None)
+        local_PIPE = cls.init(**kwargs)
+        
+        local_PIPE.INFO.id = kwargs.get('id', None)
         
         # Upscaling phase
         upscaler_pipe, _, upscaler_info = Mara_McBoaty_Configurator_v6.fn(**kwargs)
@@ -1220,9 +1232,9 @@ Total Execution Time: {total_time} seconds
         return combined_info
 
     @classmethod
-    def init(cls, **kwargs):
+    def init(self, **kwargs):
 
-        local_PIPE = Mara_Common_v1.init()
+        local_PIPE = Mara_Common_v1().init()
 
         local_PIPE = Mara_McBoaty_Configurator_v6.init(**kwargs)
         
