@@ -571,7 +571,7 @@ class Mara_McBoaty_Configurator_v6(Mara_Common_v1):
                 # "Llm_party": ("CUSTOM", { "label": "LLM Model" }),
                 "vlm_query": ("STRING", {
                     "multiline": True,
-                    "default": "generate a single paragraph prompt of max 77 token to match the red rectangle area. do not comment."
+                    "default": "generate a single paragraph prompt of max 77 token to describe the image. do not comment."
                 }),
                 "ollama_url": ("STRING", {
                     "multiline": False,
