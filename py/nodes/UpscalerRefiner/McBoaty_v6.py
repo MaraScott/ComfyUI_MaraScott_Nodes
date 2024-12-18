@@ -120,7 +120,7 @@ async def get_prompts_endpoint(request):
         return web.json_response(prompts)
 
 
-class Mara_Common_v1():
+class Mara_Common_v1:
 
     MAX_TILES = 16384
 
@@ -155,6 +155,7 @@ class Mara_Common_v1():
 
     @staticmethod
     def set_pipe_values(local_PIPE, pipe):
+        local_PIPE = copy.deepcopy(local_PIPE)
         for name, value in zip(copy.deepcopy(Mara_Common_v1.PIPE_ATTRIBUTES), pipe):
             setattr(local_PIPE, name, value)
         return local_PIPE
@@ -234,7 +235,7 @@ class Mara_Common_v1():
         return tiles
 
     
-class Mara_Tiler_v1():
+class Mara_Tiler_v1:
     
     NAME = "Image to tiles"
     SHORTCUT = "m"
@@ -294,6 +295,7 @@ class Mara_Tiler_v1():
         start_time = time.time()
 
         local_PIPE = self.init(**kwargs)
+        local_PIPE = copy.deepcopy(local_PIPE)
         
         log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {local_PIPE.INFO.id}")
         
@@ -403,7 +405,7 @@ class Mara_Tiler_v1():
         return (tiles, tile_w, tile_h, overlap_x, overlap_y, rows_qty, cols_qty,)
         
         
-class Mara_Untiler_v1():
+class Mara_Untiler_v1:
     
     NAME = "Tiles to Image"
     SHORTCUT = "m"
@@ -469,6 +471,7 @@ class Mara_Untiler_v1():
         start_time = time.time()
 
         local_PIPE = self.init(**kwargs)
+        local_PIPE = copy.deepcopy(local_PIPE)
         
         log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {local_PIPE.INFO.id}")
         
@@ -523,6 +526,7 @@ class Mara_Untiler_v1():
     def init(cls, **kwargs):
 
         local_PIPE = Mara_Common_v1().init()
+        local_PIPE = copy.deepcopy(local_PIPE)
 
         pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
 
@@ -530,6 +534,7 @@ class Mara_Untiler_v1():
         # log(pipe[0], None, None, f"Node {id}") TODO
         
         local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
+        local_PIPE = copy.deepcopy(local_PIPE)
 
         local_PIPE.INFO.id = kwargs.get('id', None)
         local_PIPE.INPUTS.tiles = kwargs.get('tiles', None)
@@ -541,7 +546,7 @@ class Mara_Untiler_v1():
         
         return local_PIPE
         
-class Mara_McBoaty_Configurator_v6():
+class Mara_McBoaty_Configurator_v6:
 
     NAME = "McBoaty Configurator"
     SHORTCUT = "m"
@@ -813,7 +818,7 @@ class Mara_McBoaty_Configurator_v6():
                             
     #     return grid_specs, grid_images, grid_prompts
 
-class Mara_McBoaty_Refiner_v6():
+class Mara_McBoaty_Refiner_v6:
     
     NAME = "McBoaty Refiner"
     SHORTCUT = "m"
@@ -883,7 +888,7 @@ class Mara_McBoaty_Refiner_v6():
         start_time = time.time()
         
         local_PIPE = self.init(**kwargs)
-        local_PIPE.KSAMPLER.tiles = copy.deepcopy(local_PIPE.KSAMPLER.tiles)
+        local_PIPE = copy.deepcopy(local_PIPE)
 
         log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
@@ -1063,7 +1068,7 @@ class Mara_McBoaty_Refiner_v6():
         
         return tiles
 
-class Mara_McBoaty_TilePrompter_v6():
+class Mara_McBoaty_TilePrompter_v6:
 
     NAME = "McBoaty Tile Prompter"
     SHORTCUT = "m"
@@ -1151,7 +1156,7 @@ class Mara_McBoaty_TilePrompter_v6():
         )
 
                 
-class Mara_McBoaty_v6():
+class Mara_McBoaty_v6:
 
     NAME = "McBoaty"
     SHORTCUT = "m"
