@@ -297,7 +297,7 @@ class Mara_Tiler_v1:
         local_PIPE = self.init(**kwargs)
         local_PIPE = copy.deepcopy(local_PIPE)
         
-        log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {local_PIPE.INFO.id}")
+        log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {local_PIPE.INFO.id}") 
         
         local_PIPE.OUTPUTS.image, _, _, local_PIPE.INFO.is_image_divisible_by_8 = MS_Image().format_2_divby8(image=local_PIPE.INPUTS.image)
         local_PIPE.OUTPUTS.upscaled_image = local_PIPE.OUTPUTS.image 
