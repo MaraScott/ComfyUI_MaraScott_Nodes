@@ -519,7 +519,7 @@ class Mara_Untiler_v1:
             nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, final_negative)[0],
             local_PIPE.KSAMPLER.sampler, 
             Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, final_denoise, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type), 
-            nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, local_PIPE.OUTPUTS.image, local_PIPE.KSAMPLER.tile_size_vae, , local_PIPE.KSAMPLER.tile_size_vae // 16)[0]
+            nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, local_PIPE.OUTPUTS.image, local_PIPE.KSAMPLER.tile_size_vae, local_PIPE.KSAMPLER.tile_size_vae // 16)[0]
         )[0]
         local_PIPE.OUTPUTS.image = nodes.VAEDecodeTiled().decode(local_PIPE.KSAMPLER.vae, output_latent, local_PIPE.KSAMPLER.tile_size_vae, int(local_PIPE.KSAMPLER.tile_size_vae * local_PIPE.PARAMS.overlap) )[0]
 
