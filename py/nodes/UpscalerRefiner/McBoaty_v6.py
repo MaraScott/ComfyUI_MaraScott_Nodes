@@ -531,7 +531,6 @@ class Mara_Untiler_v1:
         pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
 
         id = kwargs.get('id', None)
-        # log(pipe[0], None, None, f"Node {id}") TODO
         
         local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
         local_PIPE = copy.deepcopy(local_PIPE)
@@ -780,43 +779,7 @@ class Mara_McBoaty_Configurator_v6:
     NODE INFO
         version : {VERSION}
 
-"""]        
-    
-    # @classmethod
-    # def upscale(cls, image):
-        
-    #     rows_qty_float = (image.shape[1] * cls.PARAMS.upscale_model_scale) / cls.PARAMS.tile_size
-    #     cols_qty_float = (image.shape[2] * cls.PARAMS.upscale_model_scale) / cls.PARAMS.tile_size
-    #     rows_qty = math.ceil(rows_qty_float)
-    #     cols_qty = math.ceil(cols_qty_float)
-
-    #     tiles_qty = rows_qty * cols_qty        
-    #     if tiles_qty > Mara_Common_v1.MAX_TILES :
-    #         msg = get_log(f"\n\n--------------------\n\n!!! Number of tiles is higher than {Mara_Common_v1.MAX_TILES} ({tiles_qty} for {cls.PARAMS.cols_qty} cols and {cls.PARAMS.rows_qty} rows)!!!\n\nPlease consider increasing your tile and feather sizes\n\n--------------------\n", "BLUE", "YELLOW", f"Node {cls.INFO.id} - Mara_McBoaty_Configurator_v6")
-    #         raise ValueError(msg)
-
-    #     upscaled_image = comfy_extras.nodes_upscale_model.ImageUpscaleWithModel().upscale(cls.PARAMS.upscale_model, image)[0]
-
-    #     cls.PARAMS.rows_qty = rows_qty
-    #     cls.PARAMS.cols_qty = cols_qty
-        
-    #     # grid_specs = MS_Image().get_dynamic_grid_specs(upscaled_image.shape[2], upscaled_image.shape[1], rows_qty, cols_qty, cls.PARAMS.feather_mask)[0]
-    #     grid_specs = MS_Image().get_tiled_grid_specs(upscaled_image, cls.PARAMS.tile_size, cls.PARAMS.rows_qty, cls.PARAMS.cols_qty, cls.PARAMS.feather_mask)[0]
-    #     grid_images = MS_Image().get_grid_images(upscaled_image, grid_specs)
-        
-    #     grid_prompts = []
-    #     llm = MS_Llm(cls.LLM.vision_model, cls.LLM.model)
-    #     prompt_context = llm.vision_llm.generate_prompt(image)
-    #     total = len(grid_images)
-    #     for index, grid_image in enumerate(grid_images):
-    #         prompt_tile = prompt_context
-    #         if cls.PARAMS.tile_prompting_active:
-    #             log(f"tile {index + 1}/{total} - [tile prompt]", None, None, f"Node {cls.INFO.id} - Prompting")
-    #             prompt_tile = llm.generate_tile_prompt(grid_image, prompt_context, cls.KSAMPLER.noise_seed)
-    #         log(f"tile {index + 1}/{total} - [tile prompt] {prompt_tile}", None, None, f"Node {cls.INFO.id} - Prompting")
-    #         grid_prompts.append(prompt_tile)
-                            
-    #     return grid_specs, grid_images, grid_prompts
+"""]
 
 class Mara_McBoaty_Refiner_v6:
     
@@ -905,7 +868,7 @@ class Mara_McBoaty_Refiner_v6:
         mc_boaty_pipe = Mara_Common_v1.set_mc_boaty_pipe(local_PIPE)
         
         tiles = [t.new_tile for t in local_PIPE.KSAMPLER.tiles]
-        cannies = [t.canny for t in local_PIPE.KSAMPLER.tiles]
+        cannies = [t.new_canny for t in local_PIPE.KSAMPLER.tiles]
 
         log("McBoaty (Refiner) is done with its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
@@ -1013,10 +976,13 @@ class Mara_McBoaty_Refiner_v6:
                 _tile = _tile.squeeze(0).permute(2, 0, 1)
                 _, h, w = _tile.shape
                 dim_max = max(h, w)
+            tile.new_tile = _tile.permute(1, 2, 0).unsqueeze(0)
+            if local_PIPE.CONTROLNET.controlnet is not None:
+                tile.new_canny = Canny().detect_edge(tile.new_tile, local_PIPE.CONTROLNET.low_threshold, local_PIPE.CONTROLNET.high_threshold)[0]
 
-            new_tile, tile_padding = MS_Image.pad_to_square(_tile, dim_max)
-            new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
             if len(local_PIPE.PARAMS.tiles_to_process) == 0 or index in local_PIPE.PARAMS.tiles_to_process:
+                new_tile, tile_padding = MS_Image.pad_to_square(_tile, dim_max)
+                new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
                 if local_PIPE.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEEncodingTiled")
                     tile.latent = nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, new_tile, local_PIPE.KSAMPLER.tile_size_vae)[0]
@@ -1034,11 +1000,10 @@ class Mara_McBoaty_Refiner_v6:
                 log(f"tile {index + 1}/{total} : {denoise} / {tile.positive}", None, None, f"Node {local_PIPE.INFO.id} - Denoise/ClipTextEncoding")
                 positive = nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, tile.positive)[0]
                 negative = nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, tile.negative)[0]
-                tile.controlnet = True
-                if local_PIPE.CONTROLNET.controlnet is not None and tile.controlnet:
+                if local_PIPE.CONTROLNET.controlnet is not None:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - ControlNetApply")
-                    tile.canny = Canny().detect_edge(new_tile, local_PIPE.CONTROLNET.low_threshold, local_PIPE.CONTROLNET.high_threshold)[0]
-                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, local_PIPE.CONTROLNET.controlnet, tile.canny, tile.strength, tile.start_percent, tile.end_percent, local_PIPE.KSAMPLER.vae )
+                    _canny = Canny().detect_edge(new_tile, local_PIPE.CONTROLNET.low_threshold, local_PIPE.CONTROLNET.high_threshold)[0]
+                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, local_PIPE.CONTROLNET.controlnet, _canny, tile.strength, tile.start_percent, tile.end_percent, local_PIPE.KSAMPLER.vae )
                     
                 log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - Refining")
                 _latent = tile.latent
@@ -1061,7 +1026,6 @@ class Mara_McBoaty_Refiner_v6:
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEDecoding")
                     new_tile = nodes.VAEDecode().decode(local_PIPE.KSAMPLER.vae, tile.latent)[0]
-                _new_tile = new_tile
                 new_tile = new_tile.squeeze(0).permute(2, 0, 1)
                 new_tile = MS_Image.crop_to_original(new_tile, _tile.shape, tile_padding)
                 tile.new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
