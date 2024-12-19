@@ -306,7 +306,7 @@ class Mara_Tiler_v1:
         tiles = []
         total = len(local_PIPE.OUTPUTS.tiles)
         for index, tile in enumerate(local_PIPE.OUTPUTS.tiles):
-            _tile = Mara_Common_v1.TILE_ATTRIBUTES
+            _tile = copy.deepcopy(Mara_Common_v1.TILE_ATTRIBUTES)
             _tile.id = index + 1
             _tile.tile = tile.unsqueeze(0)
             _tile.canny = torch.zeros((1, _tile.tile.shape[1], _tile.tile.shape[2], 3), dtype=torch.float16)
