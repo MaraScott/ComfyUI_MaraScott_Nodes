@@ -481,6 +481,11 @@ class Mara_Untiler_v1:
             local_PIPE.OUTPUTS.tiles = local_PIPE.INPUTS.tiles
         else:
             local_PIPE.OUTPUTS.tiles = [t.new_tile for t in local_PIPE.KSAMPLER.tiles]
+            local_PIPE.INPUTS.tiles = [t.tile for t in local_PIPE.KSAMPLER.tiles]
+            if local_PIPE.PARAMS.color_match_method != 'none':
+                for index, tile in enumerate(local_PIPE.OUTPUTS.tiles):
+                    local_PIPE.OUTPUTS.tiles[index] = ColorMatch().colormatch(local_PIPE.INPUTS.tiles[index], tile, local_PIPE.PARAMS.color_match_method)[0]
+                
             local_PIPE.OUTPUTS.tiles = torch.cat(local_PIPE.OUTPUTS.tiles, dim=0)
             
         local_PIPE.OUTPUTS.image = ImageUntile().execute(
@@ -518,8 +523,8 @@ class Mara_Untiler_v1:
         )[0]
         local_PIPE.OUTPUTS.image = nodes.VAEDecodeTiled().decode(local_PIPE.KSAMPLER.vae, output_latent, local_PIPE.KSAMPLER.tile_size_vae, int(local_PIPE.KSAMPLER.tile_size_vae * local_PIPE.PARAMS.overlap) )[0]
 
-        if local_PIPE.PARAMS.color_match_method != 'none':
-            local_PIPE.OUTPUTS.image = ColorMatch().colormatch(local_PIPE.INPUTS.image, local_PIPE.OUTPUTS.image, local_PIPE.PARAMS.color_match_method)[0]
+        # if local_PIPE.PARAMS.color_match_method != 'none':
+        #     local_PIPE.OUTPUTS.image = ColorMatch().colormatch(local_PIPE.INPUTS.image, local_PIPE.OUTPUTS.image, local_PIPE.PARAMS.color_match_method)[0]
 
         end_time = time.time()
         local_PIPE.INFO.execution_time = int(end_time - start_time)
