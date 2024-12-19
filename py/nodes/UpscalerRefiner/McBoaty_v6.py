@@ -989,7 +989,9 @@ class Mara_McBoaty_Refiner_v6:
             tile.new_tile = _tile.permute(1, 2, 0).unsqueeze(0)
             if local_PIPE.CONTROLNET.controlnet is not None:
                 tile.new_canny = Canny().detect_edge(tile.new_tile, local_PIPE.CONTROLNET.low_threshold, local_PIPE.CONTROLNET.high_threshold)[0]
-
+            else:
+                tile.new_canny = tile.canny
+            
             if len(local_PIPE.PARAMS.tiles_to_process) == 0 or index in local_PIPE.PARAMS.tiles_to_process:
                 new_tile, tile_padding = MS_Image.pad_to_square(_tile, dim_max)
                 new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
