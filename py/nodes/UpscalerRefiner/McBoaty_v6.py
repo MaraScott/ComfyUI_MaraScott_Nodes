@@ -939,7 +939,7 @@ class Mara_McBoaty_Refiner_v6:
                     _tiles_to_process.extend(range(to_computer_index(start), to_computer_index(end) + 1))
                 else:
                     _tiles_to_process.append(-1)
-                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {cls.INFO.id}")
+                    log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {local_PIPE.INFO.id}")
             else:
                 # Single index
                 try:
@@ -948,7 +948,7 @@ class Mara_McBoaty_Refiner_v6:
                         _tiles_to_process.append(to_computer_index(index))
                     else:
                         _tiles_to_process.append(-1)
-                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {cls.INFO.id}")
+                        log(f"tiles_to_process is not in valid format '{tiles_to_process}' - Allowed formats : indexes from 1 to {max} or any range like 1-{max}", None, COLORS['YELLOW'], f"Node {local_PIPE.INFO.id}")
                 except ValueError:
                     _tiles_to_process.append(-1)
                     # Ignore non-integer values
