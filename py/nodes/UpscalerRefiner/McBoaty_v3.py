@@ -352,7 +352,7 @@ class UpscalerRefiner_McBoaty_v3():
         for index, upscaled_image_grid in enumerate(grid_images):            
             if self.KSAMPLER.tiled:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncodingTiled {iteration}")
-                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
+                latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae, self.KSAMPLER.tile_size_vae // 16)[0]
             else:
                 log(f"tile {index + 1}/{total}", None, None, f"VAEEncoding {iteration}")
                 latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
