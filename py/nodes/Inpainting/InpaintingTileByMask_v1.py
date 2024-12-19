@@ -291,7 +291,8 @@ class KSampler_setInpaintingTileByMask_v1:
     def ksample_tile(s):
         
         if s.params.is_model_diffdiff:
-            latent = VAEEncodeTiled().encode(s.ksampler.vae, s.tile.noised_by_mask, tile_size=int(s.params.inpaint_size/2))[0]
+            tile_size=int(s.params.inpaint_size/2)
+            latent = VAEEncodeTiled().encode(s.ksampler.vae, s.tile.noised_by_mask, tile_size, tile_size // 16)[0]
             latent = SetLatentNoiseMask().set_mask(latent, s.params.mask_region.mask_cropped)[0]
         else:
             latent = VAEEncodeForInpaint().encode(s.ksampler.vae, s.tile.noised_by_mask, s.params.mask_region.mask_cropped)[0]

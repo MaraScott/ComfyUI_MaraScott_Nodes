@@ -418,7 +418,7 @@ class RemoveNoiseMask:
 #             pixels = nodes.VAEDecode().decode(input_vae, samples)[0]
 
 #         if tile_mode in ["Both", "Encode(output) only"]:
-#             return nodes.VAEEncodeTiled().encode(output_vae, pixels, tile_size)
+#             return nodes.VAEEncodeTiled().encode(output_vae, pixels, tile_size, tile_size // 16)
 #         else:
 #             return nodes.VAEEncode().encode(output_vae, pixels)
 

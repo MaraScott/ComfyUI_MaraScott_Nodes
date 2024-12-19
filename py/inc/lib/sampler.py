@@ -15,7 +15,7 @@ class MS_Sampler:
     def refine(self, image, upscale_method, vae, tile_size, model, seed, steps, cfg, sampler_name, scheduler, positive, negative, denoise):
         
         inpainted = ImageScaleBy().upscale(image, upscale_method, 1.5)[0]
-        latent = VAEEncodeTiled().encode(vae, inpainted, tile_size)[0]
+        latent = VAEEncodeTiled().encode(vae, inpainted, tile_size, tile_size // 16)[0]
             
         latent = KSampler().sample(
             model, 
@@ -39,7 +39,7 @@ class MS_Sampler:
         upscale = ImageScaleBy().upscale(image, upscale_method, 1.5)[0]
 
         if tiled == True:
-            latent_image = VAEEncodeTiled().encode(vae, upscale, tile_size)[0]
+            latent_image = VAEEncodeTiled().encode(vae, upscale, tile_size, tile_size // 16)[0]
         else:
             latent_image = VAEEncode().encode(vae, upscale, tile_size)[0]
             
