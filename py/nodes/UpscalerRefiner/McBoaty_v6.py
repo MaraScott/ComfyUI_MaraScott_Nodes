@@ -1004,7 +1004,7 @@ class Mara_McBoaty_Refiner_v6:
                 new_tile = new_tile.permute(1, 2, 0).unsqueeze(0)
                 if local_PIPE.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEEncodingTiled")
-                    tile.latent = nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, new_tile, local_PIPE.KSAMPLER.tile_size_vae)[0]
+                    tile.latent = nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, new_tile, local_PIPE.KSAMPLER.tile_size_vae, local_PIPE.KSAMPLER.tile_size_vae // 16)[0]
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEEncoding")
                     tile.latent = nodes.VAEEncode().encode(local_PIPE.KSAMPLER.vae, new_tile)[0]
