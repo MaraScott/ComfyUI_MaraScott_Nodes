@@ -3,3 +3,4 @@ numba
 color-matcher
 groq
 opencv-python
+ollama
