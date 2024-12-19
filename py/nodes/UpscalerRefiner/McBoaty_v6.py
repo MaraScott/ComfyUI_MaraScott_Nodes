@@ -257,9 +257,6 @@ class Mara_Tiler_v1:
                 "control_net_name": (cls.CONTROLNET_CANNY_ONLY , { "label": "ControlNet (Canny only)", "default": "None" }),
                 "low_threshold": ("FLOAT", {"label": "Low Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
                 "high_threshold": ("FLOAT", {"label": "High Threshold (Canny)", "default": 0.6, "min": 0.01, "max": 0.99, "step": 0.01}),
-                "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.76, "min": 0.0, "max": 10.0, "step": 0.01}),
-                "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
-                "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 0.76, "min": 0.0, "max": 1.0, "step": 0.001}),
 
             },
             "optional": {
@@ -270,15 +267,18 @@ class Mara_Tiler_v1:
         "MC_BOATY_PIPE",
         "IMAGE",
         "IMAGE",
+        "IMAGE",
     )
     
     RETURN_NAMES = (
         "McBoayty Pipe",
+        "image",
         "tiles",
         "tiles - canny",
     )
     
     OUTPUT_IS_LIST = (
+        False,
         False,
         False,
         False,
@@ -315,9 +315,6 @@ class Mara_Tiler_v1:
             _tile.id = index + 1
             _tile.tile = tile.unsqueeze(0)
             _tile.canny = torch.zeros((1, _tile.tile.shape[1], _tile.tile.shape[2], 3), dtype=torch.float16)
-            _tile.strength = local_PIPE.CONTROLNET.strength
-            _tile.start_percent = local_PIPE.CONTROLNET.start_percent
-            _tile.end_percent = local_PIPE.CONTROLNET.end_percent
             if local_PIPE.CONTROLNET.controlnet is not None:
                 log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - Canny")
                 _tile.canny = Canny().detect_edge(_tile.tile, local_PIPE.CONTROLNET.low_threshold, local_PIPE.CONTROLNET.high_threshold)[0]
@@ -336,6 +333,7 @@ class Mara_Tiler_v1:
         
         return (
             mc_boaty_pipe,
+            local_PIPE.OUTPUTS.image,
             torch.cat(tiles, dim=0),
             torch.cat(cannies, dim=0),
         )
@@ -375,9 +373,6 @@ class Mara_Tiler_v1:
         local_PIPE.CONTROLNET.name = kwargs.get('control_net_name', 'None')
         local_PIPE.CONTROLNET.low_threshold = kwargs.get('low_threshold', None)
         local_PIPE.CONTROLNET.high_threshold = kwargs.get('high_threshold', None)
-        local_PIPE.CONTROLNET.strength = kwargs.get('strength', None)
-        local_PIPE.CONTROLNET.start_percent = kwargs.get('start_percent', None)
-        local_PIPE.CONTROLNET.end_percent = kwargs.get('end_percent', None)
 
         local_PIPE.CONTROLNET.path = None
         local_PIPE.CONTROLNET.controlnet = None
@@ -440,7 +435,7 @@ class Mara_Untiler_v1:
                 "output_upscale_method": (cls.UPSCALE_METHODS, { "label": "Custom Output Upscale Method", "default": "bicubic"}),
                 "output_size_ref": (cls.UPSCALE_SIZE_REF, { "label": "Output Size Ref", "default": "Output Image"}),
                 "output_size": ("FLOAT", { "label": "Custom Output Size", "default": 1.00, "min": 0.10, "max": 16.00, "step":0.01, "round": 0.01}),
-                
+                "denoise": ("FLOAT", { "label": "Denoise", "default": 0.10, "min": 0.0, "max": 1.0, "step": 0.01}),                
             },
             "optional": {
                 "tiles": ("IMAGE", {"label": "Image" }),
@@ -472,11 +467,16 @@ class Mara_Untiler_v1:
 
         local_PIPE = self.init(**kwargs)
         local_PIPE = copy.deepcopy(local_PIPE)
+
+        final_denoise = kwargs.get('denoise', 0.10)
         
         log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {local_PIPE.INFO.id}")
         
-        local_PIPE.OUTPUTS.tiles = [t.new_tile for t in local_PIPE.KSAMPLER.tiles]
-        local_PIPE.OUTPUTS.tiles = torch.cat(local_PIPE.OUTPUTS.tiles, dim=0)
+        if local_PIPE.INPUTS.tiles is not None:
+            local_PIPE.OUTPUTS.tiles = local_PIPE.INPUTS.tiles
+        else:
+            local_PIPE.OUTPUTS.tiles = [t.new_tile for t in local_PIPE.KSAMPLER.tiles]
+            local_PIPE.OUTPUTS.tiles = torch.cat(local_PIPE.OUTPUTS.tiles, dim=0)
             
         local_PIPE.OUTPUTS.image = ImageUntile().execute(
             local_PIPE.OUTPUTS.tiles,
@@ -485,6 +485,7 @@ class Mara_Untiler_v1:
             local_PIPE.PARAMS.rows_qty, 
             local_PIPE.PARAMS.cols_qty
         )[0]
+        
         local_PIPE.OUTPUTS.image = comfy_extras.nodes_images.ImageCrop().crop(
             local_PIPE.OUTPUTS.image, 
             (local_PIPE.INPUTS.image.shape[2] * local_PIPE.PARAMS.upscale_model_scale), 
@@ -507,7 +508,7 @@ class Mara_Untiler_v1:
             nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, local_PIPE.KSAMPLER.positive)[0],
             nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, local_PIPE.KSAMPLER.negative)[0],
             local_PIPE.KSAMPLER.sampler, 
-            Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, 0.10, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type), 
+            Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, final_denoise, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type), 
             nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, local_PIPE.OUTPUTS.image, local_PIPE.KSAMPLER.tile_size_vae)[0]
         )[0]
         local_PIPE.OUTPUTS.image = nodes.VAEDecodeTiled().decode(local_PIPE.KSAMPLER.vae, output_latent, local_PIPE.KSAMPLER.tile_size_vae, int(local_PIPE.KSAMPLER.tile_size_vae * local_PIPE.PARAMS.overlap) )[0]
@@ -594,9 +595,10 @@ class Mara_McBoaty_Configurator_v6:
 
             },
             "optional": {
+                "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.76, "min": 0.0, "max": 10.0, "step": 0.01}),
+                "start_percent": ("FLOAT", {"label": "Start % (ControlNet)", "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                "end_percent": ("FLOAT", {"label": "End % (ControlNet)", "default": 0.76, "min": 0.0, "max": 1.0, "step": 0.001}),
                 "tiles": ("IMAGE", {"label": "Tiles" }),
-                # "Florence2": ("FL2MODEL", { "label": "Florence2" }),
-                # "Llm_party": ("CUSTOM", { "label": "LLM Model" }),
                 "vlm_query": ("STRING", {
                     "multiline": True,
                     "default": "generate a single paragraph prompt of max 77 token to describe the image. do not comment."
@@ -655,6 +657,9 @@ class Mara_McBoaty_Configurator_v6:
             store.add_item(local_PIPE.INFO.id, "all", {"positive": local_PIPE.KSAMPLER.positive, "negative": local_PIPE.KSAMPLER.negative})
         
         for index, tile in enumerate(local_PIPE.KSAMPLER.tiles):
+            tile.strength = local_PIPE.CONTROLNET.strength
+            tile.start_percent = local_PIPE.CONTROLNET.start_percent
+            tile.end_percent = local_PIPE.CONTROLNET.end_percent
             tile.positive = local_PIPE.KSAMPLER.positive
             if generate_prompt:
                 log(f"Initiate Tile {index} Analysis", None, None, f"Node {local_PIPE.INFO.id} - OllamaVision - Tile")
@@ -733,6 +738,10 @@ class Mara_McBoaty_Configurator_v6:
         
         local_PIPE.KSAMPLER.sigmas = self._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, local_PIPE.KSAMPLER.denoise, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type)
         # local_PIPE.KSAMPLER.outpaint_sigmas = self._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, 1, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type)
+
+        local_PIPE.CONTROLNET.strength = kwargs.get('strength', None)
+        local_PIPE.CONTROLNET.start_percent = kwargs.get('start_percent', None)
+        local_PIPE.CONTROLNET.end_percent = kwargs.get('end_percent', None)
 
         # TODO : make the feather_mask proportional to tile size ?
         # local_PIPE.PARAMS.feather_mask = local_PIPE.PARAMS.tile_size // 16

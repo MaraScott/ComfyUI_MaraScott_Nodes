@@ -1,6 +1,6 @@
 {
-  "last_node_id": 234,
-  "last_link_id": 694,
+  "last_node_id": 264,
+  "last_link_id": 787,
   "nodes": [
     {
       "id": 4,
@@ -22,7 +22,7 @@
           "name": "MODEL",
           "type": "MODEL",
           "links": [
-            635
+            776
           ],
           "slot_index": 0
         },
@@ -30,7 +30,7 @@
           "name": "CLIP",
           "type": "CLIP",
           "links": [
-            636
+            775
           ],
           "slot_index": 1
         },
@@ -38,7 +38,7 @@
           "name": "VAE",
           "type": "VAE",
           "links": [
-            637
+            777
           ],
           "slot_index": 2
         }
@@ -47,7 +47,7 @@
         "Node name for S&R": "CheckpointLoaderSimple"
       },
       "widgets_values": [
-        "sdxl\\halcyonSDXL_v19.safetensors"
+        "sd1.5\\SD_1.5_for_reals_v4.safetensors"
       ]
     },
     {
@@ -70,7 +70,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            638
+            778
           ],
           "slot_index": 0
         },
@@ -98,14 +98,14 @@
       "type": "MaraScottMcBoatyRefiner_v6",
       "pos": [
         2000,
-        530
+        390
       ],
       "size": [
         342.5999755859375,
         374
       ],
       "flags": {},
-      "order": 13,
+      "order": 15,
       "mode": 0,
       "inputs": [
         {
@@ -141,7 +141,8 @@
           "name": "tiles",
           "type": "IMAGE",
           "links": [
-            689
+            689,
+            742
           ],
           "slot_index": 2
         },
@@ -165,100 +166,39 @@
       ]
     },
     {
-      "id": 142,
-      "type": "MaraScottTiler_v1",
-      "pos": [
-        -880,
-        -30
-      ],
-      "size": [
-        315,
-        266
-      ],
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 522
-        }
-      ],
-      "outputs": [
-        {
-          "name": "McBoayty Pipe",
-          "type": "MC_BOATY_PIPE",
-          "links": [
-            639
-          ],
-          "slot_index": 0
-        },
-        {
-          "name": "tiles",
-          "type": "IMAGE",
-          "links": [
-            507
-          ],
-          "slot_index": 1
-        },
-        {
-          "name": "tiles - canny",
-          "type": "IMAGE",
-          "links": [
-            508
-          ],
-          "slot_index": 2
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaraScottTiler_v1"
-      },
-      "widgets_values": [
-        "4x-AnimeSharp.pth",
-        1024,
-        "controlnet-canny-sdxl-1.0.safetensors",
-        0.4,
-        0.6,
-        1,
-        0,
-        1
-      ]
-    },
-    {
       "id": 179,
       "type": "MaraScottMcBoatyConfigurator_v6",
       "pos": [
         900,
-        530
+        390
       ],
       "size": [
         400,
-        592
+        684
       ],
       "flags": {},
-      "order": 10,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
           "name": "pipe",
           "type": "MC_BOATY_PIPE",
-          "link": 643
+          "link": 783
         },
         {
           "name": "model",
           "type": "MODEL",
-          "link": 640
+          "link": 780
         },
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 641
+          "link": 781
         },
         {
           "name": "vae",
           "type": "VAE",
-          "link": 642
+          "link": 782
         },
         {
           "name": "tiles",
@@ -297,17 +237,20 @@
         "space market",
         "",
         "BasicScheduler",
-        "SDXL",
+        "SD1",
         "euler",
         "normal",
         15,
         42,
         "fixed",
         2.5,
-        0.35000000000000003,
+        0.76,
         true,
         512,
-        "generate a single paragraph prompt of max 77 token to describe the image. do not comment.",
+        0.76,
+        0,
+        0.5,
+        "\"generate a single paragraph prompt of max 77 token to describe the image. do not comment.",
         "http://127.0.0.1:11434",
         "llama3.2-vision:latest",
         5
@@ -318,20 +261,20 @@
       "type": "PreviewImage",
       "pos": [
         -530,
-        40
+        -30
       ],
       "size": [
         210,
         246
       ],
       "flags": {},
-      "order": 5,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 507
+          "link": 772
         }
       ],
       "outputs": [],
@@ -345,20 +288,20 @@
       "type": "PreviewImage",
       "pos": [
         -300,
-        40
+        -30
       ],
       "size": [
         210,
         246
       ],
       "flags": {},
-      "order": 6,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 508
+          "link": 773
         }
       ],
       "outputs": [],
@@ -389,32 +332,32 @@
           "shape": 7
         },
         {
-          "name": "* 01",
-          "type": "*",
-          "link": 635,
+          "name": "* 01 - model",
+          "type": "MODEL",
+          "link": 776,
           "shape": 7
         },
         {
-          "name": "* 02",
-          "type": "*",
-          "link": 636,
+          "name": "* 02 - clip",
+          "type": "CLIP",
+          "link": 775,
           "shape": 7
         },
         {
-          "name": "* 03",
-          "type": "*",
-          "link": 637,
+          "name": "* 03 - vae",
+          "type": "VAE",
+          "link": 777,
           "shape": 7
         },
         {
-          "name": "* 04",
-          "type": "*",
-          "link": 638,
+          "name": "* 04 - image",
+          "type": "IMAGE",
+          "link": 778,
           "shape": 7
         },
         {
-          "name": "* 05",
-          "type": "*",
+          "name": "* 05 - mcboayty pipe",
+          "type": "MC_BOATY_PIPE",
           "link": null,
           "shape": 7
         },
@@ -434,31 +377,32 @@
           "slot_index": 0
         },
         {
-          "name": "* 01",
-          "type": "*",
+          "name": "* 01 - model",
+          "type": "MODEL",
           "links": null
         },
         {
-          "name": "* 02",
-          "type": "*",
+          "name": "* 02 - clip",
+          "type": "CLIP",
           "links": null
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - vae",
+          "type": "VAE",
           "links": null
         },
         {
-          "name": "* 04",
+          "name": "* 04 - image",
           "type": "*",
           "links": [
-            522
+            769,
+            770
           ],
           "slot_index": 4
         },
         {
-          "name": "* 05",
-          "type": "*",
+          "name": "* 05 - mcboayty pipe",
+          "type": "MC_BOATY_PIPE",
           "links": null
         },
         {
@@ -488,15 +432,15 @@
       "id": 192,
       "type": "MaraScottAnyBus_v2",
       "pos": [
-        -50,
-        -140
+        -60,
+        -130
       ],
       "size": [
         362.79998779296875,
         226
       ],
       "flags": {},
-      "order": 4,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
@@ -506,33 +450,33 @@
           "shape": 7
         },
         {
-          "name": "* 01",
-          "type": "*",
+          "name": "* 01 - model",
+          "type": "MODEL",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 02",
-          "type": "*",
+          "name": "* 02 - clip",
+          "type": "CLIP",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - vae",
+          "type": "VAE",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 04",
-          "type": "*",
-          "link": null,
+          "name": "* 04 - image",
+          "type": "IMAGE",
+          "link": 771,
           "shape": 7
         },
         {
-          "name": "* 05",
-          "type": "*",
-          "link": 639,
+          "name": "* 05 - mcboayty pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 779,
           "shape": 7
         },
         {
@@ -552,29 +496,29 @@
           "slot_index": 0
         },
         {
-          "name": "* 01",
-          "type": "*",
+          "name": "* 01 - model",
+          "type": "MODEL",
           "links": null
         },
         {
-          "name": "* 02",
-          "type": "*",
+          "name": "* 02 - clip",
+          "type": "CLIP",
           "links": null
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - vae",
+          "type": "VAE",
           "links": null
         },
         {
-          "name": "* 04",
-          "type": "*",
+          "name": "* 04 - image",
+          "type": "IMAGE",
           "links": [],
           "slot_index": 4
         },
         {
-          "name": "* 05",
-          "type": "*",
+          "name": "* 05 - mcboayty pipe",
+          "type": "MC_BOATY_PIPE",
           "links": null
         },
         {
@@ -612,7 +556,7 @@
         226
       ],
       "flags": {},
-      "order": 7,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -622,32 +566,32 @@
           "shape": 7
         },
         {
-          "name": "* 01",
-          "type": "*",
+          "name": "* 01 - model",
+          "type": "MODEL",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 02",
-          "type": "*",
+          "name": "* 02 - clip",
+          "type": "CLIP",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - vae",
+          "type": "VAE",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 04",
-          "type": "*",
+          "name": "* 04 - image",
+          "type": "IMAGE",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 05",
-          "type": "*",
+          "name": "* 05 - mcboayty pipe",
+          "type": "MC_BOATY_PIPE",
           "link": null,
           "shape": 7
         },
@@ -665,42 +609,40 @@
           "slot_index": 0
         },
         {
-          "name": "* 01",
-          "type": "*",
+          "name": "* 01 - model",
+          "type": "MODEL",
           "links": [
-            645
+            784
           ],
           "slot_index": 1
         },
         {
-          "name": "* 02",
-          "type": "*",
+          "name": "* 02 - clip",
+          "type": "CLIP",
           "links": [
-            646
+            785
           ],
           "slot_index": 2
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - vae",
+          "type": "VAE",
           "links": [
-            647
+            786
           ],
           "slot_index": 3
         },
         {
-          "name": "* 04",
-          "type": "*",
-          "links": [
-            649
-          ],
+          "name": "* 04 - image",
+          "type": "IMAGE",
+          "links": null,
           "slot_index": 4
         },
         {
-          "name": "* 05",
-          "type": "*",
+          "name": "* 05 - mcboayty pipe",
+          "type": "MC_BOATY_PIPE",
           "links": [
-            648
+            787
           ],
           "slot_index": 5
         },
@@ -739,7 +681,7 @@
         226
       ],
       "flags": {},
-      "order": 8,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -749,32 +691,32 @@
           "shape": 7
         },
         {
-          "name": "* 01",
-          "type": "*",
+          "name": "* 01 - model",
+          "type": "MODEL",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 02",
-          "type": "*",
+          "name": "* 02 - clip",
+          "type": "CLIP",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - vae",
+          "type": "VAE",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 04",
-          "type": "*",
+          "name": "* 04 - image",
+          "type": "IMAGE",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 05",
-          "type": "*",
+          "name": "* 05 - mcboayty pipe",
+          "type": "MC_BOATY_PIPE",
           "link": null,
           "shape": 7
         },
@@ -792,42 +734,40 @@
           "slot_index": 0
         },
         {
-          "name": "* 01",
-          "type": "*",
+          "name": "* 01 - model",
+          "type": "MODEL",
           "links": [
-            640
+            780
           ],
           "slot_index": 1
         },
         {
-          "name": "* 02",
-          "type": "*",
+          "name": "* 02 - clip",
+          "type": "CLIP",
           "links": [
-            641
+            781
           ],
           "slot_index": 2
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - vae",
+          "type": "VAE",
           "links": [
-            642
+            782
           ],
           "slot_index": 3
         },
         {
-          "name": "* 04",
-          "type": "*",
-          "links": [
-            644
-          ],
+          "name": "* 04 - image",
+          "type": "IMAGE",
+          "links": null,
           "slot_index": 4
         },
         {
-          "name": "* 05",
-          "type": "*",
+          "name": "* 05 - mcboayty pipe",
+          "type": "MC_BOATY_PIPE",
           "links": [
-            643
+            783
           ],
           "slot_index": 5
         },
@@ -859,14 +799,14 @@
       "type": "MaraScottMcBoatyTilePrompter_v6",
       "pos": [
         1440,
-        1120
+        980
       ],
       "size": [
         403.1999816894531,
         270
       ],
       "flags": {},
-      "order": 14,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
@@ -893,10 +833,10 @@
         "Modern French Market",
         "",
         2.5,
-        0.35000000000000003,
-        1,
+        0.76,
+        0.76,
         0,
-        1
+        0.5
       ]
     },
     {
@@ -907,32 +847,32 @@
         -730
       ],
       "size": [
-        400,
-        836
+        390,
+        930
       ],
       "flags": {},
-      "order": 9,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
           "name": "pipe",
           "type": "MC_BOATY_PIPE",
-          "link": 648
+          "link": 787
         },
         {
           "name": "model",
           "type": "MODEL",
-          "link": 645
+          "link": 784
         },
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 646
+          "link": 785
         },
         {
           "name": "vae",
           "type": "VAE",
-          "link": 647
+          "link": 786
         },
         {
           "name": "tiles",
@@ -946,7 +886,8 @@
           "name": "McBoaty Pipe",
           "type": "MC_BOATY_PIPE",
           "links": [
-            650
+            650,
+            760
           ],
           "slot_index": 0
         },
@@ -962,7 +903,8 @@
           "name": "tiles",
           "type": "IMAGE",
           "links": [
-            688
+            688,
+            750
           ],
           "slot_index": 2
         },
@@ -984,21 +926,24 @@
         "Feudal Japan market.",
         "",
         "BasicScheduler",
-        "SDXL",
+        "SD1",
         "euler",
         "normal",
         15,
         42,
         "fixed",
         2.5,
-        0.35000000000000003,
+        0.76,
         true,
         512,
-        "generate a single paragraph prompt of max 77 token to describe the image. do not comment.",
-        "http://127.0.0.1:11434",
-        "llama3.2-vision:latest",
+        0.76,
+        0,
+        0.76,
+        "\"generate a single paragraph prompt of max 77 token to describe the image. do not comment.",
+        "hm-mvgd-hm",
+        "",
         5,
-        "hm-mvgd-hm"
+        "none"
       ]
     },
     {
@@ -1013,7 +958,7 @@
         30
       ],
       "flags": {},
-      "order": 15,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -1059,7 +1004,7 @@
         30
       ],
       "flags": {},
-      "order": 20,
+      "order": 23,
       "mode": 0,
       "inputs": [
         {
@@ -1105,7 +1050,7 @@
         30
       ],
       "flags": {},
-      "order": 22,
+      "order": 25,
       "mode": 0,
       "inputs": [
         {
@@ -1149,7 +1094,7 @@
         206
       ],
       "flags": {},
-      "order": 11,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -1161,7 +1106,7 @@
         {
           "name": "* 01",
           "type": "*",
-          "link": 649,
+          "link": null,
           "shape": 7
         },
         {
@@ -1251,15 +1196,15 @@
       "id": 215,
       "type": "MaraScottAnyBus_v2",
       "pos": [
-        2400,
-        390
+        2500,
+        400
       ],
       "size": [
         210,
         206
       ],
       "flags": {},
-      "order": 17,
+      "order": 20,
       "mode": 0,
       "inputs": [
         {
@@ -1271,7 +1216,7 @@
         {
           "name": "* 01",
           "type": "*",
-          "link": 644,
+          "link": null,
           "shape": 7
         },
         {
@@ -1370,7 +1315,7 @@
         210
       ],
       "flags": {},
-      "order": 26,
+      "order": 30,
       "mode": 0,
       "inputs": [
         {
@@ -1430,7 +1375,7 @@
           "type": "*",
           "links": [
             675,
-            682
+            695
           ],
           "slot_index": 2
         },
@@ -1438,7 +1383,8 @@
           "name": "* 03",
           "type": "*",
           "links": [
-            693
+            693,
+            697
           ],
           "slot_index": 3
         },
@@ -1482,7 +1428,7 @@
         580
       ],
       "flags": {},
-      "order": 21,
+      "order": 24,
       "mode": 0,
       "inputs": [
         {
@@ -1507,12 +1453,7 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_jqvdp_00001_.png&type=temp&subfolder=&preview=webp&rand=0.9650913899829641"
-          },
-          {
-            "name": "B",
-            "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_jqvdp_00002_.png&type=temp&subfolder=&preview=webp&rand=0.22381715359749732"
+            "url": "/api/view?filename=rgthree.compare._temp_mbtpq_00002_.png&type=temp&subfolder=&preview=webp&rand=0.3867664574256373"
           }
         ]
       ]
@@ -1526,10 +1467,10 @@
       ],
       "size": [
         378,
-        338
+        362
       ],
       "flags": {},
-      "order": 16,
+      "order": 18,
       "mode": 0,
       "inputs": [
         {
@@ -1560,7 +1501,8 @@
       "widgets_values": [
         "bicubic",
         "Input Image",
-        1
+        1,
+        0.1
       ]
     },
     {
@@ -1575,7 +1517,7 @@
         580
       ],
       "flags": {},
-      "order": 27,
+      "order": 31,
       "mode": 0,
       "inputs": [
         {
@@ -1600,12 +1542,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_irqin_00001_.png&type=temp&subfolder=&preview=webp&rand=0.9164964583637447"
+            "url": "/api/view?filename=rgthree.compare._temp_yrqnp_00013_.png&type=temp&subfolder=&preview=webp&rand=0.27151522699713726"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_irqin_00002_.png&type=temp&subfolder=&preview=webp&rand=0.8845394510951692"
+            "url": "/api/view?filename=rgthree.compare._temp_yrqnp_00014_.png&type=temp&subfolder=&preview=webp&rand=0.1647265221836638"
           }
         ]
       ]
@@ -1619,10 +1561,10 @@
       ],
       "size": [
         378,
-        338
+        362
       ],
       "flags": {},
-      "order": 23,
+      "order": 26,
       "mode": 0,
       "inputs": [
         {
@@ -1653,22 +1595,23 @@
       "widgets_values": [
         "bicubic",
         "Input Image",
-        1
+        1,
+        0.1
       ]
     },
     {
       "id": 221,
       "type": "MaraScottMcBoatyRefiner_v6",
       "pos": [
-        2006.193603515625,
-        1053.142578125
+        2010,
+        910
       ],
       "size": [
         342.5999755859375,
         374
       ],
       "flags": {},
-      "order": 19,
+      "order": 22,
       "mode": 0,
       "inputs": [
         {
@@ -1702,7 +1645,8 @@
           "name": "tiles",
           "type": "IMAGE",
           "links": [
-            690
+            690,
+            743
           ],
           "slot_index": 2
         },
@@ -1721,7 +1665,7 @@
         "Node name for S&R": "MaraScottMcBoatyRefiner_v6"
       },
       "widgets_values": [
-        "",
+        "2",
         "hm-mvgd-hm"
       ]
     },
@@ -1737,7 +1681,7 @@
         580
       ],
       "flags": {},
-      "order": 28,
+      "order": 32,
       "mode": 0,
       "inputs": [
         {
@@ -1762,12 +1706,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_lknfn_00001_.png&type=temp&subfolder=&preview=webp&rand=0.7007695117700574"
+            "url": "/api/view?filename=rgthree.compare._temp_pypae_00013_.png&type=temp&subfolder=&preview=webp&rand=0.5865784990633438"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_lknfn_00002_.png&type=temp&subfolder=&preview=webp&rand=0.029120127846554045"
+            "url": "/api/view?filename=rgthree.compare._temp_pypae_00014_.png&type=temp&subfolder=&preview=webp&rand=0.26637752509815305"
           }
         ]
       ]
@@ -1781,10 +1725,10 @@
       ],
       "size": [
         378,
-        338
+        362
       ],
       "flags": {},
-      "order": 24,
+      "order": 27,
       "mode": 0,
       "inputs": [
         {
@@ -1815,14 +1759,15 @@
       "widgets_values": [
         "bicubic",
         "Input Image",
-        1
+        1,
+        0.1
       ]
     },
     {
       "id": 225,
       "type": "Image Comparer (rgthree)",
       "pos": [
-        5550,
+        6090,
         680
       ],
       "size": [
@@ -1830,7 +1775,7 @@
         580
       ],
       "flags": {},
-      "order": 34,
+      "order": 42,
       "mode": 0,
       "inputs": [
         {
@@ -1855,12 +1800,7 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_uksnl_00001_.png&type=temp&subfolder=&preview=webp&rand=0.5768807371828015"
-          },
-          {
-            "name": "B",
-            "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_uksnl_00002_.png&type=temp&subfolder=&preview=webp&rand=0.15251571587839607"
+            "url": "/api/view?filename=rgthree.compare._temp_mquzu_00001_.png&type=temp&subfolder=&preview=webp&rand=0.9944969965944024"
           }
         ]
       ]
@@ -1869,15 +1809,15 @@
       "id": 226,
       "type": "MaraScottUntiler_v1",
       "pos": [
-        5140,
+        5680,
         680
       ],
       "size": [
         315,
-        338
+        362
       ],
       "flags": {},
-      "order": 33,
+      "order": 40,
       "mode": 0,
       "inputs": [
         {
@@ -1907,7 +1847,8 @@
       "widgets_values": [
         "bicubic",
         "Input Image",
-        1
+        1,
+        0.15
       ]
     },
     {
@@ -1922,7 +1863,7 @@
         374
       ],
       "flags": {},
-      "order": 32,
+      "order": 37,
       "mode": 0,
       "inputs": [
         {
@@ -1986,7 +1927,7 @@
         270
       ],
       "flags": {},
-      "order": 30,
+      "order": 34,
       "mode": 0,
       "inputs": [
         {
@@ -2012,17 +1953,17 @@
         "Russian market",
         "",
         2.5,
-        0.35000000000000003,
-        1,
+        0.76,
+        0.76,
         0,
-        1
+        0.5
       ]
     },
     {
       "id": 229,
       "type": "Image Comparer (rgthree)",
       "pos": [
-        5560,
+        6100,
         -40
       ],
       "size": [
@@ -2030,7 +1971,7 @@
         580
       ],
       "flags": {},
-      "order": 31,
+      "order": 45,
       "mode": 0,
       "inputs": [
         {
@@ -2055,12 +1996,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_ydrys_00001_.png&type=temp&subfolder=&preview=webp&rand=0.615054150027132"
+            "url": "/api/view?filename=rgthree.compare._temp_ibmoc_00013_.png&type=temp&subfolder=&preview=webp&rand=0.9390779193024223"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_ydrys_00002_.png&type=temp&subfolder=&preview=webp&rand=0.452569101771088"
+            "url": "/api/view?filename=rgthree.compare._temp_ibmoc_00014_.png&type=temp&subfolder=&preview=webp&rand=0.4425801388974877"
           }
         ]
       ]
@@ -2069,21 +2010,21 @@
       "id": 230,
       "type": "MaraScottUntiler_v1",
       "pos": [
-        5160,
-        10
+        5720,
+        -40
       ],
       "size": [
         315,
-        338
+        362
       ],
       "flags": {},
-      "order": 29,
+      "order": 43,
       "mode": 0,
       "inputs": [
         {
           "name": "pipe",
           "type": "MC_BOATY_PIPE",
-          "link": 682
+          "link": 713
         },
         {
           "name": "tiles",
@@ -2107,7 +2048,8 @@
       "widgets_values": [
         "bicubic",
         "Input Image",
-        2
+        2,
+        0.1
       ]
     },
     {
@@ -2122,7 +2064,7 @@
         246
       ],
       "flags": {},
-      "order": 12,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -2141,15 +2083,15 @@
       "id": 233,
       "type": "PreviewImage",
       "pos": [
-        2460,
-        700
+        2490,
+        690
       ],
       "size": [
         210,
         246
       ],
       "flags": {},
-      "order": 18,
+      "order": 21,
       "mode": 0,
       "inputs": [
         {
@@ -2168,15 +2110,15 @@
       "id": 234,
       "type": "PreviewImage",
       "pos": [
-        2490,
-        1250
+        2470,
+        1130
       ],
       "size": [
         210,
         246
       ],
       "flags": {},
-      "order": 25,
+      "order": 28,
       "mode": 0,
       "inputs": [
         {
@@ -2190,6 +2132,1320 @@
         "Node name for S&R": "PreviewImage"
       },
       "widgets_values": []
+    },
+    {
+      "id": 236,
+      "type": "MaraScottMcBoatyRefiner_v6",
+      "pos": [
+        5180,
+        -50
+      ],
+      "size": [
+        355.20001220703125,
+        374
+      ],
+      "flags": {},
+      "order": 41,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 695
+        },
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE",
+          "link": 700,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            713
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE",
+          "links": null
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": [
+            736
+          ],
+          "slot_index": 2
+        },
+        {
+          "name": "tiles - cannies",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyRefiner_v6"
+      },
+      "widgets_values": [
+        "",
+        "hm-mvgd-hm"
+      ]
+    },
+    {
+      "id": 237,
+      "type": "MaraScottMcBoatyTilePrompter_v6",
+      "pos": [
+        4240,
+        50
+      ],
+      "size": [
+        403.1999816894531,
+        270
+      ],
+      "flags": {},
+      "order": 35,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE",
+          "link": 697
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE",
+          "links": [
+            699
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyTilePrompter_v6"
+      },
+      "widgets_values": [
+        "1,3",
+        "Istanbul market",
+        "",
+        2.5,
+        0.76,
+        0.76,
+        0,
+        0.5
+      ]
+    },
+    {
+      "id": 238,
+      "type": "MaraScottMcBoatyTilePrompter_v6",
+      "pos": [
+        4930,
+        400
+      ],
+      "size": [
+        403.1999816894531,
+        270
+      ],
+      "flags": {},
+      "order": 38,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE",
+          "link": 699
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE",
+          "links": [
+            700
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyTilePrompter_v6"
+      },
+      "widgets_values": [
+        "2,4",
+        "Wizards Market",
+        "",
+        2.5,
+        0.76,
+        0.5,
+        0,
+        0.5
+      ]
+    },
+    {
+      "id": 245,
+      "type": "MaraScottUntiler_v1",
+      "pos": [
+        7250,
+        -1020
+      ],
+      "size": [
+        315,
+        362
+      ],
+      "flags": {},
+      "order": 54,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 765
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "link": 732,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            715
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottUntiler_v1"
+      },
+      "widgets_values": [
+        "bicubic",
+        "Input Image",
+        1,
+        0.1
+      ]
+    },
+    {
+      "id": 246,
+      "type": "Image Comparer (rgthree)",
+      "pos": [
+        7660,
+        -1020
+      ],
+      "size": [
+        620,
+        580
+      ],
+      "flags": {},
+      "order": 55,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_a",
+          "type": "IMAGE",
+          "link": 715,
+          "dir": 3
+        },
+        {
+          "name": "image_b",
+          "type": "IMAGE",
+          "link": 763,
+          "dir": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "comparer_mode": "Slide"
+      },
+      "widgets_values": [
+        [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_euazp_00011_.png&type=temp&subfolder=&preview=webp&rand=0.5443805911402113"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_euazp_00012_.png&type=temp&subfolder=&preview=webp&rand=0.04522996765216014"
+          }
+        ]
+      ]
+    },
+    {
+      "id": 247,
+      "type": "LayerUtility: BatchSelector",
+      "pos": [
+        6150,
+        -770
+      ],
+      "size": [
+        352.79998779296875,
+        78
+      ],
+      "flags": {},
+      "order": 48,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 764,
+          "shape": 7
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            728
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LayerUtility: BatchSelector"
+      },
+      "widgets_values": [
+        "1"
+      ],
+      "color": "rgba(38, 73, 116, 0.7)"
+    },
+    {
+      "id": 248,
+      "type": "LayerUtility: BatchSelector",
+      "pos": [
+        6150,
+        -610
+      ],
+      "size": [
+        352.79998779296875,
+        78
+      ],
+      "flags": {},
+      "order": 49,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 738,
+          "shape": 7
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            729
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LayerUtility: BatchSelector"
+      },
+      "widgets_values": [
+        "2"
+      ],
+      "color": "rgba(38, 73, 116, 0.7)"
+    },
+    {
+      "id": 249,
+      "type": "LayerUtility: BatchSelector",
+      "pos": [
+        6150,
+        -440
+      ],
+      "size": [
+        352.79998779296875,
+        78
+      ],
+      "flags": {},
+      "order": 50,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 737,
+          "shape": 7
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            730
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LayerUtility: BatchSelector"
+      },
+      "widgets_values": [
+        "3"
+      ],
+      "color": "rgba(38, 73, 116, 0.7)"
+    },
+    {
+      "id": 250,
+      "type": "LayerUtility: BatchSelector",
+      "pos": [
+        6150,
+        -910
+      ],
+      "size": [
+        352.79998779296875,
+        78
+      ],
+      "flags": {},
+      "order": 47,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 740,
+          "shape": 7
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            727
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LayerUtility: BatchSelector"
+      },
+      "widgets_values": [
+        "0"
+      ],
+      "color": "rgba(38, 73, 116, 0.7)"
+    },
+    {
+      "id": 251,
+      "type": "MaraScottAnyBus_v2",
+      "pos": [
+        2530,
+        -40
+      ],
+      "size": [
+        211.60000610351562,
+        246
+      ],
+      "flags": {},
+      "order": 29,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 753,
+          "shape": 7
+        },
+        {
+          "name": "* 01",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 02",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 03",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 04",
+          "type": "*",
+          "link": 743,
+          "shape": 7
+        },
+        {
+          "name": "* 05",
+          "type": "*",
+          "link": 742,
+          "shape": 7
+        },
+        {
+          "name": "* 06 - tiles",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "* 07 - any",
+          "type": "*",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            757
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "* 01",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 02",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 03",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 04",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 05",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 06 - tiles",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "* 07 - any",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - tiles",
+      "properties": {
+        "Node name for S&R": "MaraScottAnyBus_v2",
+        "Profile": "tiles",
+        "prevProfileName": "tiles",
+        "Nb Inputs": 7,
+        "uuid": 251
+      },
+      "widgets_values": [
+        "tiles",
+        7,
+        null
+      ],
+      "color": "#223",
+      "bgcolor": "#335",
+      "shape": 4
+    },
+    {
+      "id": 252,
+      "type": "MaraScottAnyBus_v2",
+      "pos": [
+        5750,
+        -1030
+      ],
+      "size": [
+        211.60000610351562,
+        246
+      ],
+      "flags": {},
+      "order": 44,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": 759,
+          "shape": 7
+        },
+        {
+          "name": "* 01",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 02",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 03",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 04",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 05",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 06 - tiles",
+          "type": "IMAGE",
+          "link": 736
+        },
+        {
+          "name": "* 07 - any",
+          "type": "*",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": null
+        },
+        {
+          "name": "* 01",
+          "type": "*",
+          "links": [
+            765
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "* 02",
+          "type": "*",
+          "links": [
+            761
+          ],
+          "slot_index": 2
+        },
+        {
+          "name": "* 03",
+          "type": "*",
+          "links": [
+            740
+          ],
+          "slot_index": 3
+        },
+        {
+          "name": "* 04",
+          "type": "*",
+          "links": [
+            764
+          ],
+          "slot_index": 4
+        },
+        {
+          "name": "* 05",
+          "type": "*",
+          "links": [
+            738
+          ],
+          "slot_index": 5
+        },
+        {
+          "name": "* 06 - tiles",
+          "type": "IMAGE",
+          "links": [
+            737
+          ],
+          "slot_index": 6
+        },
+        {
+          "name": "* 07 - any",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - tiles",
+      "properties": {
+        "Node name for S&R": "MaraScottAnyBus_v2",
+        "Profile": "tiles",
+        "prevProfileName": "tiles",
+        "Nb Inputs": 7,
+        "uuid": 252
+      },
+      "widgets_values": [
+        "tiles",
+        7,
+        null
+      ],
+      "color": "#223",
+      "bgcolor": "#335",
+      "shape": 4
+    },
+    {
+      "id": 253,
+      "type": "ImpactMakeImageBatch",
+      "pos": [
+        6730,
+        -840
+      ],
+      "size": [
+        150,
+        110
+      ],
+      "flags": {},
+      "order": 52,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image1",
+          "type": "IMAGE",
+          "link": 727
+        },
+        {
+          "name": "image2",
+          "type": "IMAGE",
+          "link": 728
+        },
+        {
+          "name": "image3",
+          "type": "IMAGE",
+          "link": 729
+        },
+        {
+          "name": "image4",
+          "type": "IMAGE",
+          "link": 730
+        },
+        {
+          "name": "image5",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            731,
+            732
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImpactMakeImageBatch"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 254,
+      "type": "PreviewImage",
+      "pos": [
+        6840,
+        -590
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 53,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 731
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 255,
+      "type": "MaraScottAnyBus_v2",
+      "pos": [
+        1660,
+        -1110
+      ],
+      "size": [
+        211.60000610351562,
+        246
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 01",
+          "type": "*",
+          "link": 760,
+          "shape": 7
+        },
+        {
+          "name": "* 02",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 03",
+          "type": "*",
+          "link": 750,
+          "shape": 7
+        },
+        {
+          "name": "* 04",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 05",
+          "type": "*",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "* 06 - tiles",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "* 07 - any",
+          "type": "*",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            754
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "* 01",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 02",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 03",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 04",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 05",
+          "type": "*",
+          "links": null
+        },
+        {
+          "name": "* 06 - tiles",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "* 07 - any",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "title": "AnyBus - tiles",
+      "properties": {
+        "Node name for S&R": "MaraScottAnyBus_v2",
+        "Profile": "tiles",
+        "prevProfileName": "tiles",
+        "Nb Inputs": 7,
+        "uuid": 255
+      },
+      "widgets_values": [
+        "tiles",
+        7,
+        null
+      ],
+      "color": "#223",
+      "bgcolor": "#335",
+      "shape": 4
+    },
+    {
+      "id": 256,
+      "type": "Reroute (rgthree)",
+      "pos": [
+        2210,
+        -1110
+      ],
+      "size": [
+        40,
+        30
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 754,
+          "dir": 3,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            753
+          ],
+          "slot_index": 0,
+          "dir": 4,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "properties": {
+        "resizable": false,
+        "size": [
+          40,
+          30
+        ]
+      }
+    },
+    {
+      "id": 258,
+      "type": "Reroute (rgthree)",
+      "pos": [
+        3310,
+        -40
+      ],
+      "size": [
+        40,
+        30
+      ],
+      "flags": {},
+      "order": 33,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 757,
+          "dir": 3,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            756
+          ],
+          "slot_index": 0,
+          "dir": 4,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "properties": {
+        "resizable": false,
+        "size": [
+          40,
+          30
+        ]
+      }
+    },
+    {
+      "id": 259,
+      "type": "Reroute (rgthree)",
+      "pos": [
+        3660,
+        -260
+      ],
+      "size": [
+        40,
+        30
+      ],
+      "flags": {},
+      "order": 36,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 756,
+          "dir": 3,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            758
+          ],
+          "slot_index": 0,
+          "dir": 4,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "properties": {
+        "resizable": false,
+        "size": [
+          40,
+          30
+        ]
+      }
+    },
+    {
+      "id": 260,
+      "type": "Reroute (rgthree)",
+      "pos": [
+        3960,
+        -260
+      ],
+      "size": [
+        40,
+        30
+      ],
+      "flags": {},
+      "order": 39,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 758,
+          "dir": 3,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bus",
+          "type": "BUS",
+          "links": [
+            759
+          ],
+          "slot_index": 0,
+          "dir": 4,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "properties": {
+        "resizable": false,
+        "size": [
+          40,
+          30
+        ]
+      }
+    },
+    {
+      "id": 261,
+      "type": "Reroute (rgthree)",
+      "pos": [
+        6090,
+        -1170
+      ],
+      "size": [
+        40,
+        30
+      ],
+      "flags": {},
+      "order": 46,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 761,
+          "dir": 3,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "outputs": [
+        {
+          "name": "* 02",
+          "type": "*",
+          "links": [
+            762
+          ],
+          "slot_index": 0,
+          "dir": 4,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "properties": {
+        "resizable": false,
+        "size": [
+          40,
+          30
+        ]
+      }
+    },
+    {
+      "id": 262,
+      "type": "Reroute (rgthree)",
+      "pos": [
+        7520,
+        -1170
+      ],
+      "size": [
+        40,
+        30
+      ],
+      "flags": {},
+      "order": 51,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 762,
+          "dir": 3,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "outputs": [
+        {
+          "name": "* 02",
+          "type": "*",
+          "links": [
+            763
+          ],
+          "slot_index": 0,
+          "dir": 4,
+          "has_old_label": true,
+          "label": " "
+        }
+      ],
+      "properties": {
+        "resizable": false,
+        "size": [
+          40,
+          30
+        ]
+      }
+    },
+    {
+      "id": 263,
+      "type": "MaraScottTiler_v1",
+      "pos": [
+        -880,
+        -30
+      ],
+      "size": [
+        315,
+        214
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 769
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoayty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": null
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "tiles - canny",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottTiler_v1"
+      },
+      "widgets_values": [
+        "None",
+        512,
+        "None",
+        0.6,
+        0.6
+      ]
+    },
+    {
+      "id": 264,
+      "type": "MaraScottTiler_v1",
+      "pos": [
+        -880,
+        -30
+      ],
+      "size": [
+        315,
+        214
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 770
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoayty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            779
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            771
+          ]
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": [
+            772
+          ],
+          "slot_index": 2
+        },
+        {
+          "name": "tiles - canny",
+          "type": "IMAGE",
+          "links": [
+            773
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottTiler_v1"
+      },
+      "widgets_values": [
+        "1x-ESRGAN.pth",
+        512,
+        "control_v11p_sd15_canny.safetensors",
+        0.6,
+        0.6
+      ]
     }
   ],
   "links": [
@@ -2202,36 +3458,12 @@
       "MC_BOATY_PIPE"
     ],
     [
-      507,
-      142,
-      1,
-      189,
-      0,
-      "IMAGE"
-    ],
-    [
-      508,
-      142,
-      2,
-      190,
-      0,
-      "IMAGE"
-    ],
-    [
       514,
       191,
       0,
       192,
       0,
       "BUS"
-    ],
-    [
-      522,
-      191,
-      4,
-      142,
-      0,
-      "IMAGE"
     ],
     [
       524,
@@ -2354,126 +3586,6 @@
       "MC_BOATY_PIPE"
     ],
     [
-      635,
-      4,
-      0,
-      191,
-      1,
-      "*"
-    ],
-    [
-      636,
-      4,
-      1,
-      191,
-      2,
-      "*"
-    ],
-    [
-      637,
-      4,
-      2,
-      191,
-      3,
-      "*"
-    ],
-    [
-      638,
-      36,
-      0,
-      191,
-      4,
-      "*"
-    ],
-    [
-      639,
-      142,
-      0,
-      192,
-      5,
-      "*"
-    ],
-    [
-      640,
-      195,
-      1,
-      179,
-      1,
-      "MODEL"
-    ],
-    [
-      641,
-      195,
-      2,
-      179,
-      2,
-      "CLIP"
-    ],
-    [
-      642,
-      195,
-      3,
-      179,
-      3,
-      "VAE"
-    ],
-    [
-      643,
-      195,
-      5,
-      179,
-      0,
-      "MC_BOATY_PIPE"
-    ],
-    [
-      644,
-      195,
-      4,
-      215,
-      1,
-      "*"
-    ],
-    [
-      645,
-      193,
-      1,
-      207,
-      1,
-      "MODEL"
-    ],
-    [
-      646,
-      193,
-      2,
-      207,
-      2,
-      "CLIP"
-    ],
-    [
-      647,
-      193,
-      3,
-      207,
-      3,
-      "VAE"
-    ],
-    [
-      648,
-      193,
-      5,
-      207,
-      0,
-      "MC_BOATY_PIPE"
-    ],
-    [
-      649,
-      193,
-      4,
-      214,
-      1,
-      "*"
-    ],
-    [
       650,
       207,
       0,
@@ -2562,14 +3674,6 @@
       "IMAGE"
     ],
     [
-      682,
-      216,
-      2,
-      230,
-      0,
-      "MC_BOATY_PIPE"
-    ],
-    [
       683,
       230,
       0,
@@ -2624,6 +3728,398 @@
       209,
       0,
       "*"
+    ],
+    [
+      695,
+      216,
+      2,
+      236,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      697,
+      216,
+      3,
+      237,
+      0,
+      "MC_PROMPTY_PIPE"
+    ],
+    [
+      699,
+      237,
+      0,
+      238,
+      0,
+      "MC_PROMPTY_PIPE"
+    ],
+    [
+      700,
+      238,
+      0,
+      236,
+      1,
+      "MC_PROMPTY_PIPE"
+    ],
+    [
+      713,
+      236,
+      0,
+      230,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      715,
+      245,
+      0,
+      246,
+      0,
+      "IMAGE"
+    ],
+    [
+      727,
+      250,
+      0,
+      253,
+      0,
+      "IMAGE"
+    ],
+    [
+      728,
+      247,
+      0,
+      253,
+      1,
+      "IMAGE"
+    ],
+    [
+      729,
+      248,
+      0,
+      253,
+      2,
+      "IMAGE"
+    ],
+    [
+      730,
+      249,
+      0,
+      253,
+      3,
+      "IMAGE"
+    ],
+    [
+      731,
+      253,
+      0,
+      254,
+      0,
+      "IMAGE"
+    ],
+    [
+      732,
+      253,
+      0,
+      245,
+      1,
+      "IMAGE"
+    ],
+    [
+      736,
+      236,
+      2,
+      252,
+      6,
+      "*"
+    ],
+    [
+      737,
+      252,
+      6,
+      249,
+      0,
+      "IMAGE"
+    ],
+    [
+      738,
+      252,
+      5,
+      248,
+      0,
+      "IMAGE"
+    ],
+    [
+      740,
+      252,
+      3,
+      250,
+      0,
+      "IMAGE"
+    ],
+    [
+      742,
+      96,
+      2,
+      251,
+      5,
+      "*"
+    ],
+    [
+      743,
+      221,
+      2,
+      251,
+      4,
+      "*"
+    ],
+    [
+      750,
+      207,
+      2,
+      255,
+      3,
+      "*"
+    ],
+    [
+      753,
+      256,
+      0,
+      251,
+      0,
+      "BUS"
+    ],
+    [
+      754,
+      255,
+      0,
+      256,
+      0,
+      "*"
+    ],
+    [
+      756,
+      258,
+      0,
+      259,
+      0,
+      "*"
+    ],
+    [
+      757,
+      251,
+      0,
+      258,
+      0,
+      "*"
+    ],
+    [
+      758,
+      259,
+      0,
+      260,
+      0,
+      "*"
+    ],
+    [
+      759,
+      260,
+      0,
+      252,
+      0,
+      "BUS"
+    ],
+    [
+      760,
+      207,
+      0,
+      255,
+      1,
+      "*"
+    ],
+    [
+      761,
+      252,
+      2,
+      261,
+      0,
+      "*"
+    ],
+    [
+      762,
+      261,
+      0,
+      262,
+      0,
+      "*"
+    ],
+    [
+      763,
+      262,
+      0,
+      246,
+      1,
+      "IMAGE"
+    ],
+    [
+      764,
+      252,
+      4,
+      247,
+      0,
+      "IMAGE"
+    ],
+    [
+      765,
+      252,
+      1,
+      245,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      769,
+      191,
+      4,
+      263,
+      0,
+      "IMAGE"
+    ],
+    [
+      770,
+      191,
+      4,
+      264,
+      0,
+      "IMAGE"
+    ],
+    [
+      771,
+      264,
+      1,
+      192,
+      4,
+      "*"
+    ],
+    [
+      772,
+      264,
+      2,
+      189,
+      0,
+      "IMAGE"
+    ],
+    [
+      773,
+      264,
+      3,
+      190,
+      0,
+      "IMAGE"
+    ],
+    [
+      775,
+      4,
+      1,
+      191,
+      2,
+      "*"
+    ],
+    [
+      776,
+      4,
+      0,
+      191,
+      1,
+      "*"
+    ],
+    [
+      777,
+      4,
+      2,
+      191,
+      3,
+      "*"
+    ],
+    [
+      778,
+      36,
+      0,
+      191,
+      4,
+      "IMAGE"
+    ],
+    [
+      779,
+      264,
+      0,
+      192,
+      5,
+      "*"
+    ],
+    [
+      780,
+      195,
+      1,
+      179,
+      1,
+      "MODEL"
+    ],
+    [
+      781,
+      195,
+      2,
+      179,
+      2,
+      "CLIP"
+    ],
+    [
+      782,
+      195,
+      3,
+      179,
+      3,
+      "VAE"
+    ],
+    [
+      783,
+      195,
+      5,
+      179,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      784,
+      193,
+      1,
+      207,
+      1,
+      "MODEL"
+    ],
+    [
+      785,
+      193,
+      2,
+      207,
+      2,
+      "CLIP"
+    ],
+    [
+      786,
+      193,
+      3,
+      207,
+      3,
+      "VAE"
+    ],
+    [
+      787,
+      193,
+      5,
+      207,
+      0,
+      "MC_BOATY_PIPE"
     ]
   ],
   "groups": [
@@ -2647,7 +4143,7 @@
         -900,
         -110,
         830,
-        430
+        360
       ],
       "color": "#3f789e",
       "font_size": 24,
@@ -2671,7 +4167,7 @@
       "title": "McBoaty = Configurator + TilePrompter (Optional) + Refiner",
       "bounding": [
         880,
-        450,
+        310,
         1480,
         1030
       ],
@@ -2683,7 +4179,7 @@
       "id": 6,
       "title": "Untiling",
       "bounding": [
-        5110,
+        5650,
         -130,
         1100,
         690
@@ -2709,7 +4205,7 @@
       "id": 8,
       "title": "Untiling",
       "bounding": [
-        5110,
+        5650,
         590,
         1100,
         690
@@ -2765,6 +4261,45 @@
         1130,
         1090,
         683.5999755859375
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 13,
+      "title": "McBoaty : TilePrompter + Refiner",
+      "bounding": [
+        4210,
+        -120,
+        1390,
+        500
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 14,
+      "title": "Untiling",
+      "bounding": [
+        7220,
+        -1110,
+        1100,
+        690
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 15,
+      "title": "ReTiling",
+      "bounding": [
+        6100,
+        -1130,
+        970,
+        809.5999755859375
       ],
       "color": "#3f789e",
       "font_size": 24,
