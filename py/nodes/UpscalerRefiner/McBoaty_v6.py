@@ -438,6 +438,9 @@ class Mara_Untiler_v1:
                 "denoise": ("FLOAT", { "label": "Denoise", "default": 0.10, "min": 0.0, "max": 1.0, "step": 0.01}),                
             },
             "optional": {
+                "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True, "default": Mara_Common_v1.TILE_ATTRIBUTES.positive }),
+                "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": Mara_Common_v1.TILE_ATTRIBUTES.negative }),
+                "refresh_prompts": ("BOOLEAN", { "label": "Refresh prompts", "default": False, "label_on": "Refreshing...", "label_off": ""}),
                 "tiles": ("IMAGE", {"label": "Image" }),
             }
         }
@@ -468,6 +471,8 @@ class Mara_Untiler_v1:
         local_PIPE = self.init(**kwargs)
         local_PIPE = copy.deepcopy(local_PIPE)
 
+        final_positve = kwargs.get('positve', local_PIPE.KSAMPLER.positive)
+        final_negative = kwargs.get('negative', local_PIPE.KSAMPLER.negative)
         final_denoise = kwargs.get('denoise', 0.10)
         
         log("McBoaty (Untiler) is starting to rebuild the image", None, None, f"Node {local_PIPE.INFO.id}")
@@ -505,8 +510,8 @@ class Mara_Untiler_v1:
             local_PIPE.KSAMPLER.add_noise, 
             local_PIPE.KSAMPLER.noise_seed, 
             local_PIPE.KSAMPLER.cfg, 
-            nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, local_PIPE.KSAMPLER.positive)[0],
-            nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, local_PIPE.KSAMPLER.negative)[0],
+            nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, final_positve)[0],
+            nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, final_negative)[0],
             local_PIPE.KSAMPLER.sampler, 
             Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE.KSAMPLER.sigmas_type, local_PIPE.KSAMPLER.model, local_PIPE.KSAMPLER.steps, final_denoise, local_PIPE.KSAMPLER.scheduler, local_PIPE.KSAMPLER.model_type), 
             nodes.VAEEncodeTiled().encode(local_PIPE.KSAMPLER.vae, local_PIPE.OUTPUTS.image, local_PIPE.KSAMPLER.tile_size_vae)[0]
@@ -1057,6 +1062,7 @@ class Mara_McBoaty_TilePrompter_v6:
                 "tiles_to_process": ("STRING", { "label": "Tile to process", "default": ""}),
                 "positive": ("STRING", { "label": "Positive (Prompt)", "multiline": True, "default": Mara_Common_v1.TILE_ATTRIBUTES.positive }),
                 "negative": ("STRING", { "label": "Negative (Prompt)", "multiline": True, "default": Mara_Common_v1.TILE_ATTRIBUTES.negative }),
+                "refresh_prompts": ("BOOLEAN", { "label": "Refresh prompts", "default": False, "label_on": "Refreshing...", "label_off": ""}),
                 "cfg": ("FLOAT", { "label": "CFG", "default": Mara_Common_v1.TILE_ATTRIBUTES.cfg, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                 "denoise": ("FLOAT", { "label": "Denoise", "default": Mara_Common_v1.TILE_ATTRIBUTES.denoise, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "strength": ("FLOAT", {"label": "Strength (ControlNet)", "default": 0.76, "min": 0.0, "max": 10.0, "step": 0.01}),

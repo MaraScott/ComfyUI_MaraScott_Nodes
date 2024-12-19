@@ -13,7 +13,8 @@ class MaraScottMcBoatyv6NodeLiteGraph {
         );
 
         if (parentLink != undefined) {
-
+            
+            const refreshWidget = node.widgets.find((w) => w.name === "refresh_prompts");
             const tilesWidget = node.widgets.find((w) => w.name === "tiles_to_process");
             const positiveWidget = node.widgets.find((w) => w.name === "positive");
             const negativeWidget = node.widgets.find((w) => w.name === "negative");
@@ -45,18 +46,26 @@ class MaraScottMcBoatyv6NodeLiteGraph {
                 }
             };
     
-            const updatePrompts = async () => {
+            const refreshPrompts = async () => {
     
                 const positive = positiveWidget.value;
                 const negative = negativeWidget.value;
-                const tiles = tilesWidget.value    
+                const tiles = tilesWidget != undefined ? tilesWidget.value : ""    
                 const prompts = await fetchPrompts(tiles);                
                 positiveWidget.value == "" ? positiveWidget.value = prompts.positive : null
                 negativeWidget.value == "" ? negativeWidget.value = prompts.negative : null
+                setTimeout(() => {
+                    refreshWidget.value = false
+                }, 50);
 
             };
+            const updatePrompts = async () => {
+                refreshWidget.value = true
+                refreshPrompts();
+            };
     
-            tilesWidget.callback = updatePrompts;
+            if(tilesWidget != undefined) tilesWidget.callback = updatePrompts;
+            refreshWidget.callback = refreshPrompts;
     
             const dummy = async () => {
                 // calling async method will update the widgets with actual value from the browser and not the default from Node definition.
@@ -140,7 +149,7 @@ app.registerExtension({
     name: "ComfyUI.MaraScott.McBoaty_v6",
 
     async loadedGraphNode(node, app) {
-        if (["MaraScottMcBoatyTilePrompter_v6"].includes(node.type)) {
+        if (["MaraScottMcBoatyTilePrompter_v6", "MaraScottUntiler_v1"].includes(node.type)) {
             MaraScottMcBoatyv6NodeLiteGraph.setPrompts(node)
         }
     },
