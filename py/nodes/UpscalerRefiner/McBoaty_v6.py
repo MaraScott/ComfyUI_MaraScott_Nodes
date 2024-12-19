@@ -148,22 +148,20 @@ class Mara_Common_v1:
     @staticmethod
     def init(local_PIPE=SimpleNamespace()):
         # Dynamically create attributes from PIPE_ATTRIBUTES
-        for attr in copy.deepcopy(Mara_Common_v1.PIPE_ATTRIBUTES):
+        for attr in Mara_Common_v1.PIPE_ATTRIBUTES:
             if not hasattr(local_PIPE, attr):  # Only set the attribute if it doesn't already exist
                 setattr(local_PIPE, attr, SimpleNamespace())
         return local_PIPE
 
     @staticmethod
     def set_pipe_values(local_PIPE, pipe):
-        local_PIPE = copy.deepcopy(local_PIPE)
-        for name, value in zip(copy.deepcopy(Mara_Common_v1.PIPE_ATTRIBUTES), pipe):
+        for name, value in zip(Mara_Common_v1.PIPE_ATTRIBUTES, pipe):
             setattr(local_PIPE, name, value)
         return local_PIPE
 
     @staticmethod
     def set_mc_boaty_pipe(local_PIPE):
-        local_PIPE = copy.deepcopy(local_PIPE)
-        return tuple(getattr(local_PIPE, attr, None) for attr in copy.deepcopy(Mara_Common_v1.PIPE_ATTRIBUTES))
+        return tuple(getattr(local_PIPE, attr, None) for attr in Mara_Common_v1.PIPE_ATTRIBUTES)
     
     @staticmethod
     def parse_tiles_to_process(tiles_to_process = "", MAX_TILES = 16384):
@@ -204,9 +202,7 @@ class Mara_Common_v1:
 
     @staticmethod
     def override_tiles(local_PIPE, tiles, new_tiles):
-        
-        tiles = copy.deepcopy(tiles)
-        
+                
         for index, tile in enumerate(tiles):
             if index >= len(new_tiles):
                 continue  # Skip if the index doesn't exist in the `tiles` list
@@ -295,7 +291,6 @@ class Mara_Tiler_v1:
         start_time = time.time()
 
         local_PIPE = self.init(**kwargs)
-        local_PIPE = copy.deepcopy(local_PIPE)
         
         log("McBoaty (Tiler) is starting to slicing the image", None, None, f"Node {local_PIPE.INFO.id}") 
         
@@ -311,7 +306,7 @@ class Mara_Tiler_v1:
         tiles = []
         total = len(local_PIPE.OUTPUTS.tiles)
         for index, tile in enumerate(local_PIPE.OUTPUTS.tiles):
-            _tile = copy.deepcopy(Mara_Common_v1.TILE_ATTRIBUTES)
+            _tile = Mara_Common_v1.TILE_ATTRIBUTES
             _tile.id = index + 1
             _tile.tile = tile.unsqueeze(0)
             _tile.canny = torch.zeros((1, _tile.tile.shape[1], _tile.tile.shape[2], 3), dtype=torch.float16)
@@ -469,7 +464,6 @@ class Mara_Untiler_v1:
         start_time = time.time()
 
         local_PIPE = self.init(**kwargs)
-        local_PIPE = copy.deepcopy(local_PIPE)
 
         final_positve = kwargs.get('positve', local_PIPE.KSAMPLER.positive)
         final_negative = kwargs.get('negative', local_PIPE.KSAMPLER.negative)
@@ -530,21 +524,19 @@ class Mara_Untiler_v1:
         local_PIPE.INFO.execution_time = int(end_time - start_time)
 
         return (
-            copy.deepcopy(local_PIPE.OUTPUTS.image),
+            local_PIPE.OUTPUTS.image,
         )
         
     @classmethod
     def init(cls, **kwargs):
 
         local_PIPE = Mara_Common_v1().init()
-        local_PIPE = copy.deepcopy(local_PIPE)
 
         pipe = kwargs.get('pipe', (SimpleNamespace(),) * len(Mara_Common_v1.PIPE_ATTRIBUTES))
 
         id = kwargs.get('id', None)
         
         local_PIPE = Mara_Common_v1.set_pipe_values(local_PIPE, pipe)
-        local_PIPE = copy.deepcopy(local_PIPE)
 
         local_PIPE.INFO.id = kwargs.get('id', None)
         local_PIPE.INPUTS.tiles = kwargs.get('tiles', None)
@@ -697,7 +689,7 @@ class Mara_McBoaty_Configurator_v6:
         return (
             mc_boaty_pipe,
             (
-                copy.deepcopy(local_PIPE.KSAMPLER.tiles),
+                local_PIPE.KSAMPLER.tiles,
             ),
             output_info
         )
@@ -870,13 +862,12 @@ class Mara_McBoaty_Refiner_v6:
         start_time = time.time()
         
         local_PIPE = self.init(**kwargs)
-        local_PIPE = copy.deepcopy(local_PIPE)
 
         log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
         if len(tiles) > 0:
-            local_PIPE.KSAMPLER.tiles = Mara_Common_v1.override_tiles(local_PIPE, copy.deepcopy(local_PIPE.KSAMPLER.tiles), tiles)
+            local_PIPE.KSAMPLER.tiles = Mara_Common_v1.override_tiles(local_PIPE, local_PIPE.KSAMPLER.tiles, tiles)
         local_PIPE.KSAMPLER.tiles = self.refine(local_PIPE, local_PIPE.KSAMPLER.tiles)
         end_time = time.time()
 
@@ -894,7 +885,7 @@ class Mara_McBoaty_Refiner_v6:
         return (
             mc_boaty_pipe,
             (
-                copy.deepcopy(local_PIPE.KSAMPLER.tiles),
+                local_PIPE.KSAMPLER.tiles,
             ),            
             torch.cat(tiles, dim=0),
             torch.cat(cannies, dim=0),
@@ -1099,13 +1090,12 @@ class Mara_McBoaty_TilePrompter_v6:
         start_time = time.time()
 
         tiles = kwargs.get('pipe_prompty', ([],))[0]
-        tiles = copy.deepcopy(tiles)
         
         nodeid = kwargs.get('id', None)
         
         log("McBoaty (PromptEditor) is starting to do its magic", None, None, f"Node {nodeid}")
         
-        tile_attributes = copy.deepcopy(Mara_Common_v1.TILE_ATTRIBUTES)
+        tile_attributes = Mara_Common_v1.TILE_ATTRIBUTES
 
         attributes = {
             'positive': kwargs.get('positive', tile_attributes.positive),
