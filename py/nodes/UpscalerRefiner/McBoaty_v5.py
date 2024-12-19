@@ -584,7 +584,7 @@ class McBoaty_Refiner_v5():
             if len(self.PARAMS.tiles_to_process) == 0 or index in self.PARAMS.tiles_to_process:
                 if self.KSAMPLER.tiled:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncodingTiled {iteration}")
-                    latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae)[0]
+                    latent_image = nodes.VAEEncodeTiled().encode(self.KSAMPLER.vae, upscaled_image_grid, self.KSAMPLER.tile_size_vae, self.KSAMPLER.tile_size_vae // 16)[0]
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {self.INFO.id} - VAEEncoding {iteration}")
                     latent_image = nodes.VAEEncode().encode(self.KSAMPLER.vae, upscaled_image_grid)[0]
