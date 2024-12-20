@@ -459,7 +459,7 @@ class Mara_Untiler_v1:
         local_PIPE_Untiler = SimpleNamespace()
         local_PIPE_Untiler = self.init(local_PIPE_Untiler, **kwargs)
 
-        final_positve = kwargs.get('positve', local_PIPE_Untiler.KSAMPLER.positive)
+        final_positive = kwargs.get('positive', local_PIPE_Untiler.KSAMPLER.positive)
         final_negative = kwargs.get('negative', local_PIPE_Untiler.KSAMPLER.negative)
         final_denoise = kwargs.get('denoise', 0.10)
         
@@ -497,14 +497,17 @@ class Mara_Untiler_v1:
             if local_PIPE_Untiler.PARAMS.upscale_size_ref != self.UPSCALE_SIZE_REF[0]:
                 image_ref = local_PIPE_Untiler.INPUTS.image
             local_PIPE_Untiler.OUTPUTS.image = nodes.ImageScale().upscale(local_PIPE_Untiler.OUTPUTS.image, local_PIPE_Untiler.PARAMS.upscale_method, int(image_ref.shape[2] * local_PIPE_Untiler.PARAMS.upscale_size), int(image_ref.shape[1] * local_PIPE_Untiler.PARAMS.upscale_size), False)[0]
-
+        final_positive_conditioning = nodes.CLIPTextEncode().encode(local_PIPE_Untiler.KSAMPLER.clip, final_positive)[0]
+        final_negative_conditioning = nodes.CLIPTextEncode().encode(local_PIPE_Untiler.KSAMPLER.clip, final_positive)[0]
+        if local_PIPE_Untiler.KSAMPLER.model_type == "SD3":
+            final_negative_conditioning = nodes.ConditioningZeroOut().zero_out(final_negative_conditioning)[0]
         output_latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
             local_PIPE_Untiler.KSAMPLER.model, 
             local_PIPE_Untiler.KSAMPLER.add_noise, 
             local_PIPE_Untiler.KSAMPLER.noise_seed, 
-            local_PIPE_Untiler.KSAMPLER.cfg, 
-            nodes.CLIPTextEncode().encode(local_PIPE_Untiler.KSAMPLER.clip, final_positve)[0],
-            nodes.CLIPTextEncode().encode(local_PIPE_Untiler.KSAMPLER.clip, final_negative)[0],
+            local_PIPE_Untiler.KSAMPLER.cfg,
+            final_positive_conditioning,
+            final_negative_conditioning,
             local_PIPE_Untiler.KSAMPLER.sampler, 
             Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE_Untiler.KSAMPLER.sigmas_type, local_PIPE_Untiler.KSAMPLER.model, local_PIPE_Untiler.KSAMPLER.steps, final_denoise, local_PIPE_Untiler.KSAMPLER.scheduler, local_PIPE_Untiler.KSAMPLER.model_type), 
             nodes.VAEEncodeTiled().encode(local_PIPE_Untiler.KSAMPLER.vae, local_PIPE_Untiler.OUTPUTS.image, local_PIPE_Untiler.KSAMPLER.tile_size_vae, local_PIPE_Untiler.KSAMPLER.tile_size_vae // 16)[0]
@@ -997,7 +1000,7 @@ class Mara_McBoaty_Refiner_v6:
                 else:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - VAEEncoding")
                     tile.latent = nodes.VAEEncode().encode(local_PIPE.KSAMPLER.vae, new_tile)[0]
-        
+                        
                 sigmas = local_PIPE.KSAMPLER.sigmas
                 if tile.denoise != local_PIPE.KSAMPLER.denoise:
                     denoise = tile.denoise
@@ -1008,13 +1011,15 @@ class Mara_McBoaty_Refiner_v6:
                 log(f"tile {index + 1}/{total} : {denoise} / {tile.positive}", None, None, f"Node {local_PIPE.INFO.id} - Denoise/ClipTextEncoding")
                 positive = nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, tile.positive)[0]
                 negative = nodes.CLIPTextEncode().encode(local_PIPE.KSAMPLER.clip, tile.negative)[0]
+                if local_PIPE.KSAMPLER.model_type == "SD3":
+                    negative = nodes.ConditioningZeroOut().zero_out(positive)[0]
                 if local_PIPE.CONTROLNET.controlnet is not None:
                     log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - ControlNetApply")
-                    _canny = Canny().detect_edge(new_tile, local_PIPE.CONTROLNET.low_threshold, local_PIPE.CONTROLNET.high_threshold)[0]
-                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, local_PIPE.CONTROLNET.controlnet, _canny, tile.strength, tile.start_percent, tile.end_percent, local_PIPE.KSAMPLER.vae )
+                    positive, negative = nodes.ControlNetApplyAdvanced().apply_controlnet(positive, negative, local_PIPE.CONTROLNET.controlnet, tile.new_canny, tile.strength, tile.start_percent, tile.end_percent, local_PIPE.KSAMPLER.vae )
                     
                 log(f"tile {index + 1}/{total}", None, None, f"Node {local_PIPE.INFO.id} - Refining")
                 _latent = tile.latent
+                
                 _latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
                     local_PIPE.KSAMPLER.model, 
                     local_PIPE.KSAMPLER.add_noise, 

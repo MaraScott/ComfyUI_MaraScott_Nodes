@@ -1,6 +1,6 @@
 {
   "last_node_id": 268,
-  "last_link_id": 816,
+  "last_link_id": 831,
   "nodes": [
     {
       "id": 4,
@@ -116,7 +116,7 @@
         {
           "name": "pipe_prompty",
           "type": "MC_PROMPTY_PIPE",
-          "link": 816,
+          "link": 828,
           "shape": 7
         }
       ],
@@ -222,7 +222,7 @@
           "type": "MC_PROMPTY_PIPE",
           "links": [
             798,
-            816
+            828
           ],
           "slot_index": 1
         },
@@ -239,9 +239,9 @@
         "space market",
         "",
         "BasicScheduler",
-        "SD3",
-        "euler",
-        "normal",
+        "SD1",
+        "dpmpp_2m",
+        "sgm_uniform",
         15,
         42,
         "fixed",
@@ -251,7 +251,7 @@
         512,
         0.76,
         0,
-        0.35000000000000003,
+        0.32,
         "\"generate a single paragraph prompt of max 77 token to describe the image. do not comment.",
         "http://127.0.0.1:11434",
         "llama3.2-vision:latest",
@@ -857,7 +857,7 @@
           "name": "McPrompty Pipe",
           "type": "MC_PROMPTY_PIPE",
           "links": [
-            651
+            825
           ],
           "slot_index": 1
         },
@@ -866,8 +866,7 @@
           "type": "IMAGE",
           "links": [
             688,
-            750,
-            807
+            750
           ],
           "slot_index": 2
         },
@@ -889,9 +888,9 @@
         "Feudal Japan market.",
         "",
         "BasicScheduler",
-        "SD3",
-        "euler",
-        "normal",
+        "SD1",
+        "dpmpp_2m",
+        "sgm_uniform",
         15,
         42,
         "fixed",
@@ -921,7 +920,7 @@
         30
       ],
       "flags": {},
-      "order": 18,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -1057,7 +1056,7 @@
         206
       ],
       "flags": {},
-      "order": 14,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -1079,15 +1078,15 @@
           "shape": 7
         },
         {
-          "name": "* 03",
-          "type": "*",
-          "link": 651,
+          "name": "* 03 - mcprompty pipe",
+          "type": "MC_PROMPTY_PIPE",
+          "link": 825,
           "shape": 7
         },
         {
-          "name": "* 04 - tiles",
-          "type": "IMAGE",
-          "link": 807,
+          "name": "* 04",
+          "type": "*",
+          "link": null,
           "shape": 7
         },
         {
@@ -1123,15 +1122,15 @@
           "slot_index": 2
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - mcprompty pipe",
+          "type": "MC_PROMPTY_PIPE",
           "links": null
         },
         {
-          "name": "* 04 - tiles",
+          "name": "* 04",
           "type": "IMAGE",
           "links": [
-            808
+            831
           ],
           "slot_index": 4
         },
@@ -1245,7 +1244,7 @@
           "name": "* 04 - tiles",
           "type": "IMAGE",
           "links": [
-            811
+            830
           ],
           "slot_index": 4
         },
@@ -1306,14 +1305,14 @@
           "shape": 7
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - mcprompty pipe",
+          "type": "MC_PROMPTY_PIPE",
           "link": null,
           "shape": 7
         },
         {
-          "name": "* 04 - tiles",
-          "type": "IMAGE",
+          "name": "* 04",
+          "type": "*",
           "link": null,
           "shape": 7
         },
@@ -1349,17 +1348,17 @@
           "slot_index": 2
         },
         {
-          "name": "* 03",
-          "type": "*",
+          "name": "* 03 - mcprompty pipe",
+          "type": "MC_PROMPTY_PIPE",
           "links": [
-            693,
-            697
+            823,
+            824
           ],
           "slot_index": 3
         },
         {
-          "name": "* 04 - tiles",
-          "type": "IMAGE",
+          "name": "* 04",
+          "type": "*",
           "links": null,
           "slot_index": 4
         },
@@ -1423,12 +1422,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_qkkem_00001_.png&type=temp&subfolder=&preview=webp&rand=0.7459512561727377"
+            "url": "/api/view?filename=rgthree.compare._temp_cccvp_00059_.png&type=temp&subfolder=&preview=webp&rand=0.11249473866920123"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_qkkem_00002_.png&type=temp&subfolder=&preview=webp&rand=0.04830551183703924"
+            "url": "/api/view?filename=rgthree.compare._temp_cccvp_00060_.png&type=temp&subfolder=&preview=webp&rand=0.06177497924684494"
           }
         ]
       ]
@@ -1445,7 +1444,7 @@
         582
       ],
       "flags": {},
-      "order": 19,
+      "order": 18,
       "mode": 0,
       "inputs": [
         {
@@ -1456,7 +1455,7 @@
         {
           "name": "tiles",
           "type": "IMAGE",
-          "link": 808,
+          "link": 831,
           "shape": 7
         }
       ],
@@ -1520,12 +1519,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_ngryn_00001_.png&type=temp&subfolder=&preview=webp&rand=0.4296965240718498"
+            "url": "/api/view?filename=rgthree.compare._temp_mited_00051_.png&type=temp&subfolder=&preview=webp&rand=0.9398833380549894"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_ngryn_00002_.png&type=temp&subfolder=&preview=webp&rand=0.13430911723745664"
+            "url": "/api/view?filename=rgthree.compare._temp_mited_00052_.png&type=temp&subfolder=&preview=webp&rand=0.7627083342757148"
           }
         ]
       ]
@@ -1553,7 +1552,7 @@
         {
           "name": "tiles",
           "type": "IMAGE",
-          "link": 811,
+          "link": 830,
           "shape": 7
         }
       ],
@@ -1628,7 +1627,7 @@
           "links": [
             690,
             790,
-            809
+            829
           ],
           "slot_index": 2
         },
@@ -1688,12 +1687,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_rkjgb_00003_.png&type=temp&subfolder=&preview=webp&rand=0.0952556201082917"
+            "url": "/api/view?filename=rgthree.compare._temp_ysnbh_00043_.png&type=temp&subfolder=&preview=webp&rand=0.16109974073483446"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_rkjgb_00004_.png&type=temp&subfolder=&preview=webp&rand=0.7711431493101557"
+            "url": "/api/view?filename=rgthree.compare._temp_ysnbh_00044_.png&type=temp&subfolder=&preview=webp&rand=0.28747522476141674"
           }
         ]
       ]
@@ -1721,7 +1720,7 @@
         {
           "name": "tiles",
           "type": "IMAGE",
-          "link": 809,
+          "link": 829,
           "shape": 7
         }
       ],
@@ -1760,7 +1759,7 @@
         580
       ],
       "flags": {},
-      "order": 42,
+      "order": 44,
       "mode": 0,
       "inputs": [
         {
@@ -1785,12 +1784,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_aptnf_00006_.png&type=temp&subfolder=&preview=webp&rand=0.7080266071794021"
+            "url": "/api/view?filename=rgthree.compare._temp_rpoij_00041_.png&type=temp&subfolder=&preview=webp&rand=0.36367922244243256"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_aptnf_00007_.png&type=temp&subfolder=&preview=webp&rand=0.44355041430342856"
+            "url": "/api/view?filename=rgthree.compare._temp_rpoij_00042_.png&type=temp&subfolder=&preview=webp&rand=0.7986658629829064"
           }
         ]
       ]
@@ -1807,7 +1806,7 @@
         486
       ],
       "flags": {},
-      "order": 40,
+      "order": 41,
       "mode": 0,
       "inputs": [
         {
@@ -1818,7 +1817,7 @@
         {
           "name": "tiles",
           "type": "IMAGE",
-          "link": 813,
+          "link": 826,
           "shape": 7
         }
       ],
@@ -1856,7 +1855,7 @@
         374
       ],
       "flags": {},
-      "order": 37,
+      "order": 38,
       "mode": 0,
       "inputs": [
         {
@@ -1888,7 +1887,7 @@
           "name": "tiles",
           "type": "IMAGE",
           "links": [
-            813
+            826
           ],
           "slot_index": 2
         },
@@ -1923,13 +1922,13 @@
         294
       ],
       "flags": {},
-      "order": 34,
+      "order": 35,
       "mode": 0,
       "inputs": [
         {
           "name": "pipe_prompty",
           "type": "MC_PROMPTY_PIPE",
-          "link": 693
+          "link": 824
         }
       ],
       "outputs": [
@@ -1951,9 +1950,9 @@
         false,
         5.6000000000000005,
         0.76,
-        0.76,
+        1,
         0,
-        0.5
+        1
       ]
     },
     {
@@ -1993,12 +1992,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_zroqb_00001_.png&type=temp&subfolder=&preview=webp&rand=0.5491197486160171"
+            "url": "/api/view?filename=rgthree.compare._temp_ghbva_00053_.png&type=temp&subfolder=&preview=webp&rand=0.9013277093792722"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_zroqb_00002_.png&type=temp&subfolder=&preview=webp&rand=0.3395266097805798"
+            "url": "/api/view?filename=rgthree.compare._temp_ghbva_00054_.png&type=temp&subfolder=&preview=webp&rand=0.389743480008488"
           }
         ]
       ]
@@ -2015,7 +2014,7 @@
         486
       ],
       "flags": {},
-      "order": 44,
+      "order": 43,
       "mode": 0,
       "inputs": [
         {
@@ -2026,7 +2025,7 @@
         {
           "name": "tiles",
           "type": "IMAGE",
-          "link": 812,
+          "link": 827,
           "shape": 7
         }
       ],
@@ -2046,7 +2045,7 @@
         "bicubic",
         "Input Image",
         1,
-        0.1,
+        0.11,
         "",
         "",
         false
@@ -2064,7 +2063,7 @@
         246
       ],
       "flags": {},
-      "order": 12,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -2145,7 +2144,7 @@
         374
       ],
       "flags": {},
-      "order": 41,
+      "order": 40,
       "mode": 0,
       "inputs": [
         {
@@ -2179,7 +2178,7 @@
           "type": "IMAGE",
           "links": [
             791,
-            812
+            827
           ],
           "slot_index": 2
         },
@@ -2214,13 +2213,13 @@
         294
       ],
       "flags": {},
-      "order": 35,
+      "order": 34,
       "mode": 0,
       "inputs": [
         {
           "name": "pipe_prompty",
           "type": "MC_PROMPTY_PIPE",
-          "link": 697
+          "link": 823
         }
       ],
       "outputs": [
@@ -2260,7 +2259,7 @@
         294
       ],
       "flags": {},
-      "order": 38,
+      "order": 37,
       "mode": 0,
       "inputs": [
         {
@@ -2331,12 +2330,12 @@
           {
             "name": "A",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_nmihn_00005_.png&type=temp&subfolder=&preview=webp&rand=0.6260554624313408"
+            "url": "/api/view?filename=rgthree.compare._temp_fopom_00041_.png&type=temp&subfolder=&preview=webp&rand=0.9648012336845966"
           },
           {
             "name": "B",
             "selected": true,
-            "url": "/api/view?filename=rgthree.compare._temp_nmihn_00006_.png&type=temp&subfolder=&preview=webp&rand=0.15475538815053413"
+            "url": "/api/view?filename=rgthree.compare._temp_fopom_00042_.png&type=temp&subfolder=&preview=webp&rand=0.30145915040829174"
           }
         ]
       ]
@@ -2681,7 +2680,7 @@
         246
       ],
       "flags": {},
-      "order": 43,
+      "order": 42,
       "mode": 0,
       "inputs": [
         {
@@ -2904,7 +2903,7 @@
         246
       ],
       "flags": {},
-      "order": 13,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -3028,7 +3027,7 @@
         30
       ],
       "flags": {},
-      "order": 17,
+      "order": 19,
       "mode": 0,
       "inputs": [
         {
@@ -3400,7 +3399,7 @@
         "RealESRGAN_x2.pth",
         1024,
         "control_v11p_sd15_canny.safetensors",
-        0.6,
+        0.59,
         0.6
       ]
     },
@@ -3446,7 +3445,7 @@
       "widgets_values": [
         "bicubic",
         "Input Image",
-        2,
+        1,
         0.1,
         "multi planetary markets",
         "",
@@ -3495,7 +3494,7 @@
         0.76,
         0.76,
         0,
-        0.35000000000000003
+        0.32
       ]
     }
   ],
@@ -3637,14 +3636,6 @@
       "*"
     ],
     [
-      651,
-      207,
-      1,
-      214,
-      3,
-      "*"
-    ],
-    [
       652,
       96,
       0,
@@ -3733,14 +3724,6 @@
       "*"
     ],
     [
-      693,
-      216,
-      3,
-      228,
-      0,
-      "MC_PROMPTY_PIPE"
-    ],
-    [
       694,
       208,
       0,
@@ -3755,14 +3738,6 @@
       236,
       0,
       "MC_BOATY_PIPE"
-    ],
-    [
-      697,
-      216,
-      3,
-      237,
-      0,
-      "MC_PROMPTY_PIPE"
     ],
     [
       699,
@@ -4181,60 +4156,12 @@
       "*"
     ],
     [
-      807,
-      207,
-      2,
-      214,
-      4,
-      "*"
-    ],
-    [
-      808,
-      214,
-      4,
-      218,
-      1,
-      "IMAGE"
-    ],
-    [
-      809,
-      221,
-      2,
-      223,
-      1,
-      "IMAGE"
-    ],
-    [
       810,
       96,
       2,
       215,
       4,
       "*"
-    ],
-    [
-      811,
-      215,
-      4,
-      220,
-      1,
-      "IMAGE"
-    ],
-    [
-      812,
-      236,
-      2,
-      230,
-      1,
-      "IMAGE"
-    ],
-    [
-      813,
-      227,
-      2,
-      226,
-      1,
-      "IMAGE"
     ],
     [
       814,
@@ -4253,12 +4180,76 @@
       "IMAGE"
     ],
     [
-      816,
+      823,
+      216,
+      3,
+      237,
+      0,
+      "MC_PROMPTY_PIPE"
+    ],
+    [
+      824,
+      216,
+      3,
+      228,
+      0,
+      "MC_PROMPTY_PIPE"
+    ],
+    [
+      825,
+      207,
+      1,
+      214,
+      3,
+      "*"
+    ],
+    [
+      826,
+      227,
+      2,
+      226,
+      1,
+      "IMAGE"
+    ],
+    [
+      827,
+      236,
+      2,
+      230,
+      1,
+      "IMAGE"
+    ],
+    [
+      828,
       179,
       1,
       96,
       1,
       "MC_PROMPTY_PIPE"
+    ],
+    [
+      829,
+      221,
+      2,
+      223,
+      1,
+      "IMAGE"
+    ],
+    [
+      830,
+      215,
+      4,
+      220,
+      1,
+      "IMAGE"
+    ],
+    [
+      831,
+      214,
+      4,
+      218,
+      1,
+      "IMAGE"
     ]
   ],
   "groups": [
