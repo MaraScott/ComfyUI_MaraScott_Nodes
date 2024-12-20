@@ -464,7 +464,6 @@ class Mara_Untiler_v1:
         start_time = time.time()
 
         local_PIPE = self.init(**kwargs)
-        local_PIPE = copy.deepcopy(local_PIPE)
 
         final_positve = kwargs.get('positve', local_PIPE.KSAMPLER.positive)
         final_negative = kwargs.get('negative', local_PIPE.KSAMPLER.negative)
@@ -863,7 +862,6 @@ class Mara_McBoaty_Refiner_v6:
         start_time = time.time()
         
         local_PIPE = self.init(**kwargs)
-        local_PIPE = copy.deepcopy(local_PIPE)
 
         log("McBoaty (Refiner) is starting to do its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
