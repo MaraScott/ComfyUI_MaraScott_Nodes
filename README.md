@@ -1,3 +1,7 @@
+### !!! McBoaty v6 is broken !!!
+
+[Help needed](https://github.com/MaraScott/ComfyUI_MaraScott_Nodes/blob/main/py/nodes/UpscalerRefiner/McBoaty_v6.py), if you can 
+
 # ComfyUI MaraScott Nodes
 
 Turn ★ into ⭐ (top-right corner) if you like the project!
