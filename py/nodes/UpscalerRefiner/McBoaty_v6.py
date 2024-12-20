@@ -330,7 +330,7 @@ class Mara_Tiler_v1:
         cannies = [t.canny for t in local_PIPE.KSAMPLER.tiles]
         
         return (
-            mc_boaty_pipe,
+            copy.deepcopy(mc_boaty_pipe),
             local_PIPE.OUTPUTS.image,
             torch.cat(tiles, dim=0),
             torch.cat(cannies, dim=0),
@@ -692,7 +692,7 @@ class Mara_McBoaty_Configurator_v6:
         log("McBoaty (Upscaler) is done with its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         return (
-            mc_boaty_pipe,
+            copy.deepcopy(mc_boaty_pipe),
             (
                 local_PIPE.KSAMPLER.tiles,
             ),
@@ -889,7 +889,7 @@ class Mara_McBoaty_Refiner_v6:
         log("McBoaty (Refiner) is done with its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         return (
-            mc_boaty_pipe,
+            copy.deepcopy(mc_boaty_pipe),
             (
                 local_PIPE.KSAMPLER.tiles,
             ),            
@@ -1199,7 +1199,7 @@ class Mara_McBoaty_v6:
         combined_info = cls._combine_info(upscaler_info, refiner_info, total_time)
         
         return (
-            mc_boaty_pipe,
+            copy.deepcopy(mc_boaty_pipe),
             mc_boaty_pipe_prompty,            
             tiles, 
             cannies,
