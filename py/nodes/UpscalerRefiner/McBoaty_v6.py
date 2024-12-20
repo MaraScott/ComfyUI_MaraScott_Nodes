@@ -309,7 +309,7 @@ class Mara_Tiler_v1:
         tiles = []
         total = len(local_PIPE.OUTPUTS.tiles)
         for index, tile in enumerate(local_PIPE.OUTPUTS.tiles):
-            _tile = Mara_Common_v1.TILE_ATTRIBUTES
+            _tile = copy.deepcopy(Mara_Common_v1.TILE_ATTRIBUTES)
             _tile.id = index + 1
             _tile.tile = tile.unsqueeze(0)
             _tile.canny = torch.zeros((1, _tile.tile.shape[1], _tile.tile.shape[2], 3), dtype=torch.float16)
@@ -324,13 +324,13 @@ class Mara_Tiler_v1:
         end_time = time.time()        
         local_PIPE.INFO.execution_time = int(end_time - start_time)
         
-        mc_boaty_pipe = Mara_Common_v1_Tiler.set_mc_boaty_pipe(local_PIPE)
+        mc_boaty_pipe_tiler = Mara_Common_v1_Tiler.set_mc_boaty_pipe(local_PIPE)
         
         tiles = [t.tile for t in local_PIPE.KSAMPLER.tiles]
         cannies = [t.canny for t in local_PIPE.KSAMPLER.tiles]
         
         return (
-            copy.deepcopy(mc_boaty_pipe),
+            mc_boaty_pipe_tiler,
             local_PIPE.OUTPUTS.image,
             torch.cat(tiles, dim=0),
             torch.cat(cannies, dim=0),
@@ -687,12 +687,12 @@ class Mara_McBoaty_Configurator_v6:
             int(end_time - start_time)
         )
         
-        mc_boaty_pipe = Mara_Common_v1_Configurator.set_mc_boaty_pipe(local_PIPE)
+        mc_boaty_pipe_untiler = Mara_Common_v1_Configurator.set_mc_boaty_pipe(local_PIPE)
         
         log("McBoaty (Upscaler) is done with its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         return (
-            copy.deepcopy(mc_boaty_pipe),
+            mc_boaty_pipe_untiler,
             (
                 local_PIPE.KSAMPLER.tiles,
             ),
@@ -881,7 +881,7 @@ class Mara_McBoaty_Refiner_v6:
             int(end_time - start_time)
         )
 
-        mc_boaty_pipe = Mara_Common_v1_Refiner.set_mc_boaty_pipe(local_PIPE)
+        mc_boaty_pipe_refiner = Mara_Common_v1_Refiner.set_mc_boaty_pipe(local_PIPE)
         
         tiles = [t.new_tile for t in local_PIPE.KSAMPLER.tiles]
         cannies = [t.new_canny for t in local_PIPE.KSAMPLER.tiles]
@@ -889,7 +889,7 @@ class Mara_McBoaty_Refiner_v6:
         log("McBoaty (Refiner) is done with its magic", None, None, f"Node {local_PIPE.INFO.id}")
 
         return (
-            copy.deepcopy(mc_boaty_pipe),
+            mc_boaty_pipe_refiner,
             (
                 local_PIPE.KSAMPLER.tiles,
             ),            
@@ -1190,7 +1190,7 @@ class Mara_McBoaty_v6:
         })
 
         # Refining phase
-        mc_boaty_pipe, mc_boaty_pipe_prompty, tiles, cannies, refiner_info = Mara_McBoaty_Refiner_v6.fn(**kwargs)
+        mc_boaty_pipe_mcboaty, mc_boaty_pipe_prompty, tiles, cannies, refiner_info = Mara_McBoaty_Refiner_v6.fn(**kwargs)
 
         end_time = time.time()
         total_time = int(end_time - start_time)
@@ -1199,7 +1199,7 @@ class Mara_McBoaty_v6:
         combined_info = cls._combine_info(upscaler_info, refiner_info, total_time)
         
         return (
-            copy.deepcopy(mc_boaty_pipe),
+            mc_boaty_pipe_mcboaty,
             mc_boaty_pipe_prompty,            
             tiles, 
             cannies,
