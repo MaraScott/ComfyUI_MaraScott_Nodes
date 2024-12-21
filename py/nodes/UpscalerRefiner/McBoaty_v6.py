@@ -497,22 +497,23 @@ class Mara_Untiler_v1:
             if local_PIPE_Untiler.PARAMS.upscale_size_ref != self.UPSCALE_SIZE_REF[0]:
                 image_ref = local_PIPE_Untiler.INPUTS.image
             local_PIPE_Untiler.OUTPUTS.image = nodes.ImageScale().upscale(local_PIPE_Untiler.OUTPUTS.image, local_PIPE_Untiler.PARAMS.upscale_method, int(image_ref.shape[2] * local_PIPE_Untiler.PARAMS.upscale_size), int(image_ref.shape[1] * local_PIPE_Untiler.PARAMS.upscale_size), False)[0]
-        final_positive_conditioning = nodes.CLIPTextEncode().encode(local_PIPE_Untiler.KSAMPLER.clip, final_positive)[0]
-        final_negative_conditioning = nodes.CLIPTextEncode().encode(local_PIPE_Untiler.KSAMPLER.clip, final_positive)[0]
-        if local_PIPE_Untiler.KSAMPLER.model_type == "SD3":
-            final_negative_conditioning = nodes.ConditioningZeroOut().zero_out(final_negative_conditioning)[0]
-        output_latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
-            local_PIPE_Untiler.KSAMPLER.model, 
-            local_PIPE_Untiler.KSAMPLER.add_noise, 
-            local_PIPE_Untiler.KSAMPLER.noise_seed, 
-            local_PIPE_Untiler.KSAMPLER.cfg,
-            final_positive_conditioning,
-            final_negative_conditioning,
-            local_PIPE_Untiler.KSAMPLER.sampler, 
-            Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE_Untiler.KSAMPLER.sigmas_type, local_PIPE_Untiler.KSAMPLER.model, local_PIPE_Untiler.KSAMPLER.steps, final_denoise, local_PIPE_Untiler.KSAMPLER.scheduler, local_PIPE_Untiler.KSAMPLER.model_type), 
-            nodes.VAEEncodeTiled().encode(local_PIPE_Untiler.KSAMPLER.vae, local_PIPE_Untiler.OUTPUTS.image, local_PIPE_Untiler.KSAMPLER.tile_size_vae, local_PIPE_Untiler.KSAMPLER.tile_size_vae // 16)[0]
-        )[0]
-        local_PIPE_Untiler.OUTPUTS.image = nodes.VAEDecodeTiled().decode(local_PIPE_Untiler.KSAMPLER.vae, output_latent, local_PIPE_Untiler.KSAMPLER.tile_size_vae, int(local_PIPE_Untiler.KSAMPLER.tile_size_vae * local_PIPE_Untiler.PARAMS.overlap) )[0]
+        if int(final_denoise) > 0:
+            final_positive_conditioning = nodes.CLIPTextEncode().encode(local_PIPE_Untiler.KSAMPLER.clip, final_positive)[0]
+            final_negative_conditioning = nodes.CLIPTextEncode().encode(local_PIPE_Untiler.KSAMPLER.clip, final_positive)[0]
+            if local_PIPE_Untiler.KSAMPLER.model_type == "SD3":
+                final_negative_conditioning = nodes.ConditioningZeroOut().zero_out(final_negative_conditioning)[0]
+            output_latent = comfy_extras.nodes_custom_sampler.SamplerCustom().sample(
+                local_PIPE_Untiler.KSAMPLER.model, 
+                local_PIPE_Untiler.KSAMPLER.add_noise, 
+                local_PIPE_Untiler.KSAMPLER.noise_seed, 
+                local_PIPE_Untiler.KSAMPLER.cfg,
+                final_positive_conditioning,
+                final_negative_conditioning,
+                local_PIPE_Untiler.KSAMPLER.sampler, 
+                Mara_McBoaty_Configurator_v6._get_sigmas(local_PIPE_Untiler.KSAMPLER.sigmas_type, local_PIPE_Untiler.KSAMPLER.model, local_PIPE_Untiler.KSAMPLER.steps, final_denoise, local_PIPE_Untiler.KSAMPLER.scheduler, local_PIPE_Untiler.KSAMPLER.model_type), 
+                nodes.VAEEncodeTiled().encode(local_PIPE_Untiler.KSAMPLER.vae, local_PIPE_Untiler.OUTPUTS.image, local_PIPE_Untiler.KSAMPLER.tile_size_vae, local_PIPE_Untiler.KSAMPLER.tile_size_vae // 16)[0]
+            )[0]
+            local_PIPE_Untiler.OUTPUTS.image = nodes.VAEDecodeTiled().decode(local_PIPE_Untiler.KSAMPLER.vae, output_latent, local_PIPE_Untiler.KSAMPLER.tile_size_vae, int(local_PIPE_Untiler.KSAMPLER.tile_size_vae * local_PIPE_Untiler.PARAMS.overlap) )[0]
 
         # if local_PIPE_Untiler.PARAMS.color_match_method != 'none':
         #     local_PIPE_Untiler.OUTPUTS.image = ColorMatch().colormatch(local_PIPE_Untiler.INPUTS.image, local_PIPE_Untiler.OUTPUTS.image, local_PIPE_Untiler.PARAMS.color_match_method)[0]
