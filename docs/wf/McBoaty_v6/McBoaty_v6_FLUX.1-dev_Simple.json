@@ -1,0 +1,1030 @@
+{
+  "last_node_id": 275,
+  "last_link_id": 867,
+  "nodes": [
+    {
+      "id": 4,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        -1270,
+        -250
+      ],
+      "size": [
+        315,
+        98
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            863
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            864
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            854
+          ],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "flux.1-dev\\flux1-dev-fp8.safetensors"
+      ]
+    },
+    {
+      "id": 36,
+      "type": "MaraScottLoadImage_v1",
+      "pos": [
+        -1260,
+        -30
+      ],
+      "size": [
+        315,
+        334
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            858,
+            859
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "File Name",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottLoadImage_v1"
+      },
+      "widgets_values": [
+        "David/CptKuzzoLandscape.jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 189,
+      "type": "PreviewImage",
+      "pos": [
+        -530,
+        -30
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 772
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 190,
+      "type": "PreviewImage",
+      "pos": [
+        -300,
+        -20
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 773
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 236,
+      "type": "MaraScottMcBoatyRefiner_v6",
+      "pos": [
+        1460,
+        -20
+      ],
+      "size": [
+        355.20001220703125,
+        374
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 861
+        },
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE",
+          "link": 700,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            848
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE",
+          "links": null
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": [
+            842,
+            846
+          ],
+          "slot_index": 2
+        },
+        {
+          "name": "tiles - cannies",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyRefiner_v6"
+      },
+      "widgets_values": [
+        "",
+        "hm-mvgd-hm"
+      ]
+    },
+    {
+      "id": 237,
+      "type": "MaraScottMcBoatyTilePrompter_v6",
+      "pos": [
+        530,
+        80
+      ],
+      "size": [
+        403.1999816894531,
+        294
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE",
+          "link": 862
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE",
+          "links": [
+            699
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyTilePrompter_v6"
+      },
+      "widgets_values": [
+        "1,3",
+        "cowboy",
+        "",
+        false,
+        1,
+        0.76,
+        0.5,
+        0,
+        0.5
+      ]
+    },
+    {
+      "id": 238,
+      "type": "MaraScottMcBoatyTilePrompter_v6",
+      "pos": [
+        990,
+        90
+      ],
+      "size": [
+        403.1999816894531,
+        294
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe_prompty",
+          "type": "MC_PROMPTY_PIPE",
+          "link": 699
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE",
+          "links": [
+            700
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyTilePrompter_v6"
+      },
+      "widgets_values": [
+        "2,4",
+        "monkey",
+        "",
+        false,
+        1,
+        0.76,
+        1,
+        0,
+        0.5
+      ]
+    },
+    {
+      "id": 246,
+      "type": "Image Comparer (rgthree)",
+      "pos": [
+        2370,
+        -20
+      ],
+      "size": [
+        620,
+        580
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image_a",
+          "type": "IMAGE",
+          "link": 795,
+          "dir": 3
+        },
+        {
+          "name": "image_b",
+          "type": "IMAGE",
+          "link": 860,
+          "dir": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "comparer_mode": "Slide"
+      },
+      "widgets_values": [
+        [
+          {
+            "name": "A",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_vbsen_00001_.png&type=temp&subfolder=&preview=webp&rand=0.8112475547816154"
+          },
+          {
+            "name": "B",
+            "selected": true,
+            "url": "/api/view?filename=rgthree.compare._temp_vbsen_00002_.png&type=temp&subfolder=&preview=webp&rand=0.7132616412987269"
+          }
+        ]
+      ]
+    },
+    {
+      "id": 263,
+      "type": "MaraScottTiler_v1",
+      "pos": [
+        -880,
+        -30
+      ],
+      "size": [
+        315,
+        214
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 859
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoayty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": null
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "tiles - canny",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottTiler_v1"
+      },
+      "widgets_values": [
+        "None",
+        512,
+        "None",
+        0.6,
+        0.6
+      ]
+    },
+    {
+      "id": 264,
+      "type": "MaraScottTiler_v1",
+      "pos": [
+        -880,
+        -30
+      ],
+      "size": [
+        315,
+        214
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 858
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoayty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            857
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            860
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "links": [
+            772
+          ],
+          "slot_index": 2
+        },
+        {
+          "name": "tiles - canny",
+          "type": "IMAGE",
+          "links": [
+            773
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottTiler_v1"
+      },
+      "widgets_values": [
+        "RealESRGAN_x2.pth",
+        2048,
+        "flux.1-dev_FLUX.1-dev-ControlNet-Union-Pro.safetensors",
+        0.6,
+        0.6
+      ]
+    },
+    {
+      "id": 266,
+      "type": "MaraScottUntiler_v1",
+      "pos": [
+        1960,
+        -20
+      ],
+      "size": [
+        310,
+        486
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 848
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "link": 842,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            795
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottUntiler_v1"
+      },
+      "widgets_values": [
+        "bicubic",
+        "Input Image",
+        2,
+        0.15,
+        "rainbow",
+        "",
+        false
+      ]
+    },
+    {
+      "id": 273,
+      "type": "MaraScottMcBoatyConfigurator_v6",
+      "pos": [
+        80,
+        -20
+      ],
+      "size": [
+        400,
+        664
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "MC_BOATY_PIPE",
+          "link": 857
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 866
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 867
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 854
+        },
+        {
+          "name": "tiles",
+          "type": "IMAGE",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "McBoaty Pipe",
+          "type": "MC_BOATY_PIPE",
+          "links": [
+            861
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "McPrompty Pipe",
+          "type": "MC_PROMPTY_PIPE",
+          "links": [
+            862
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaraScottMcBoatyConfigurator_v6"
+      },
+      "widgets_values": [
+        "astronaut",
+        "",
+        "BasicScheduler",
+        "FLUX1",
+        "dpmpp_2m",
+        "sgm_uniform",
+        8,
+        42,
+        "fixed",
+        1,
+        0.5,
+        true,
+        512,
+        0.76,
+        0,
+        0.5,
+        "generate a single paragraph prompt of max 77 token to describe the image. do not comment.",
+        "http://127.0.0.1:11434",
+        "hhao/openbmb-minicpm-llama3-v-2_5:latest",
+        5
+      ]
+    },
+    {
+      "id": 274,
+      "type": "ApplyFBCacheOnModel",
+      "pos": [
+        -900,
+        -430
+      ],
+      "size": [
+        315,
+        154
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 863
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            865
+          ],
+          "slot_index": 0
+        }
+      ],
+      "title": "First Block Speed Boost",
+      "properties": {
+        "Node name for S&R": "ApplyFBCacheOnModel"
+      },
+      "widgets_values": [
+        "diffusion_model",
+        0.05,
+        0,
+        1,
+        -1
+      ]
+    },
+    {
+      "id": 275,
+      "type": "Power Lora Loader (rgthree)",
+      "pos": [
+        -530,
+        -430
+      ],
+      "size": [
+        450,
+        142
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 865,
+          "dir": 3
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 864,
+          "dir": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            866
+          ],
+          "slot_index": 0,
+          "shape": 3,
+          "dir": 4
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            867
+          ],
+          "slot_index": 1,
+          "shape": 3,
+          "dir": 4
+        }
+      ],
+      "properties": {
+        "Show Strengths": "Single Strength"
+      },
+      "widgets_values": [
+        null,
+        {
+          "type": "PowerLoraLoaderHeaderWidget"
+        },
+        {
+          "on": true,
+          "lora": "accelerators\\Hyper-FLUX.1-dev-8steps-lora.safetensors",
+          "strength": 0.1,
+          "strengthTwo": null
+        },
+        null,
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      699,
+      237,
+      0,
+      238,
+      0,
+      "MC_PROMPTY_PIPE"
+    ],
+    [
+      700,
+      238,
+      0,
+      236,
+      1,
+      "MC_PROMPTY_PIPE"
+    ],
+    [
+      772,
+      264,
+      2,
+      189,
+      0,
+      "IMAGE"
+    ],
+    [
+      773,
+      264,
+      3,
+      190,
+      0,
+      "IMAGE"
+    ],
+    [
+      795,
+      266,
+      0,
+      246,
+      0,
+      "IMAGE"
+    ],
+    [
+      842,
+      236,
+      2,
+      266,
+      1,
+      "IMAGE"
+    ],
+    [
+      846,
+      236,
+      2,
+      253,
+      1,
+      "IMAGE"
+    ],
+    [
+      848,
+      236,
+      0,
+      266,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      854,
+      4,
+      2,
+      273,
+      3,
+      "VAE"
+    ],
+    [
+      857,
+      264,
+      0,
+      273,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      858,
+      36,
+      0,
+      264,
+      0,
+      "IMAGE"
+    ],
+    [
+      859,
+      36,
+      0,
+      263,
+      0,
+      "IMAGE"
+    ],
+    [
+      860,
+      264,
+      1,
+      246,
+      1,
+      "IMAGE"
+    ],
+    [
+      861,
+      273,
+      0,
+      236,
+      0,
+      "MC_BOATY_PIPE"
+    ],
+    [
+      862,
+      273,
+      1,
+      237,
+      0,
+      "MC_PROMPTY_PIPE"
+    ],
+    [
+      863,
+      4,
+      0,
+      274,
+      0,
+      "MODEL"
+    ],
+    [
+      864,
+      4,
+      1,
+      275,
+      1,
+      "CLIP"
+    ],
+    [
+      865,
+      274,
+      0,
+      275,
+      0,
+      "MODEL"
+    ],
+    [
+      866,
+      275,
+      0,
+      273,
+      1,
+      "MODEL"
+    ],
+    [
+      867,
+      275,
+      1,
+      273,
+      2,
+      "CLIP"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 2,
+      "title": "Tiling",
+      "bounding": [
+        -900,
+        -110,
+        830,
+        360
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 13,
+      "title": "McBoaty : TilePrompter + Refiner",
+      "bounding": [
+        20,
+        -110,
+        1850,
+        790
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 14,
+      "title": "Untiling",
+      "bounding": [
+        1930,
+        -110,
+        1100,
+        690
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "linkExtensions": [
+      {
+        "id": 854,
+        "parentId": 5
+      },
+      {
+        "id": 857,
+        "parentId": 4
+      },
+      {
+        "id": 860,
+        "parentId": 2
+      },
+      {
+        "id": 864,
+        "parentId": 6
+      }
+    ],
+    "reroutes": [
+      {
+        "id": 1,
+        "pos": [
+          -510,
+          -170
+        ],
+        "linkIds": [
+          860
+        ]
+      },
+      {
+        "id": 2,
+        "parentId": 1,
+        "pos": [
+          2230,
+          -160
+        ],
+        "linkIds": [
+          860
+        ]
+      },
+      {
+        "id": 3,
+        "pos": [
+          -510,
+          -140
+        ],
+        "linkIds": [
+          857
+        ]
+      },
+      {
+        "id": 4,
+        "parentId": 3,
+        "pos": [
+          230,
+          130
+        ],
+        "linkIds": [
+          857
+        ]
+      },
+      {
+        "id": 5,
+        "pos": [
+          -90,
+          -190
+        ],
+        "linkIds": [
+          854
+        ]
+      },
+      {
+        "id": 6,
+        "pos": [
+          -600,
+          -230
+        ],
+        "linkIds": [
+          864
+        ]
+      }
+    ],
+    "ue_links": [],
+    "node_versions": {
+      "rgthree-comfy": "5d771b8b56a343c24a26e8cea1f0c87c3d58102f",
+      "ComfyUI_MaraScott_Nodes": "4acd4759a92c70784ab2471135e628c573c320d1",
+      "comfy-core": "0.3.14",
+      "Comfy-WaveSpeed": "3db162bb7ad56b84a452a4778527da63793c0e87"
+    }
+  },
+  "version": 0.4
+}
