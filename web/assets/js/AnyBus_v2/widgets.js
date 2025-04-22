@@ -1,5 +1,5 @@
-import { Bus } from "./AnyBus_v2/bus.js";
-import { Flow } from "./AnyBus_v2/flow.js";
+import { Bus } from "./bus.js";
+import { Flow } from "./flow.js";
 
 export class Widget {
 

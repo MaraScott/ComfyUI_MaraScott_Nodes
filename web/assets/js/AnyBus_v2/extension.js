@@ -1,6 +1,6 @@
-import { Bus } from "./AnyBus_v2/bus.js";
-import { Flow } from "./AnyBus_v2/flow.js";
-import { LiteGraph_Hooks } from "./AnyBus_v2/litegraph-hooks.js";
+import { Bus } from "./bus.js";
+import { Flow } from "./flow.js";
+import { LiteGraph_Hooks } from "./litegraph-hooks.js";
 
 export const Extension = {
     // Unique name for the extension

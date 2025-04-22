@@ -1,6 +1,5 @@
-import { Widget } from "./AnyBus_v2/widgets.js";
-import { Bus } from "./AnyBus_v2/bus.js";
-import { Flow } from "./AnyBus_v2/flow.js";
+import { Widget } from "./widgets.js";
+import { Bus } from "./bus.js";
 
 export class Flow {
 
@@ -164,14 +163,14 @@ export class Flow {
 
     static syncProfile(node, isChangeWidget, isChangeConnect) {
 
-        if (!node.graph || window.marascott.AnyBus_v2.sync == Flow.NOSYNC) return
-        if (window.marascott.AnyBus_v2.sync == Flow.FULLSYNC) {
-            Flow.setFlows(node);
+        if (!node.graph || window.marascott.AnyBus_v2.sync == this.NOSYNC) return
+        if (window.marascott.AnyBus_v2.sync == this.FULLSYNC) {
+            this.setFlows(node);
             const busNodes = [].concat(...this.getFlows(node)).filter((value, index, self) => self.indexOf(value) === index)
             this.sync(node, busNodes, isChangeWidget, isChangeConnect)
         }
 
-        window.marascott.AnyBus_v2.sync = Flow.NOSYNC
+        window.marascott.AnyBus_v2.sync = this.NOSYNC
     }
 
     static sync(node, busNodes, isChangeWidget, isChangeConnect) {
@@ -248,9 +247,9 @@ export class Flow {
                 }
 
             }
-            window.marascott.AnyBus_v2.sync = Flow.FULLSYNC
-            Flow.syncProfile(node, Widget.CLEAN.name, false)
-            Flow.syncProfile(node, null, true)
+            window.marascott.AnyBus_v2.sync = this.FULLSYNC
+            this.syncProfile(node, Widget.CLEAN.name, false)
+            this.syncProfile(node, null, true)
             window.marascott.AnyBus_v2.clean = true
         }
         const cleanedLabel = " ... cleaned"
