@@ -1,15 +1,16 @@
 import { Widget } from "./widgets.js";
 import { Flow } from "./flow.js";
+import { CONSTANTS } from "./constants.js";
 
 export class Bus {
 
-    static TYPE = "MaraScottAnyBus_v2"
+    static TYPE = CONSTANTS.NODE_TYPE
 
-    static BUS_SLOT = 0
-    static BASIC_PIPE_SLOT = 0
-    static REFINER_PIPE_SLOT = 0
+    static BUS_SLOT = CONSTANTS.BUS_SLOT
+    static BASIC_PIPE_SLOT = CONSTANTS.BASIC_PIPE_SLOT
+    static REFINER_PIPE_SLOT = CONSTANTS.REFINER_PIPE_SLOT
 
-    static FIRST_INDEX = 1
+    static FIRST_INDEX = CONSTANTS.FIRST_INDEX
 
     static configure(node) {
 
@@ -29,49 +30,124 @@ export class Bus {
     }
 
     static setInputValue(node) {
-
-        let protected_slots = []
-
-        let inputsLength = window.marascott.AnyBus_v2.nodeToSync.inputs.length
-        if (node.inputs.length < inputsLength) inputsLength = node.inputs.length
-
-        for (let slot = this.FIRST_INDEX; slot < inputsLength; slot++) {
-
-            if (protected_slots.indexOf(slot) > -1) continue
-            if (typeof node.inputs[slot] == 'undefined' || typeof window.marascott.AnyBus_v2.nodeToSync.inputs[slot] == 'undefined') {
-                console.log('[MaraScott Nodes] Check your profile Names')
-                continue;
-            }
-
-            const isNodeInputAny = node.inputs[slot].type == "*"
-            const isNodeOutputDifferent = node.outputs[slot].type == window.marascott.AnyBus_v2.nodeToSync.outputs[slot].type
-            const isNodeInputDifferent =
-                !isNodeOutputDifferent // output different from new input
-            const isOutputAny = node.outputs[slot].type == "*"
-            const isOutputDifferent = node.outputs[slot].type != window.marascott.AnyBus_v2.nodeToSync.outputs[slot].type
-            const isOutputLinked = node.outputs[slot].links != null && node.outputs[slot].links.length > 0
-
-            if (isNodeInputDifferent) {
-                const preSyncMode = window.marascott.AnyBus_v2.sync;
-                window.marascott.AnyBus_v2.sync = this.NOSYNC;
-                if (node.inputs[slot].link == null) {
-                    node.disconnectInput(slot)
-                    node.disconnectOutput(slot)
-                } else {
-                    protected_slots.push(node.id)
-                }
-                window.marascott.AnyBus_v2.sync = preSyncMode;
-            }
-            if (window.marascott.AnyBus_v2.nodeToSync != null && window.marascott.AnyBus_v2.nodeToSync.id != node.id) {
-                if (node.inputs[slot].link == null) {
-                    node.inputs[slot].name = window.marascott.AnyBus_v2.nodeToSync.inputs[slot].name.toLowerCase()
-                    node.inputs[slot].type = window.marascott.AnyBus_v2.nodeToSync.inputs[slot].type
-                    node.outputs[slot].name = node.inputs[slot].name
-                    if (isOutputDifferent || !isOutputLinked) node.outputs[slot].type = node.inputs[slot].type
-                }
-            }
+        // Initial validation
+        if (!node) {
+            console.warn('[MaraScott Nodes] Node is undefined');
+            return;
         }
 
+        // Validate node structure
+        if (!node.inputs || !node.outputs) {
+            console.warn('[MaraScott Nodes] Invalid node structure - missing inputs/outputs');
+            return;
+        }
+
+        // Validate global state
+        const globalState = window.marascott?.AnyBus_v2;
+        if (!globalState) {
+            console.warn('[MaraScott Nodes] Global state not initialized');
+            return;
+        }
+
+        const syncNode = globalState.nodeToSync;
+        if (!syncNode?.inputs) {
+            console.warn('[MaraScott Nodes] NodeToSync not properly initialized');
+            return;
+        }
+
+        try {
+            const protected_slots = new Set();
+            
+            // Safely determine inputs length
+            const inputsLength = Math.min(
+                syncNode.inputs?.length || 0,
+                node.inputs?.length || 0
+            );
+
+            for (let slot = this.FIRST_INDEX; slot < inputsLength; slot++) {
+                // Skip if slot is protected
+                if (protected_slots.has(slot)) {
+                    continue;
+                }
+
+                // Validate slot existence
+                const currentInput = node.inputs[slot];
+                const syncInput = syncNode.inputs[slot];
+                const currentOutput = node.outputs[slot];
+                const syncOutput = syncNode.outputs[slot];
+
+                if (!currentInput || !syncInput || !currentOutput || !syncOutput) {
+                    console.warn(`[MaraScott Nodes] Invalid slot configuration at slot ${slot}`);
+                    continue;
+                }
+
+                // Check types and connections
+                const isNodeInputAny = currentInput.type === "*";
+                const isNodeOutputDifferent = currentOutput.type === syncOutput.type;
+                const isNodeInputDifferent = !isNodeOutputDifferent;
+                const isOutputAny = currentOutput.type === "*";
+                const isOutputDifferent = currentOutput.type !== syncOutput.type;
+                const isOutputLinked = Array.isArray(currentOutput.links) && currentOutput.links.length > 0;
+
+                // Handle input differences
+                if (isNodeInputDifferent) {
+                    const preSyncMode = globalState.sync;
+                    globalState.sync = Flow.NOSYNC;
+
+                    if (!currentInput.link) {
+                        this.safeDisconnect(node, slot);
+                    } else {
+                        protected_slots.add(slot);
+                    }
+
+                    globalState.sync = preSyncMode;
+                }
+
+                // Update node if needed
+                if (syncNode.id !== node.id && !currentInput.link) {
+                    this.updateNodeSlot(node, slot, syncNode, isOutputDifferent, isOutputLinked);
+                }
+            }
+        } catch (error) {
+            console.error('[MaraScott Nodes] Error in setInputValue:', error);
+        }
+    }
+
+    // Helper method for safe disconnection
+    static safeDisconnect(node, slot) {
+        try {
+            if (node?.inputs?.[slot]) {
+                node.disconnectInput(slot);
+            }
+            if (node?.outputs?.[slot]) {
+                node.disconnectOutput(slot);
+            }
+        } catch (error) {
+            console.error(`[MaraScott Nodes] Error disconnecting slot ${slot}:`, error);
+        }
+    }
+
+    // Helper method for updating node slot
+    static updateNodeSlot(node, slot, syncNode, isOutputDifferent, isOutputLinked) {
+        try {
+            const currentInput = node.inputs[slot];
+            const syncInput = syncNode.inputs[slot];
+            const currentOutput = node.outputs[slot];
+
+            if (!currentInput || !syncInput || !currentOutput) {
+                return;
+            }
+
+            currentInput.name = syncInput.name.toLowerCase();
+            currentInput.type = syncInput.type;
+            currentOutput.name = currentInput.name;
+
+            if (isOutputDifferent || !isOutputLinked) {
+                currentOutput.type = currentInput.type;
+            }
+        } catch (error) {
+            console.error(`[MaraScott Nodes] Error updating slot ${slot}:`, error);
+        }
     }
 
     static getSyncType(node, slot, link_info_node, link_info_slot) {
@@ -148,38 +224,78 @@ export class Bus {
     }
 
     static disConnectInput(node, slot) {
+        // Early validation with detailed error messages
+        if (!node) {
+            console.warn('[MaraScott Nodes] Node is undefined');
+            return Flow.NOSYNC;
+        }
 
-        const syncProfile = this.getSyncType(node, slot, null, null)
-        const previousBusNode = this.getBusParentNodeWithInput(node, slot)
-        let busNodes = []
-        const busNodePaths = Flow.getFlows(node)
+        if (!node.graph) {
+            console.warn('[MaraScott Nodes] Node graph is undefined');
+            return Flow.NOSYNC;
+        }
 
-        let newName = "* " + window.marascott.AnyBus_v2.input.index.toString().padStart(2, '0')
-        let newType = "*"
-        let _node = null
-        for (let i in busNodePaths) {
-            busNodes = busNodePaths[i]
-            busNodes.reverse()
-            for (let y in busNodes) {
-                _node = node.graph.getNodeById(busNodes[y])
-                if (_node != null) {
-                    if (typeof _node.inputs[slot] != 'undefined' && _node.inputs[slot].link != null && _node.inputs[slot].type != "*") {
-                        newName = _node.inputs[slot].name
-                        newType = _node.inputs[slot].type
-                    } else if (typeof _node.inputs[slot] != 'undefined' && _node.inputs[slot].type == newType && _node.inputs[slot].name != newName) {
-                        newName = _node.inputs[slot].name
+        if (!node.inputs?.[slot]) {
+            console.warn(`[MaraScott Nodes] Input slot ${slot} is undefined`);
+            return Flow.NOSYNC;
+        }
+
+        if (!node.outputs?.[slot]) {
+            console.warn(`[MaraScott Nodes] Output slot ${slot} is undefined`);
+            return Flow.NOSYNC;
+        }
+    
+        try {
+            const syncProfile = this.getSyncType(node, slot, null, null);
+            const previousBusNode = this.getBusParentNodeWithInput(node, slot);
+            const busNodePaths = Flow.getFlows(node) || [];
+            
+            // Default values with safe access to global state
+            const defaultIndex = window.marascott?.AnyBus_v2?.input?.index ?? 0;
+            let newName = `* ${defaultIndex.toString().padStart(2, '0')}`;
+            let newType = "*";
+    
+            // Process bus nodes if paths exist
+            if (busNodePaths.length > 0) {
+                for (const busNodes of busNodePaths) {
+                    // Create a new array instead of modifying the original
+                    const reversedNodes = Array.from(busNodes).reverse();
+                    
+                    for (const nodeId of reversedNodes) {
+                        const currentNode = node.graph.getNodeById(nodeId);
+                        
+                        // Skip if node or input slot doesn't exist
+                        if (!currentNode?.inputs?.[slot]) continue;
+    
+                        const currentInput = currentNode.inputs[slot];
+                        
+                        if (currentInput.link != null && currentInput.type !== "*") {
+                            newName = currentInput.name;
+                            newType = currentInput.type;
+                        } else if (currentInput.type === newType && currentInput.name !== newName) {
+                            newName = currentInput.name;
+                        }
                     }
                 }
             }
+    
+            // Safely update node properties
+            if (node.inputs?.[slot]) {
+                node.inputs[slot].name = newName;
+                node.inputs[slot].type = newType;
+            }
+            
+            if (node.outputs?.[slot]) {
+                node.outputs[slot].name = newName;
+                // Type is intentionally not updated for outputs
+            }
+
+            return syncProfile;
+    
+        } catch (error) {
+            console.error('[MaraScott Nodes] Error in disConnectInput:', error);
+            return Flow.NOSYNC;
         }
-        // input
-        node.inputs[slot].name = newName
-        node.inputs[slot].type = newType
-        node.outputs[slot].name = node.inputs[slot].name
-        // node.outputs[slot].type = node.inputs[slot].type
-
-        return syncProfile
-
     }
 
     static connectBus(node, slot, node_origin, origin_slot) {

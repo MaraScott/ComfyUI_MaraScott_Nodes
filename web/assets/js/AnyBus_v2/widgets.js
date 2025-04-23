@@ -39,34 +39,63 @@ export class Widget {
     }
 
     static setValueInputs(node, name, value) {
-        let qty = 0
-        let _value = value + Bus.FIRST_INDEX
-        if (node.inputs.length > _value) {
-            qty = node.inputs.length - _value
-            for (let i = qty; i > 0; i--) {
-                node.removeInput(node.inputs.length - 1)
-                node.removeOutput(node.outputs.length - 1)
+        // Check if node and graph are properly initialized
+        if (!node || !node.graph) {
+            console.warn("Node or graph not initialized yet");
+            return;
+        }
+
+        try {
+            const targetLength = value + Bus.FIRST_INDEX;
+            const currentLength = node.inputs?.length || 0;
+
+            // Remove inputs if we have too many
+            if (currentLength > targetLength) {
+                for (let i = currentLength - 1; i >= targetLength; i--) {
+                    if (node.inputs[i] && !node.inputs[i].link) {
+                        // Only remove unconnected inputs
+                        node.removeInput(i);
+                        node.removeOutput(i);
+                    }
+                }
             }
-        } else if (node.inputs.length < _value) {
-            qty = _value - node.inputs.length
-            for (let i = 0; i < qty; i++) {
-                const name = "* " + node.inputs.length.toString().padStart(2, '0')
-                const type = "*"
-                node.addInput(name, type)
-                node.addOutput(name, type)
+            // Add inputs if we need more
+            else if (currentLength < targetLength) {
+                for (let i = currentLength; i < targetLength; i++) {
+                    const name = `* ${i.toString().padStart(2, '0')}`;
+                    const type = "*";
+                    node.addInput(name, type);
+                    node.addOutput(name, type);
+                }
             }
+        } catch (error) {
+            console.error("Error modifying node inputs/outputs:", error);
         }
     }
 
     static setValue(node, name, value) {
+        try {
+            const nodeWidget = this.getByName(node, name);
+            if (!nodeWidget) {
+                console.warn(`Widget '${name}' not found`);
+                return;
+            }
 
-        const nodeWidget = this.getByName(node, name);
-        nodeWidget.value = value
-        node.setProperty(name, nodeWidget.value ?? node.properties[name])
-        if (name == this.PROFILE.name) this.setValueProfile(node, name, value)
-        if (name == this.INPUTS.name) this.setValueInputs(node, name, value)
-        node.setDirtyCanvas(true)
+            nodeWidget.value = value;
+            node.setProperty(name, nodeWidget.value ?? node.properties[name]);
 
+            if (name === this.PROFILE.name) {
+                this.setValueProfile(node, name, value);
+            }
+            if (name === this.INPUTS.name) {
+                // Defer input modification to next tick to ensure graph is ready
+                setTimeout(() => this.setValueInputs(node, name, value), 0);
+            }
+
+            node.setDirtyCanvas(true);
+        } catch (error) {
+            console.error("Error setting widget value:", error);
+        }
     }
 
     static setProfileInput(node) {
@@ -94,34 +123,40 @@ export class Widget {
     }
 
     static setInputsSelect(node) {
+        if (!node || !node.graph) {
+            console.warn("Node or graph not initialized yet");
+            return;
+        }
 
-        const nodeWidget = this.getByName(node, this.INPUTS.name);
+        try {
+            const nodeWidget = this.getByName(node, this.INPUTS.name);
+            if (nodeWidget !== undefined) return;
 
-        if (nodeWidget == undefined) {
-
-            let values = []
-
-            for (let i = this.INPUTS.min; i <= this.INPUTS.max; i++) {
-                values.push(i);
-            }
+            const values = Array.from(
+                { length: this.INPUTS.max - this.INPUTS.min + 1 },
+                (_, i) => i + this.INPUTS.min
+            );
 
             node.addWidget(
                 "combo",
                 this.INPUTS.name,
                 node.properties[this.INPUTS.name] ?? this.INPUTS.default,
-                (value, LGraphCanvas, Node, Coordinate, PointerEvent) => {
-                    this.setValue(node, this.INPUTS.name, value)
+                (value) => {
+                    this.setValue(node, this.INPUTS.name, value);
                     window.marascott.AnyBus_v2.sync = Flow.FULLSYNC;
-                    Flow.syncProfile(node, this.INPUTS.name, null)
+                    Flow.syncProfile(node, this.INPUTS.name, null);
                 },
-                {
-                    "values": values
-                }
-            )
-            node.setProperty(this.INPUTS.name, this.INPUTS.default)
-            this.setValue(node, this.INPUTS.name, this.INPUTS.default)
-        }
+                { values }
+            );
 
+            // Defer initial setup to ensure graph is ready
+            setTimeout(() => {
+                node.setProperty(this.INPUTS.name, this.INPUTS.default);
+                this.setValue(node, this.INPUTS.name, this.INPUTS.default);
+            }, 0);
+        } catch (error) {
+            console.error("Error setting up inputs select:", error);
+        }
     }
 
     static setCleanSwitch(node) {

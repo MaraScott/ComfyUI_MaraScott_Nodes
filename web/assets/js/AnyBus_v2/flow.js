@@ -1,4 +1,5 @@
 import { Widget } from "./widgets.js";
+import { CONSTANTS } from "./constants.js";
 import { Bus } from "./bus.js";
 
 export class Flow {
@@ -6,20 +7,12 @@ export class Flow {
     static NOSYNC = 0
     static FULLSYNC = 1
 
-    static ALLOWED_REROUTE_TYPE = [
-        "Reroute (rgthree)", // SUPPORTED - RgThree Custom Node
-        // "Reroute", // UNSUPPORTED - ComfyUI native - do not allow connection on Any Type if origin Type is not Any Type too
-        // "ReroutePrimitive|pysssss", // UNSUPPORTED - Pysssss Custom Node - do not display the name of the origin slot
-        // "0246.CastReroute", //  UNSUPPORTED - 0246 Custom Node
-    ]
-    static ALLOWED_GETSET_TYPE = [
-        "SetNode", // SUPPORTED - ComfyUI-KJNodes Custom Node
-        "GetNode", // SUPPORTED - ComfyUI-KJNodes Custom Node
-    ]
+    static ALLOWED_REROUTE_TYPE = CONSTANTS.ALLOWED_REROUTE_TYPE
+    static ALLOWED_GETSET_TYPE = CONSTANTS.ALLOWED_GETSET_TYPE
     static ALLOWED_NODE_TYPE = [
-        Bus.TYPE,
-        ...this.ALLOWED_REROUTE_TYPE,
-        ...this.ALLOWED_GETSET_TYPE,
+        CONSTANTS.NODE_TYPE,
+        ...CONSTANTS.ALLOWED_REROUTE_TYPE,
+        ...CONSTANTS.ALLOWED_GETSET_TYPE,
     ]
 
     static getLastBuses(nodes) {
@@ -202,25 +195,25 @@ export class Flow {
         window.marascott.AnyBus_v2.clean = false
         let _node_origin_link = null
         let _node_origin = null
-        if (node.inputs[Bus.BUS_SLOT].link != null) {
+        if (node.inputs[CONSTANTS.BUS_SLOT].link != null) {
 
             const nodeGraphLinks = Array.isArray(node.graph.links)
                 ? node.graph.links
                 : Object.values(node.graph.links);
 
             _node_origin_link = nodeGraphLinks.find(
-                (otherLink) => otherLink?.id == node.inputs[Bus.BUS_SLOT].link
+                (otherLink) => otherLink?.id == node.inputs[CONSTANTS.BUS_SLOT].link
             )
             _node_origin = node.graph.getNodeById(_node_origin_link.origin_id)
             // console.log('disconnect',node.id)
-            node.disconnectInput(Bus.BUS_SLOT)
+            node.disconnectInput(CONSTANTS.BUS_SLOT)
             // console.log('reconnect', _node_origin.id, '=>', node.id)
-            _node_origin.connect(Bus.BUS_SLOT, node, Bus.BUS_SLOT)
+            _node_origin.connect(CONSTANTS.BUS_SLOT, node, CONSTANTS.BUS_SLOT)
 
         } else {
 
             // disconnect
-            for (let slot = Bus.FIRST_INDEX; slot < node.inputs.length; slot++) {
+            for (let slot = CONSTANTS.FIRST_INDEX; slot < node.inputs.length; slot++) {
 
                 if (node.inputs[slot].link != null) {
 
