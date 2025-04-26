@@ -384,6 +384,7 @@ class MaraScottAnyBus_v2 {
                     node.inputs[slot].type = window.marascott.AnyBus_v2.nodeToSync.inputs[slot].type
                     node.outputs[slot].name = node.inputs[slot].name
                     if (isOutputDifferent || !isOutputLinked) node.outputs[slot].type = node.inputs[slot].type
+                    console.log(node.outputs[slot].name, node.inputs[slot].name)
                 }
             }
         }
