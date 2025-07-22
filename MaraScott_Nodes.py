@@ -10,6 +10,7 @@
 from .py.utils.constants import NAMESPACE, get_name, get_category
 
 from .py.nodes.Image.LoadImage_v1 import LoadImage_v1
+from .py.nodes.Image.LoadImageByUrlOrPath_v1 import LoadImageByUrlOrPath_v1
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
 from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
@@ -70,6 +71,7 @@ NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}GetModelBlocks_v1": GetModelBlocks_v1,
 
     f"{NAMESPACE}LoadImage_v1": LoadImage_v1,
+    f"{NAMESPACE}LoadImageByUrlOrPath_v1": LoadImageByUrlOrPath_v1,
 }
 
 VENDOR_NODE_CLASS_MAPPINGS = {
