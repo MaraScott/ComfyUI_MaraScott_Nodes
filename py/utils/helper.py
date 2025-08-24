@@ -53,3 +53,11 @@ def natural_key(entry):
 def current_method(super_class, current_frame):
     return getattr(super_class, current_frame.f_code.co_name)
     
+def to_bool(val):
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)):
+        return val != 0
+    if isinstance(val, str):
+        return val.strip().lower() in ("true", "1", "yes", "y")
+    return bool(val)  # fallback to Python truthiness    

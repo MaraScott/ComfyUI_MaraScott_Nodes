@@ -10,8 +10,10 @@
 from .py.utils.constants import NAMESPACE, get_name, get_category
 
 from .py.nodes.Image.LoadImage_v1 import LoadImage_v1
+from .py.nodes.Image.LoadImageByUrlOrPath_v1 import LoadImageByUrlOrPath_v1
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
 from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
+# from .py.nodes.Info.NSFWDetector_v1 import NSFWDetector_v1
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
 from .py.nodes.UpscalerRefiner.McBoaty_v5 import McBoaty_UpscalerRefiner_v5, McBoaty_Upscaler_v5, McBoaty_TilePrompter_v5, McBoaty_Refiner_v5
 from .py.nodes.UpscalerRefiner.McBoaty_v6 import Mara_Tiler_v1, Mara_Untiler_v1, Mara_McBoaty_v6, Mara_McBoaty_Configurator_v6, Mara_McBoaty_TilePrompter_v6, Mara_McBoaty_Refiner_v6
@@ -20,14 +22,16 @@ from .py.nodes.Prompt.PromptFromImage_v1 import PromptFromImage_v1
 from .py.nodes.Prompt.TextConcatenate_v1 import TextConcatenate_v1
 from .py.nodes.Prompt.TextConversion_v1 import TextConversion_StringToList_v1
 from .py.nodes.Loop.ForLoop_v1 import ForLoopOpen_v1, ForLoopClose_v1, ForLoopWhileOpen_v1, ForLoopWhileClose_v1, ForLoopIntMathOperation_v1, ForLoopToBoolNode_v1
-from .py.nodes.Util.Conditional import IsEmpty_v1, IsNone_v1, IsEmptyOrNone_v1, IsEqual_v1
+from .py.nodes.Util.Conditional import IsTrue_v1, IsEmpty_v1, IsNone_v1, IsEmptyOrNone_v1, IsEqual_v1
 from .py.nodes.Util.Image import ImageToGradient_v1
 from .py.nodes.Util.Model import GetModelBlocks_v1
+from .py.nodes.Util.Json import JsonList2JsonObj_v1
 
 from .py.vendor.ComfyUI_JNodes.blob.main.py.prompting_nodes import TokenCounter as TokenCounter_v1
 from .py.vendor.ComfyUI_Florence2.nodes import DownloadAndLoadFlorence2Model as DownloadAndLoadFlorence2Model_v1, Florence2Run as Florence2Run_v1
 from .py.vendor.kohya_hiresfix.kohya_hiresfix import Hires as Hires_v1
 # from .py.vendor.comfyui_ollama.CompfyuiOllama import Mara_OllamaVision_v1
+from .py.vendor.ComfyUI_Nsfw_Detection.node import NSFWDetection as NSFWDetection_v1
 
 WEB_DIRECTORY = "./web/assets/js"
 
@@ -56,6 +60,7 @@ NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}ForLoopIntMathOperation_v1": ForLoopIntMathOperation_v1,
     f"{NAMESPACE}ForLoopToBoolNode_v1": ForLoopToBoolNode_v1,
     
+    f"{NAMESPACE}IsTrue_v1": IsTrue_v1,
     f"{NAMESPACE}IsEmpty_v1": IsEmpty_v1,
     f"{NAMESPACE}IsNone_v1": IsNone_v1,
     f"{NAMESPACE}IsEmptyOrNone_v1": IsEmptyOrNone_v1,
@@ -66,18 +71,23 @@ NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}TextConversion_StringToList_v1": TextConversion_StringToList_v1,
     f"{NAMESPACE}ImageToGradient_v1": ImageToGradient_v1,
     f"{NAMESPACE}DisplayInfo_v2": DisplayInfo_v2,
+    # f"{NAMESPACE}NSFWDetector_v1": NSFWDetector_v1,
     
     f"{NAMESPACE}GetModelBlocks_v1": GetModelBlocks_v1,
 
     f"{NAMESPACE}LoadImage_v1": LoadImage_v1,
+    f"{NAMESPACE}LoadImageByUrlOrPath_v1": LoadImageByUrlOrPath_v1,
+
+    f"{NAMESPACE}JsonList2JsonObj_v1": JsonList2JsonObj_v1,
 }
 
 VENDOR_NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}_Kijai_TokenCounter_v1": TokenCounter_v1,
     f"{NAMESPACE}_Kijai_DownloadAndLoadFlorence2Model_v1": DownloadAndLoadFlorence2Model_v1,
-    f"{NAMESPACE}_Kijai_Florence2Run_v1": Florence2Run_v1,    
+    f"{NAMESPACE}_Kijai_Florence2Run_v1": Florence2Run_v1,
     f"{NAMESPACE}_laksjdjf_Hires_v1": Hires_v1,
     # f"{NAMESPACE}_stavsap_OllamaVision_v1": Mara_OllamaVision_v1,
+    f"{NAMESPACE}_trumanwong_NSFWDetection_v1": NSFWDetection_v1,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes 
@@ -100,10 +110,11 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 }
 
 VENDOR_NODE_DISPLAY_NAME_MAPPINGS = {
-    "MaraScott_Kijai_TokenCounter_v1": get_name(TokenCounter_v1, "TokenCounter", "v", "kijai"),
-    "MaraScott_Kijai_DownloadAndLoadFlorence2Model_v1": get_name(DownloadAndLoadFlorence2Model_v1, "DownloadAndLoadFlorence2Model", "v", "Kijai"),
-    "MaraScott_Kijai_Florence2Run_v1": get_name(Florence2Run_v1, "Florence2Run", "v", "Kijai"),
-    "MaraScott_laksjdjf_Hires_v1": get_name(Hires_v1, "Apply Kohya's HiresFix - sd1.5 only", "v", "laksjdjf"),
+    f"{NAMESPACE}_Kijai_TokenCounter_v1": get_name(TokenCounter_v1, "TokenCounter", "v", "kijai"),
+    f"{NAMESPACE}_Kijai_DownloadAndLoadFlorence2Model_v1": get_name(DownloadAndLoadFlorence2Model_v1, "DownloadAndLoadFlorence2Model", "v", "Kijai"),
+    f"{NAMESPACE}_Kijai_Florence2Run_v1": get_name(Florence2Run_v1, "Florence2Run", "v", "Kijai"),
+    f"{NAMESPACE}_laksjdjf_Hires_v1": get_name(Hires_v1, "Apply Kohya's HiresFix - sd1.5 only", "v", "laksjdjf"),
+    f"{NAMESPACE}_trumanwong_NSFWDetection_v1": get_name(NSFWDetection_v1, "NSFWDetection", "v", "trumanwong"),
 }
 
 NODE_CLASS_MAPPINGS.update(VENDOR_NODE_CLASS_MAPPINGS)

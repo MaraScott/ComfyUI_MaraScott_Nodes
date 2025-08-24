@@ -4,3 +4,6 @@ color-matcher
 groq
 opencv-python
 ollama
+tqdm
+transformers==4.37.2
+pillow==10.2.0
