@@ -23,6 +23,14 @@
 #
 ###
 
+ascii_art = """
+\033[34m┏━  ┳┳┓      ┏┓        •  ━┓  \033[92m┏┓┏┳┓┏┓┳┓┏┳┓\033[0m
+\033[34m┃   ┃┃┃┏┓┏┓┏┓┗┓┏┏┓╋╋ ┏┓┓   ┃  \033[92m┗┓ ┃ ┣┫┣┫ ┃ \033[0m
+\033[34m┗━  ┛ ┗┗┻┛ ┗┻┗┛┗┗┛┗┗•┗┻┗  ━┛  \033[92m┗┛ ┻ ┛┗┛┗ ┻ \033[0m
+
+"""
+print(ascii_art)
+
 import os 
 import sys 
 import folder_paths
@@ -77,3 +85,11 @@ MANIFEST = {
     "project": "https://github.com/davask/ComfyUI_MaraScott_Nodes",
     "description": "AnyBus, UpScaler Refiner, Inpainting Nodes - a MaraScott.ai nodes suite",
 }
+
+ascii_art = """
+
+\033[34m┏━  ┳┳┓      ┏┓        •  ━┓  \033[92m┏┓┳┳┓┳┏┓┓┏\033[0m
+\033[34m┃   ┃┃┃┏┓┏┓┏┓┗┓┏┏┓╋╋ ┏┓┓   ┃  \033[92m┣ ┃┃┃┃┗┓┣┫\033[0m
+\033[34m┗━  ┛ ┗┗┻┛ ┗┻┗┛┗┗┛┗┗•┗┻┗  ━┛  \033[92m┻ ┻┛┗┻┗┛┛┗\033[0m
+"""
+print(ascii_art)
