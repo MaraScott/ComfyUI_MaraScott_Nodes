@@ -1,8 +1,31 @@
 from ...utils.constants import get_name, get_category
-from ...utils.helper import AlwaysEqualProxy
+from ...utils.helper import AlwaysEqualProxy, to_bool
 from ...utils.log import log
 
 any_type = AlwaysEqualProxy("*")
+
+class IsTrue_v1:
+
+    NAME = "Is True ?"
+    SHORTCUT = "c"
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "boolean": (any_type,),
+            },
+            "optional": {
+            }
+        }
+
+    RETURN_TYPES = ("BOOLEAN",)
+    RETURN_NAMES = ("boolean",)
+    FUNCTION = "fn"
+    CATEGORY = get_category("Utils")
+
+    def fn(self, boolean=None):
+        return (to_bool(boolean),)
 
 class IsEqual_v1:
 
