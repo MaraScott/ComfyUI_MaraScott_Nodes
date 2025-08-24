@@ -4,6 +4,10 @@ import nodes
 import folder_paths
 
 from pathlib import Path
+from PIL import Image, ImageOps
+import numpy as np
+import torch
+
 
 from ...utils.constants import get_name, get_category
 from ...utils.log import log
@@ -113,7 +117,22 @@ class LoadImage_v1(nodes_LoadImage_v1):
         filename_with_ext = kwargs.get("filename_with_ext", None)
 
         file_path = folder_paths.get_annotated_filepath(image)
-        output_image, output_mask = super().load_image(file_path)
+        try:
+            output_image, output_mask = super().load_image(file_path)
+        except IndexError:
+            # 1) Open and fix orientation, convert to RGBA to preserve alpha if present
+            img_pil = Image.open(file_path)
+            img_pil = ImageOps.exif_transpose(img_pil).convert("RGBA")
+            # 2) Into NumPy and normalize to [0,1]
+            arr = np.array(img_pil).astype(np.float32) / 255.0  # shape (H, W, 4)
+            # 3) Split RGB vs. alpha
+            rgb = arr[..., :3]      # [H, W, 3]
+            alpha = arr[..., 3]     # [H, W]
+            # 4) Build image tensor [1, C, H, W]
+            image_tensor = torch.from_numpy(rgb).unsqueeze(0)
+            # 5) Build mask tensor [1, 1, H, W] with inverted alpha
+            mask_tensor  = (1.0 - torch.from_numpy(alpha)).unsqueeze(0).unsqueeze(-1)
+            output_image, output_mask = image_tensor, mask_tensor
         filename = file_path.replace(folder_paths.get_input_directory() + "\\", "")
         if not filename_with_ext:
             filename = os.path.splitext(filename)[0]

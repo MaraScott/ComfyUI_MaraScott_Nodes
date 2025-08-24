@@ -1,11 +1,4 @@
-```
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! THIS REPO IS NO MORE MAINTAIN !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-```
-
 ### !!! McBoaty v6 is broken !!!
-### !!! AnyBus v2 is broken !!!
 
 [Help needed](https://github.com/MaraScott/ComfyUI_MaraScott_Nodes/issues/187), if you can 
 
