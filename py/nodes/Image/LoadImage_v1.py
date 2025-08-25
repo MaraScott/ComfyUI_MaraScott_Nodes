@@ -13,10 +13,14 @@ from ...utils.constants import get_name, get_category
 from ...utils.log import log
 from ...utils.helper import current_method
 
-from inspect import currentframe as cf
+from inspect import cleandoc, currentframe as cf
 
 
 class nodes_LoadImage_v1(nodes.LoadImage):
+    
+    """
+    --- test doc ---
+    """
 
     def __init__(self):
         super().__init__()
@@ -24,6 +28,8 @@ class nodes_LoadImage_v1(nodes.LoadImage):
     CATEGORY = get_category("Image")
 
     ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff", ".webp"}
+    
+    DESCRIPTION = cleandoc(__doc__)
 
     @classmethod
     def INPUT_TYPES(s):

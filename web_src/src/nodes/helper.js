@@ -4,12 +4,10 @@
  * Author: David Asquiedge
  *
  * Copyright (c) 2024 David Asquiedge
- * 
+ *
  * Inspired by Mel Massadian
  *
  */
-
-import { app } from '../../scripts/app.js'
 
 // - crude uuid
 export function makeUUID() {

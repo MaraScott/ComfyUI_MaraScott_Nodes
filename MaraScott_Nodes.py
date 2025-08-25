@@ -31,7 +31,6 @@ from .py.vendor.ComfyUI_JNodes.blob.main.py.prompting_nodes import TokenCounter 
 from .py.vendor.ComfyUI_Florence2.nodes import DownloadAndLoadFlorence2Model as DownloadAndLoadFlorence2Model_v1, Florence2Run as Florence2Run_v1
 from .py.vendor.kohya_hiresfix.kohya_hiresfix import Hires as Hires_v1
 # from .py.vendor.comfyui_ollama.CompfyuiOllama import Mara_OllamaVision_v1
-from .py.vendor.ComfyUI_Nsfw_Detection.node import NSFWDetection as NSFWDetection_v1
 from .py.vendor.comfyui_libretranslate.translate_node import LibreTranslate as LibreTranslate_v1
 from .py.vendor.ComfyUI_Nsfw_Detection.node import NSFWDetection as NSFWDetection_v1
 
@@ -61,7 +60,7 @@ NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}ForLoopWhileClose_v1": ForLoopWhileClose_v1,
     f"{NAMESPACE}ForLoopIntMathOperation_v1": ForLoopIntMathOperation_v1,
     f"{NAMESPACE}ForLoopToBoolNode_v1": ForLoopToBoolNode_v1,
-    
+
     f"{NAMESPACE}IsTrue_v1": IsTrue_v1,
     f"{NAMESPACE}IsEmpty_v1": IsEmpty_v1,
     f"{NAMESPACE}IsNone_v1": IsNone_v1,
@@ -74,7 +73,7 @@ NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}ImageToGradient_v1": ImageToGradient_v1,
     f"{NAMESPACE}DisplayInfo_v2": DisplayInfo_v2,
     # f"{NAMESPACE}NSFWDetector_v1": NSFWDetector_v1,
-    
+
     f"{NAMESPACE}GetModelBlocks_v1": GetModelBlocks_v1,
 
     f"{NAMESPACE}LoadImage_v1": LoadImage_v1,
@@ -93,7 +92,7 @@ VENDOR_NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}_LibreTranslate_NSFWDetection_v1": NSFWDetection_v1,
 }
 
-# A dictionary that contains the friendly/humanly readable titles for the nodes 
+# A dictionary that contains the friendly/humanly readable titles for the nodes
 # active : \ud83d\udc30
 # deprecated : \u274C
 
@@ -103,7 +102,7 @@ def _get_CATEGORY(cls):
 
 def _set_CATEGORY(cls, value):
     cls._CATEGORY = value
-    
+
 for key, value in VENDOR_NODE_CLASS_MAPPINGS.items():
     setattr(value, 'CATEGORY', property(classmethod(_get_CATEGORY), classmethod(_set_CATEGORY)))
     value.CATEGORY = get_category("vendor")

@@ -4,7 +4,7 @@ import requests
 from io import BytesIO
 import os
 import numpy as np
-
+from inspect import cleandoc
 
 def pil2tensor(img):
     output_images = []
@@ -49,9 +49,24 @@ def load_image(image_source):
 
 class LoadImageByUrlOrPath_v1:
 
+    """
+    # LoadImageByUrlOrPath_v1 : Load Image By Url Or Path
+
+    Node to load image recursively from input directory
+
+    ![LoadImage_v1](./MaraScottLoadImage_v1.png)
+
+    ## Parameters
+
+    - **image**: Input image to process
+
+    """
+
     NAME = "Load Image By Url or Path"
     SHORTCUT = "i"
-    
+
+    DESCRIPTION = cleandoc(__doc__)
+
     @classmethod
     def INPUT_TYPES(cls):
         return {

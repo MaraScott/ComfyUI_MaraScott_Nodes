@@ -23,6 +23,10 @@
 #
 ###
 
+__author__ = """david asquiedge"""
+__email__ = "david.asquiedge@marascott.ai"
+__version__ = "5.8.7"
+
 ascii_art = """
 \033[34m┏━  ┳┳┓      ┏┓        •  ━┓  \033[92m┏┓┏┳┓┏┓┳┓┏┳┓\033[0m
 \033[34m┃   ┃┃┃┏┓┏┓┏┓┗┓┏┏┓╋╋ ┏┓┓   ┃  \033[92m┗┓ ┃ ┣┫┣┫ ┃ \033[0m
@@ -31,9 +35,10 @@ ascii_art = """
 """
 print(ascii_art)
 
-import os 
-import sys 
+import os
+import sys
 import folder_paths
+import nodes
 
 from .py.utils.version import VERSION
 from .py.inc.lib.llm import MS_Llm
@@ -85,6 +90,9 @@ MANIFEST = {
     "project": "https://github.com/davask/ComfyUI_MaraScott_Nodes",
     "description": "AnyBus, UpScaler Refiner, Inpainting Nodes - a MaraScott.ai nodes suite",
 }
+
+nodes.EXTENSION_WEB_DIRS["ComfyUI_MaraScott_Nodes"] = os.path.join(base_dir, "web")
+
 
 ascii_art = """
 
