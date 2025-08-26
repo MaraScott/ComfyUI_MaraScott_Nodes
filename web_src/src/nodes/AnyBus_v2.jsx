@@ -635,159 +635,10 @@ const MaraScottAnyBusNodeExtension = () => {
                     const React = globalThis.React;
 
                     function FlowInspector() {
-                        const [data, setData] = React.useState({ flows: [], total: 0, scanned: 0 });
-
-                        const compute = React.useCallback(() => {
-                            const graph = getActiveGraph();
-                            if (!graph) {
-                                setData({ flows: [], totalFlows: 0, nodesCount: 0, nodes: [], last: Date.now() });
-                                return;
-                            }
-
-                            const byProfile = collectAnyBusByProfile(graph);
-
-                            // flat list of all AnyBus nodes (for "Nodes" section)
-                            const allNodes = Array.from(byProfile.values()).flat();
-                            const nodes = allNodes.map((n) => ({
-                                id: n.id,
-                                title: n.title || `Node #${n.id}`,
-                                profile: n.properties?.[MaraScottAnyBusNodeWidget.PROFILE.name] ?? MaraScottAnyBusNodeWidget.PROFILE.default,
-                                connected: hasBusLink(n),
-                            }));
-
-                            // flows exist only when a chain has at least 2 nodes
-                            const flows = [];
-                            let totalFlows = 0;
-
-                            for (const [profile, nodesList] of byProfile.entries()) {
-                                const chainsRaw = chainsForProfile(nodesList, graph).map((chain, idx) => {
-                                    const edges = [];
-                                    for (let i = 0; i < chain.length - 1; i++) {
-                                        const e = busEdgeInfo(graph, chain[i], chain[i + 1]);
-                                        edges.push({ from: chain[i], to: chain[i + 1], linkId: e.id, valid: e.valid });
-                                    }
-                                    const slotSummaries = {};
-                                    for (const n of chain) slotSummaries[n.id] = summarizeSlots(n);
-                                    return { nodes: chain, edges, slotSummaries, index: idx + 1 };
-                                });
-
-                                // keep only chains with length >= 2
-                                const chains = chainsRaw.filter((ch) => ch.nodes.length >= 2);
-                                if (chains.length > 0) {
-                                    flows.push({ profile, count: chains.length, chains });
-                                    totalFlows += chains.length;
-                                }
-                            }
-
-                            setData({
-                                flows,
-                                totalFlows,
-                                nodesCount: nodes.length,
-                                nodes,
-                                last: Date.now(),
-                            });
-                        }, []);
-
-                        React.useEffect(() => { compute(); }, [compute]);
-
                         return (
                             <>
-                                <div style={{ fontFamily: 'sans-serif', fontSize: 13, padding: 8 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                                        <strong>AnyBus Overview</strong>
-                                        <Chip text={`${data.nodesCount} node(s)`} />
-                                        <Chip text={`${data.totalFlows} flow(s)`} kind={data.totalFlows ? 'ok' : 'warn'} />
-                                        <div style={{ flex: 1 }} />
-                                        <button onClick={compute} style={{ padding: '2px 8px', cursor: 'pointer' }}>Refresh</button>
-                                    </div>
-
-                                    <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 6, marginTop: 6 }}>
-                                        <div style={{ marginBottom: 6 }}>
-                                            <strong>Nodes</strong> <Chip text={`${data.nodesCount}`} />
-                                        </div>
-                                        {data.nodesCount === 0 ? (
-                                            <div style={{ opacity: 0.7 }}>No AnyBus nodes detected.</div>
-                                        ) : (
-                                            <div>
-                                                {data.nodes.map((n) => (
-                                                    <div key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                                                        <Chip text={n.title} />
-                                                        <Chip text={`profile: ${n.profile}`} />
-                                                        <Chip text={n.connected ? 'connected' : 'solo'} kind={n.connected ? 'ok' : 'warn'} />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 6, marginTop: 6 }}>
-                                        <div style={{ marginBottom: 6 }}>
-                                            <strong>Flows</strong> <Chip text={`${data.totalFlows}`} kind={data.totalFlows ? 'ok' : 'warn'} />
-                                        </div>
-
-                                        {data.flows.length === 0 && (
-                                            <div style={{ opacity: 0.7 }}>
-                                                No flows yet — connect at least two AnyBus nodes sharing the same profile (or default) via BUS to form a flow.
-                                            </div>
-                                        )}
-
-                                        {data.flows.map((flow) => (
-                                            <div
-                                                key={flow.profile + '_chain_' + ch.index}
-                                                style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 8, marginBottom: 8, background: '#f9fafb' }}
-                                            >
-                                                {/* Chain visualization */}
-                                                <div style={{ marginBottom: 6, overflowX: 'auto', whiteSpace: 'nowrap' }}>
-                                                    {ch.nodes.map((n, i) => (
-                                                        <React.Fragment key={n.id + '_frag'}>
-                                                            <Chip text={n.title || (`Node #${n.id}`)} />
-                                                            {i < ch.nodes.length - 1 && <span style={{ margin: '0 6px' }}>→</span>}
-                                                        </React.Fragment>
-                                                    ))}
-                                                </div>
-
-                                                {/* Edges with bus link IDs */}
-                                                <div style={{ marginBottom: 6 }}>
-                                                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Links along the way</div>
-                                                    {ch.edges.length === 0 ? (
-                                                        <div style={{ opacity: 0.7 }}>No BUS edges in this chain.</div>
-                                                    ) : (
-                                                        ch.edges.map((e, i) => (
-                                                            <div key={i} style={{ marginBottom: 2 }}>
-                                                                {(e.from.title || e.from.id)} → {(e.to.title || e.to.id)}{' '}
-                                                                <Chip text={`bus link: ${e.linkId ?? 'n/a'}`} kind={e.valid ? 'ok' : 'warn'} />
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                </div>
-
-                                                {/* Slot summaries */}
-                                                <details>
-                                                    <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Slot details (per node)</summary>
-                                                    {ch.nodes.map((n) => (
-                                                        <div key={'slots_' + n.id} style={{ marginTop: 6 }}>
-                                                            <div style={{ fontWeight: 600 }}>{n.title || `Node #${n.id}`}</div>
-                                                            {(ch.slotSummaries[n.id] ?? []).length === 0 ? (
-                                                                <div style={{ opacity: 0.7 }}>No input slots.</div>
-                                                            ) : (
-                                                                <div>
-                                                                    {ch.slotSummaries[n.id].map((s) => (
-                                                                        <div key={n.id + '_s_' + s.slot} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                                                            <Chip text={`#${s.slot}`} />
-                                                                            <Chip text={s.name || '(unnamed)'} />
-                                                                            <Chip text={s.type || '*'} />
-                                                                            <Chip text={s.linked ? 'linked' : 'free'} kind={s.linked ? 'ok' : 'default'} />
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </details>
-                                            </div>
-                                        ))}
-                                    </div>
-
+                                <div>
+                                    Mara Scott
                                 </div>
                             </>
                         );
@@ -914,46 +765,41 @@ const MaraScottAnyBusNodeSidebarTab = () => {
 
                 return (
                     <>
-                        <div style={{ fontFamily: 'sans-serif', fontSize: 12, padding: 8 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                        <div>
+                            <div>
                                 <strong>AnyBus Flows</strong>
                                 <Chip text={`${data.total} flow(s)`} kind={data.total ? 'ok' : 'warn'} />
                                 <Chip text={`${data.scanned} node(s)`} />
-                                <div style={{ flex: 1 }} />
+                                <div />
                                 <button onClick={compute} style={{ padding: '2px 8px', cursor: 'pointer' }}>Refresh</button>
                             </div>
 
-                            {data.flows.length === 0 && <div style={{ opacity: 0.7 }}>No AnyBus nodes detected.</div>}
-
                             {data.flows.map((flow) => (
-                                <details key={flow.profile} open style={{ borderTop: '1px solid #e5e7eb', paddingTop: 6, marginTop: 6 }}>
-                                    <summary style={{ cursor: 'pointer' }}>
+                                <details key={flow.profile} open>
+                                    <summary>
                                         <span>Profile: </span><strong>{flow.profile}</strong> <Chip text={`${flow.count} chain(s)`} />
                                     </summary>
 
                                     {flow.chains.map((ch) => (
                                         <div
                                             key={flow.profile + '_chain_' + ch.index}
-                                            style={{ padding: '6px 8px', border: '1px solid #e5e7eb', borderRadius: 6, marginBottom: 6, background: '#fafafa' }}
                                         >
-                                            {/* Chain visualization (compact) */}
-                                            <div style={{ marginBottom: 6, overflowX: 'auto', whiteSpace: 'nowrap' }}>
+                                            <div>
                                                 {ch.nodes.map((n, i) => (
                                                     <React.Fragment key={n.id + '_frag'}>
                                                         <Chip text={n.title || (`Node #${n.id}`)} />
-                                                        {i < ch.nodes.length - 1 && <span style={{ margin: '0 6px' }}>→</span>}
+                                                        {i < ch.nodes.length - 1 && <span>→</span>}
                                                     </React.Fragment>
                                                 ))}
                                             </div>
 
-                                            {/* Edges with bus link IDs (compact) */}
-                                            <div style={{ marginBottom: 6 }}>
-                                                <div style={{ fontWeight: 600, marginBottom: 2 }}>Links</div>
+                                            <div>
+                                                <div>Links</div>
                                                 {ch.edges.length === 0 ? (
-                                                    <div style={{ opacity: 0.7 }}>No BUS edges.</div>
+                                                    <div>No BUS edges.</div>
                                                 ) : (
                                                     ch.edges.map((e, i) => (
-                                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <div key={i}>
                                                             <span>{(e.from.title || e.from.id)} → {(e.to.title || e.to.id)}</span>
                                                             <Chip text={`id: ${e.linkId ?? 'n/a'}`} kind={e.valid ? 'ok' : 'warn'} />
                                                         </div>
@@ -961,18 +807,17 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                                 )}
                                             </div>
 
-                                            {/* Slot summaries (collapsible per node for tight UI) */}
                                             <details>
-                                                <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Slots</summary>
+                                                <summary>Slots</summary>
                                                 {ch.nodes.map((n) => (
-                                                    <div key={'slots_' + n.id} style={{ marginTop: 4 }}>
-                                                        <div style={{ fontWeight: 600 }}>{n.title || `Node #${n.id}`}</div>
+                                                    <div key={'slots_' + n.id}>
+                                                        <div>{n.title || `Node #${n.id}`}</div>
                                                         {(ch.slotSummaries[n.id] ?? []).length === 0 ? (
-                                                            <div style={{ opacity: 0.7 }}>No input slots.</div>
+                                                            <div>No input slots.</div>
                                                         ) : (
                                                             <div>
                                                                 {ch.slotSummaries[n.id].map((s) => (
-                                                                    <div key={n.id + '_s_' + s.slot} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                                                    <div key={n.id + '_s_' + s.slot}>
                                                                         <Chip text={`#${s.slot}`} />
                                                                         <Chip text={s.name || '(unnamed)'} />
                                                                         <Chip text={s.type || '*'} />
