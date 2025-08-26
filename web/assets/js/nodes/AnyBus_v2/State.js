@@ -1,1 +1,0 @@
-class s{constructor(){this.init=!1,this.sync=0,this.input={label:"0",index:0},this.clean=!1,this.nodeToSync=null,this.flows={start:[],list:[],end:[]},this.nodes={},this.__syncing=!1}reset(){this.flows={start:[],list:[],end:[]},this.nodes={}}}export{s as AnyBusState};
