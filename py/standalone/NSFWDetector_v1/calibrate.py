@@ -66,9 +66,15 @@ def dump_head_quantiles(pil_imgs, labels, title="ALL"):
         h = mod._horror_probability_batch([img])[0]
         w = mod._clip_posmass_logodds_batch([img], mod._WEAPON_TXT, mod._NEG_TXT)[0]
         b = mod._clip_posmass_logodds_batch([img], mod._BLOOD_TXT,  mod._NEG_TXT)[0]
-        sums.append(ssum); peaks.append(speak); vio.append(v); hor.append(h); wep.append(w); bld.append(b)
+        sums.append(ssum)
+        peaks.append(speak)
+        vio.append(v)
+        hor.append(h)
+        wep.append(w)
+        bld.append(b)
 
-    def q(a): return {k: float(np.quantile(a, k)) for k in (0.5, 0.9, 0.95, 0.99)}
+    def q(a):
+        return {k: float(np.quantile(a, k)) for k in (0.5, 0.9, 0.95, 0.99)}
     log.info("\n[%s] quantiles", title)
     log.info(" nsfw_sum : %s", q(sums))
     log.info(" nsfw_peak: %s", q(peaks))
@@ -76,7 +82,7 @@ def dump_head_quantiles(pil_imgs, labels, title="ALL"):
     log.info(" horror   : %s", q(hor))
     log.info(" weapon   : %s", q(wep))
     log.info(" blood    : %s", q(bld))
-    
+
 def discover_images(root: Path) -> List[Path]:
     if not root.exists():
         log.warning("Directory not found: %s", root)
@@ -293,7 +299,7 @@ def main(argv=None) -> int:
     nsfw_imgs= [img for img,l in zip(pil_imgs, labels) if l==0]
     dump_head_quantiles(sfw_imgs, labels=None, title="SFW only")
     dump_head_quantiles(nsfw_imgs, labels=None, title="NSFW only")
-    
+
     calib = compute_data_driven_thresholds_from_sfw(sfw_imgs,
         q_sum=0.95, q_peak=0.95, q_vio=0.99, q_hor=0.99, q_wep=0.99, q_bld=0.99)
     log.info("\n[Calibrated thresholds from SFW quantiles]")
