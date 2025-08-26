@@ -11,32 +11,38 @@
 //   }
 // ===============================================
 
-// ---------- Global namespace ----------
-if (!window.marascott) window.marascott = {};
-if (!window.marascott.AnyBus_v2) {
-    window.marascott.AnyBus_v2 = {
-        init: false,
-        sync: 0,
-        input: { label: "0", index: 0 },
-        clean: false,
-        nodeToSync: null,
-        flows: { start: [], list: [], end: [] },
-        nodes: {},
-        __syncing: false, // reentrancy guard for group sync
-    };
-} else {
-    window.marascott.AnyBus_v2.flows = { start: [], list: [], end: [] };
-    window.marascott.AnyBus_v2.nodes = {};
-}
+import { AnyBusState } from "./AnyBusState.js";
+import {
+    BUS_SLOT,
+    FIRST_INDEX,
+    getGraphLinkById,
+    getActiveGraph,
+    notifyAnyBusChange,
+    ALLOWED_REROUTE,
+    ALLOWED_GETSET,
+    ANYBUS_TYPE,
+    hasBusLink,
+    getConnectedGroupOrNull,
+    getBusPaths,
+    collectAnyBusByProfile,
+    chainsForProfile,
+    summarizeSlots,
+    busEdgeInfo
+} from "./AnyBusTraversals.js";
+
+const state = new AnyBusState();
 
 // ---------- React UMD loader (no imports / no JSX-runtime imports) ----------
 async function ensureReactGlobals() {
     if (globalThis.React && globalThis.ReactDOM) return;
-    // TIP: ship local copies instead of CDN in production:
-    //   /web/assets/js/ms_assets/react.production.min.js
-    //   /web/assets/js/ms_assets/react-dom.production.min.js
-    await loadScript('https://unpkg.com/react@18.3.1/umd/react.production.min.js');
-    await loadScript('https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js');
+    const base = 'extensions/ComfyUI_MaraScott_Nodes/web/assets/js/ms_assets';
+    try {
+        await loadScript(`${base}/react.production.min.js`);
+        await loadScript(`${base}/react-dom.production.min.js`);
+    } catch {
+        await loadScript('https://unpkg.com/react@19.1.1/umd/react.production.min.js');
+        await loadScript('https://unpkg.com/react-dom@19.1.1/umd/react-dom.production.min.js');
+    }
     if (!globalThis.React || !globalThis.ReactDOM) {
         console.error('[AnyBus] React/ReactDOM UMD not available');
         throw new Error('React UMD not loaded');
@@ -59,177 +65,14 @@ function mountJSX(el, vnode) {
     el.__ms_mount.root.render(vnode);
 }
 
-// ---------- MapProxy-safe helpers for graph.links ----------
-function _linksIsMapLike(ln) {
-    return ln && typeof ln.get === 'function' && typeof ln.values === 'function';
-}
-function getGraphLinksArray(graph) {
-    const ln = graph?.links;
-    if (!ln) return [];
-    if (Array.isArray(ln)) return ln;
-    if (_linksIsMapLike(ln)) return Array.from(ln.values());
-    const arr = [];
-    for (const k in ln) if (Object.prototype.hasOwnProperty.call(ln, k)) arr.push(ln[k]);
-    return arr;
-}
-function getGraphLinkById(graph, id) {
-    const ln = graph?.links;
-    if (!ln) return null;
-    if (_linksIsMapLike(ln)) return ln.get(id) ?? null;
-    if (Array.isArray(ln)) return ln.find(l => l && l.id === id) ?? null;
-    return ln[id] ?? null;
-}
-function getActiveGraph() {
-    return globalThis.app?.graph ?? globalThis.graph ?? null;
-}
-
-function notifyAnyBusChange() {
-    try {
-        window.dispatchEvent(new CustomEvent('marascott:anybus:changed'));
-    } catch { }
-}
-
-// ---------- Bus traversal utilities ----------
-const ALLOWED_REROUTE = ["Reroute (rgthree)"];
-const ALLOWED_GETSET = ["SetNode", "GetNode"];
-const ANYBUS_TYPE = "MaraScottAnyBus_v2";
-
-function getBusPrev(node) {
-    const in0 = node.inputs?.[MaraScottAnyBus_v2.BUS_SLOT];
-    if (!in0 || in0.link == null) return null;
-    const l = getGraphLinkById(node.graph, in0.link);
-    return l ? node.graph.getNodeById(l.origin_id) : null;
-}
-function getBusNext(node) {
-    const out0 = node.outputs?.[MaraScottAnyBus_v2.BUS_SLOT];
-    const next = [];
-    if (!out0?.links?.length) return next;
-    for (const linkId of out0.links) {
-        const l = getGraphLinkById(node.graph, linkId);
-        if (!l) continue;
-        const t = node.graph.getNodeById(l.target_id);
-        if (t?.type === ANYBUS_TYPE) next.push(t);
-    }
-    return next;
-}
-function hasBusLink(node) {
-    const inLinked = node.inputs?.[MaraScottAnyBus_v2.BUS_SLOT]?.link != null;
-    const outLinked = (node.outputs?.[MaraScottAnyBus_v2.BUS_SLOT]?.links?.length ?? 0) > 0;
-    return !!(inLinked || outLinked);
-}
-function getBusGroup(start) {
-    const seen = new Set(), q = [start], group = [];
-    while (q.length) {
-        const n = q.shift();
-        if (!n || seen.has(n.id)) continue;
-        seen.add(n.id);
-        group.push(n);
-        const p = getBusPrev(n);
-        if (p?.type === ANYBUS_TYPE) q.push(p);
-        for (const nx of getBusNext(n)) q.push(nx);
-    }
-    return group;
-}
-function getConnectedGroupOrNull(node) {
-    if (!hasBusLink(node)) return null;
-    const g = getBusGroup(node);
-    return g.length > 1 ? g : null; // only meaningful if > 1
-}
-function getBusPaths(group) {
-    const byId = new Map(group.map(n => [n.id, n]));
-    const heads = group.filter(n => !getBusPrev(n));
-    const paths = [];
-    function dfs(node, pathIds) {
-        const nexts = getBusNext(node);
-        if (!nexts.length || nexts.every(nx => !byId.has(nx.id))) {
-            paths.push([...pathIds, node.id]);
-            return;
-        }
-        for (const nx of nexts) {
-            if (!byId.has(nx.id)) continue;
-            if (pathIds.includes(nx.id)) continue;
-            dfs(nx, [...pathIds, node.id]);
-        }
-    }
-    if (heads.length) for (const h of heads) dfs(h, []);
-    else for (const n of group) dfs(n, []); // cycle/singleton fallback
-    return paths.map(ids => ids.map(id => byId.get(id)));
-}
-
-// Connected AnyBus nodes for a given profile
-function collectAnyBusByProfile(graph) {
-    const all = (graph?._nodes ?? []).filter(n => n?.type === ANYBUS_TYPE);
-    const byProfile = new Map();
-    for (const n of all) {
-        const profile = n?.properties?.[MaraScottAnyBusNodeWidget.PROFILE.name] ?? MaraScottAnyBusNodeWidget.PROFILE.default;
-        if (!byProfile.has(profile)) byProfile.set(profile, []);
-        byProfile.get(profile).push(n);
-    }
-    return byProfile;
-}
-function nextWithinProfile(node, idSet) {
-    return getBusNext(node).filter(nx => idSet.has(nx.id));
-}
-function prevWithinProfile(node, idSet) {
-    const p = getBusPrev(node);
-    return p && idSet.has(p.id) ? p : null;
-}
-function chainsForProfile(nodes, graph) {
-    if (!nodes.length) return [];
-    const idSet = new Set(nodes.map(n => n.id));
-    const heads = nodes.filter(n => !prevWithinProfile(n, idSet));
-    const chains = [];
-    function dfs(node, path) {
-        const nexts = nextWithinProfile(node, idSet);
-        if (!nexts.length) {
-            chains.push([...path, node]);
-            return;
-        }
-        for (const nx of nexts) {
-            if (path.includes(nx)) {
-                chains.push([...path, node]);
-                continue;
-            }
-            dfs(nx, [...path, node]);
-        }
-    }
-    if (heads.length) heads.forEach(h => dfs(h, []));
-    else dfs(nodes[0], []); // cycle fallback
-    return chains;
-}
-function summarizeSlots(node) {
-    const arr = [];
-    const first = MaraScottAnyBus_v2.FIRST_INDEX;
-    const max = node.inputs?.length ?? 0;
-    for (let s = first; s < max; s++) {
-        const inp = node.inputs[s];
-        if (!inp) continue;
-        arr.push({
-            slot: s,
-            name: inp.name,
-            type: inp.type,
-            linked: inp.link != null
-        });
-    }
-    return arr;
-}
-function busEdgeInfo(graph, fromNode, toNode) {
-    const link = toNode?.inputs?.[MaraScottAnyBus_v2.BUS_SLOT]?.link;
-    const l = link != null ? getGraphLinkById(graph, link) : null;
-    if (l && l.origin_id === fromNode.id && l.origin_slot === MaraScottAnyBus_v2.BUS_SLOT) {
-        return { id: l.id, valid: true };
-    }
-    return { id: l?.id ?? null, valid: false };
-}
-
 // ---------- Group sync (title & input-count) ----------
 function syncTitleAndInputsFrom(initiator) {
-    if (!initiator?.graph || window.marascott.AnyBus_v2.__syncing) return;
+    if (!initiator?.graph || state.__syncing) return;
 
     const group = getConnectedGroupOrNull(initiator);
     if (!group) return; // disconnected or single node ⇒ no sync
 
-    window.marascott.AnyBus_v2.__syncing = true;
+    state.__syncing = true;
     try {
         const title = initiator.properties?.[MaraScottAnyBusNodeWidget.PROFILE.name]
             ?? MaraScottAnyBusNodeWidget.PROFILE.default;
@@ -244,7 +87,7 @@ function syncTitleAndInputsFrom(initiator) {
         }
         for (const n of group) n.setDirtyCanvas?.(true, true);
     } finally {
-        window.marascott.AnyBus_v2.__syncing = false;
+        state.__syncing = false;
     }
 }
 
@@ -317,8 +160,8 @@ function reconcileSlotLabels(initiator) {
 const MaraScottAnyBusNodeWidget = {
     NAMESPACE: "MaraScott",
     TYPE: "AnyBus_v2",
-    BUS_SLOT: 0,
-    FIRST_INDEX: 1,
+    BUS_SLOT: BUS_SLOT,
+    FIRST_INDEX: FIRST_INDEX,
 
     ALLOWED_REROUTE_TYPE: ALLOWED_REROUTE.slice(),
     ALLOWED_GETSET_TYPE: ALLOWED_GETSET.slice(),
@@ -476,8 +319,8 @@ MaraScottAnyBusNodeWidget.ALLOWED_NODE_TYPE = [
 // ---------- Core AnyBus mechanics used on connections ----------
 class MaraScottAnyBus_v2 {
     static TYPE = ANYBUS_TYPE;
-    static BUS_SLOT = 0;
-    static FIRST_INDEX = 1;
+    static BUS_SLOT = BUS_SLOT;
+    static FIRST_INDEX = FIRST_INDEX;
 
     // Enforce: target can connect to bus only if its profile is default or equals origin's profile
     static connectBus(targetNode, slot, originNode, origin_slot) {
@@ -644,7 +487,11 @@ const MaraScottAnyBusNodeExtension = () => {
                                 return;
                             }
 
-                            const byProfile = collectAnyBusByProfile(graph);
+                            const byProfile = collectAnyBusByProfile(
+                                graph,
+                                MaraScottAnyBusNodeWidget.PROFILE.name,
+                                MaraScottAnyBusNodeWidget.PROFILE.default
+                            );
 
                             // flat list of all AnyBus nodes (for "Nodes" section)
                             const allNodes = Array.from(byProfile.values()).flat();
@@ -812,7 +659,7 @@ const MaraScottAnyBusNodeExtension = () => {
                     MaraScottAnyBusNodeWidget.setWidgetValue(this, MaraScottAnyBusNodeWidget.INPUTS.name, this.properties[MaraScottAnyBusNodeWidget.INPUTS.name]);
                     onNodeCreated?.apply(this, arguments);
                     this.serialize_widgets = true;
-                    window.marascott.AnyBus_v2.init = true;
+                    state.init = true;
                 };
 
                 // Handle connections
@@ -821,7 +668,7 @@ const MaraScottAnyBusNodeExtension = () => {
                     if (!this.graph) return;
 
                     // Update "current input index" (1-based display)
-                    window.marascott.AnyBus_v2.input.index = slotIndex + 1 - MaraScottAnyBus_v2.FIRST_INDEX;
+                    state.input.index = slotIndex + 1 - MaraScottAnyBus_v2.FIRST_INDEX;
 
                     if (isConnected && link) {
                         const originNode = this.graph.getNodeById(link.origin_id);
@@ -884,7 +731,11 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                     const graph = getActiveGraph();
                     if (!graph) { setData({ flows: [], total: 0, scanned: 0, last: Date.now() }); return; }
 
-                    const byProfile = collectAnyBusByProfile(graph);
+                    const byProfile = collectAnyBusByProfile(
+                        graph,
+                        MaraScottAnyBusNodeWidget.PROFILE.name,
+                        MaraScottAnyBusNodeWidget.PROFILE.default
+                    );
                     const flows = [];
                     let scanned = 0;
 
