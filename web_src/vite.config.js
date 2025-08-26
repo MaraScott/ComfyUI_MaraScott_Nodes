@@ -158,7 +158,7 @@ function makeAppConfig() {
         viteStaticCopy({
           targets: [
             { src: 'src/docs/**/*', dest: 'docs', flatten: false },
-            { src: 'src/js/vendor/react/*.js', dest: 'vendor/react' },
+            { src: 'src/js/vendor/react/*.cjs', dest: 'vendor/react' },
           ],
         }),
       AppCleanAndMirror(),

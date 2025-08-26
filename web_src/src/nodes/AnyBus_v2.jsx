@@ -37,8 +37,8 @@ async function ensureReactGlobals() {
     if (globalThis.React && globalThis.ReactDOM) return;
     const base = 'extensions/ComfyUI_MaraScott_Nodes/web/assets/js/vendor/react';
     try {
-        await loadScript(`${base}/react.production.min.js`);
-        await loadScript(`${base}/react-dom.production.min.js`);
+        await loadScript(`${base}/react.production.min.cjs`);
+        await loadScript(`${base}/react-dom.production.min.cjs`);
     } catch {
         await loadScript('https://unpkg.com/react@19.1.1/umd/react.production.min.js');
         await loadScript('https://unpkg.com/react-dom@19.1.1/umd/react-dom.production.min.js');
