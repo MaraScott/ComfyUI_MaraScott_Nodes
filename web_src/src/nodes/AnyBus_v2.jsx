@@ -719,10 +719,18 @@ const MaraScottAnyBusNodeSidebarTab = () => {
 
                 const compute = React.useCallback(() => {
                     const graph = getActiveGraph();
-                    if (!graph) { setData({ flows: [], total: 0, scanned: 0, last: Date.now() }); return; }
+                    if (!graph) {
+                        setData({ flows: [], total: 0, scanned: 0, last: Date.now() });
+                        setAnyBusState((s) => ({ ...s, flows: { start: [], list: [], end: [] }, nodes: {} }));
+                        return;
+                    }
 
                     const byProfile = collectAnyBusByProfile(graph);
                     const flows = [];
+                    const startSet = new Set();
+                    const listSet = new Set();
+                    const endSet = new Set();
+                    const nodesMap = {};
                     let scanned = 0;
 
                     for (const [profile, nodes] of byProfile.entries()) {
@@ -734,13 +742,26 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                 edges.push({ from: chain[i], to: chain[i + 1], linkId: e.id, valid: e.valid });
                             }
                             const slotSummaries = {};
-                            for (const n of chain) slotSummaries[n.id] = summarizeSlots(n);
+                            for (const n of chain) {
+                                slotSummaries[n.id] = summarizeSlots(n);
+                                listSet.add(n.id);
+                                nodesMap[n.id] = { id: n.id, title: n.title || `Node #${n.id}` };
+                            }
+                            if (chain.length) {
+                                startSet.add(chain[0].id);
+                                endSet.add(chain[chain.length - 1].id);
+                            }
                             return { nodes: chain, edges, slotSummaries, index: idx + 1 };
                         });
                         flows.push({ profile, count: chains.length, chains });
                     }
 
                     setData({ flows, total: flows.length, scanned, last: Date.now() });
+                    setAnyBusState((s) => ({
+                        ...s,
+                        flows: { start: Array.from(startSet), list: Array.from(listSet), end: Array.from(endSet) },
+                        nodes: nodesMap,
+                    }));
                 }, []);
 
                 React.useEffect(() => {
