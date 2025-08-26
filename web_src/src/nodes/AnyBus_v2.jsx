@@ -11,7 +11,7 @@
 //   }
 // ===============================================
 
-import { getAnyBusState, setAnyBusState } from "./AnyBus_v2/state.jsx";
+import { getAnyBusState, setAnyBusState, useAnyBusState } from "./AnyBus_v2/state.jsx";
 
 // ---------- React UMD loader (no imports / no JSX-runtime imports) ----------
 async function ensureReactGlobals() {
@@ -68,9 +68,7 @@ function getActiveGraph() {
 }
 
 function notifyAnyBusChange() {
-    try {
-        window.dispatchEvent(new CustomEvent('marascott:anybus:changed'));
-    } catch { }
+    setAnyBusState((s) => ({ ...s, sync: (s.sync || 0) + 1 }));
 }
 
 // ---------- Bus traversal utilities ----------
@@ -717,6 +715,7 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                     nodes: [],
                     last: 0,
                 });
+                const [busState] = useAnyBusState();
 
                 const compute = React.useCallback(() => {
                     const graph = getActiveGraph();
@@ -745,10 +744,8 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                 }, []);
 
                 React.useEffect(() => {
-                    const handler = () => compute();
-                    window.addEventListener('marascott:anybus:changed', handler);
-                    return () => window.removeEventListener('marascott:anybus:changed', handler);
-                }, [compute]);
+                    compute();
+                }, [busState.sync, compute]);
 
                 return (
                     <>
