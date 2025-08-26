@@ -751,6 +751,11 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                     <>
                         <div>
                             <div>
+                                <strong>AnyBus State</strong>
+                                <pre>{JSON.stringify(busState, null, 2)}</pre>
+                            </div>
+
+                            <div>
                                 <strong>AnyBus Flows</strong>
                                 <Chip text={`${data.total} flow(s)`} kind={data.total ? 'ok' : 'warn'} />
                                 <Chip text={`${data.scanned} node(s)`} />
