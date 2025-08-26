@@ -478,11 +478,6 @@ class MaraScottAnyBus_v2 {
             return;
         }
 
-        // If target is default, adopt origin's profile
-        if (targetProfile === MaraScottAnyBusNodeWidget.PROFILE.default && originProfile !== targetProfile) {
-            MaraScottAnyBusNodeWidget.setValue(targetNode, profileKey, originProfile);
-        }
-
         // Sync inputs-count from origin into the connected group (initiated by target)
         const inputsKey = MaraScottAnyBusNodeWidget.INPUTS.name;
         const originInputs = originNode.properties?.[inputsKey] ?? MaraScottAnyBusNodeWidget.INPUTS.default;
