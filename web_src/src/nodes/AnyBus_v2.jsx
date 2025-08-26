@@ -11,23 +11,7 @@
 //   }
 // ===============================================
 
-// ---------- Global namespace ----------
-if (!window.marascott) window.marascott = {};
-if (!window.marascott.AnyBus_v2) {
-    window.marascott.AnyBus_v2 = {
-        init: false,
-        sync: 0,
-        input: { label: "0", index: 0 },
-        clean: false,
-        nodeToSync: null,
-        flows: { start: [], list: [], end: [] },
-        nodes: {},
-        __syncing: false, // reentrancy guard for group sync
-    };
-} else {
-    window.marascott.AnyBus_v2.flows = { start: [], list: [], end: [] };
-    window.marascott.AnyBus_v2.nodes = {};
-}
+import { getAnyBusState, setAnyBusState } from "./AnyBus_v2/state.jsx";
 
 // ---------- React UMD loader (no imports / no JSX-runtime imports) ----------
 async function ensureReactGlobals() {
@@ -224,12 +208,12 @@ function busEdgeInfo(graph, fromNode, toNode) {
 
 // ---------- Group sync (title & input-count) ----------
 function syncTitleAndInputsFrom(initiator) {
-    if (!initiator?.graph || window.marascott.AnyBus_v2.__syncing) return;
+    if (!initiator?.graph || getAnyBusState().__syncing) return;
 
     const group = getConnectedGroupOrNull(initiator);
     if (!group) return; // disconnected or single node ⇒ no sync
 
-    window.marascott.AnyBus_v2.__syncing = true;
+    setAnyBusState(s => ({ ...s, __syncing: true }));
     try {
         const title = initiator.properties?.[MaraScottAnyBusNodeWidget.PROFILE.name]
             ?? MaraScottAnyBusNodeWidget.PROFILE.default;
@@ -244,7 +228,7 @@ function syncTitleAndInputsFrom(initiator) {
         }
         for (const n of group) n.setDirtyCanvas?.(true, true);
     } finally {
-        window.marascott.AnyBus_v2.__syncing = false;
+        setAnyBusState(s => ({ ...s, __syncing: false }));
     }
 }
 
@@ -663,7 +647,7 @@ const MaraScottAnyBusNodeExtension = () => {
                     MaraScottAnyBusNodeWidget.setWidgetValue(this, MaraScottAnyBusNodeWidget.INPUTS.name, this.properties[MaraScottAnyBusNodeWidget.INPUTS.name]);
                     onNodeCreated?.apply(this, arguments);
                     this.serialize_widgets = true;
-                    window.marascott.AnyBus_v2.init = true;
+                    setAnyBusState(s => ({ ...s, init: true }));
                 };
 
                 // Handle connections
@@ -672,7 +656,10 @@ const MaraScottAnyBusNodeExtension = () => {
                     if (!this.graph) return;
 
                     // Update "current input index" (1-based display)
-                    window.marascott.AnyBus_v2.input.index = slotIndex + 1 - MaraScottAnyBus_v2.FIRST_INDEX;
+                        setAnyBusState(s => ({
+                            ...s,
+                            input: { ...s.input, index: slotIndex + 1 - MaraScottAnyBus_v2.FIRST_INDEX },
+                        }));
 
                     if (isConnected && link) {
                         const originNode = this.graph.getNodeById(link.origin_id);
