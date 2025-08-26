@@ -194,7 +194,7 @@ function makeNodesConfig() {
       emptyOutDir: true,
       sourcemap: false,
       target: 'es2019',
-      minify: 'terser',
+    //   minify: 'terser',
       terserOptions: {
         module: true,
         mangle: { module: true, toplevel: true, reserved: ['__esModule', 'default'] },

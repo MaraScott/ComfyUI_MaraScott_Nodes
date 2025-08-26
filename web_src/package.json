@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite build --mode nodes --watch",
     "build:app": "vite build --mode app",
     "build:nodes": "vite build --mode nodes",
     "build": "npm run build:app && npm run build:nodes",
