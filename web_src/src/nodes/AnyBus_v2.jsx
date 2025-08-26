@@ -11,7 +11,7 @@
 //   }
 // ===============================================
 
-import { AnyBusState } from "./AnyBusState.js";
+import { AnyBusState } from "./AnyBus_v2/State.js";
 import {
     BUS_SLOT,
     FIRST_INDEX,
@@ -28,14 +28,14 @@ import {
     chainsForProfile,
     summarizeSlots,
     busEdgeInfo
-} from "./AnyBusTraversals.js";
+} from "./AnyBus_v2/Traversal.js";
 
 const state = new AnyBusState();
 
 // ---------- React UMD loader (no imports / no JSX-runtime imports) ----------
 async function ensureReactGlobals() {
     if (globalThis.React && globalThis.ReactDOM) return;
-    const base = 'extensions/ComfyUI_MaraScott_Nodes/web/assets/js/ms_assets';
+    const base = 'extensions/ComfyUI_MaraScott_Nodes/web/assets/js/vendor/react';
     try {
         await loadScript(`${base}/react.production.min.js`);
         await loadScript(`${base}/react-dom.production.min.js`);

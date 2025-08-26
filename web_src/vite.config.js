@@ -154,8 +154,13 @@ function makeAppConfig() {
       EnsureTmpDir(),
       NodesImportShim(),
       react(),
-      // Copy docs → TMP/docs (keep structure)
-      viteStaticCopy({ targets: [{ src: 'src/docs/**/*', dest: 'docs', flatten: false }] }),
+        // Copy docs and vendor assets → TMP (keep structure for docs)
+        viteStaticCopy({
+          targets: [
+            { src: 'src/docs/**/*', dest: 'docs', flatten: false },
+            { src: 'src/js/vendor/react/*.js', dest: 'vendor/react' },
+          ],
+        }),
       AppCleanAndMirror(),
     ],
   };
