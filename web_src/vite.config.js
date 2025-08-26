@@ -186,8 +186,8 @@ function makeNodesConfig() {
     resolve: { alias: [{ find: '@nodes', replacement: resolve(CWD, 'src/nodes') }] },
     esbuild: {
       jsx: 'transform',                 // classic JSX (no jsx-runtime)
-      jsxFactory: 'React.createElement',
-      jsxFragment: 'React.Fragment',
+      jsxFactory: 'globalThis.React.createElement',
+      jsxFragment: 'globalThis.React.Fragment',
     },
     build: {
       outDir: TMP_DIR,                  // write under TMP/*
