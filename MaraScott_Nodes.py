@@ -88,8 +88,8 @@ VENDOR_NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}_Kijai_Florence2Run_v1": Florence2Run_v1,
     f"{NAMESPACE}_laksjdjf_Hires_v1": Hires_v1,
     # f"{NAMESPACE}_stavsap_OllamaVision_v1": Mara_OllamaVision_v1,
-    f"{NAMESPACE}_trumanwong_LibreTranslate_v1": LibreTranslate_v1,
-    f"{NAMESPACE}_LibreTranslate_NSFWDetection_v1": NSFWDetection_v1,
+    f"{NAMESPACE}_LibreTranslate_LibreTranslate_v1": LibreTranslate_v1,
+    f"{NAMESPACE}_trumanwong_NSFWDetection_v1": NSFWDetection_v1,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
