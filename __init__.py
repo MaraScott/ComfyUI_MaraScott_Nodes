@@ -25,7 +25,7 @@
 
 __author__ = """david asquiedge"""
 __email__ = "david.asquiedge@marascott.ai"
-__version__ = "5.8.8"
+__version__ = "5.8.9"
 
 ascii_art = """
 \033[34m┏━  ┳┳┓      ┏┓        •  ━┓  \033[92m┏┓┏┳┓┏┓┳┓┏┳┓\033[0m
