@@ -10,9 +10,9 @@
 from .py.utils.constants import NAMESPACE, get_name, get_category
 
 from .py.nodes.Image.LoadImage_v1 import LoadImage_v1
-from .py.nodes.Image.LoadImageByUrlOrPath_v1 import LoadImageByUrlOrPath_v1
 from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
 from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
+# from .py.nodes.Info.SeedAtlas_v1 import SeedAtlas_v1
 # from .py.nodes.Info.NSFWDetector_v1 import NSFWDetector_v1
 from .py.nodes.UpscalerRefiner.McBoaty_v3 import UpscalerRefiner_McBoaty_v3
 from .py.nodes.UpscalerRefiner.McBoaty_v5 import McBoaty_UpscalerRefiner_v5, McBoaty_Upscaler_v5, McBoaty_TilePrompter_v5, McBoaty_Refiner_v5
@@ -26,6 +26,8 @@ from .py.nodes.Util.Conditional import IsTrue_v1, IsEmpty_v1, IsNone_v1, IsEmpty
 from .py.nodes.Util.Image import ImageToGradient_v1
 from .py.nodes.Util.Model import GetModelBlocks_v1
 from .py.nodes.Util.Json import JsonList2JsonObj_v1
+from .py.nodes.Util.File import IsFileExists_v1, LoadFile_v1, SaveFile_v1
+from .py.nodes.Util.StringProcessor import StringProcessor_v1, ComboProcessor_v1, TextJoiner_v1
 
 from .py.vendor.ComfyUI_JNodes.blob.main.py.prompting_nodes import TokenCounter as TokenCounter_v1
 from .py.vendor.ComfyUI_Florence2.nodes import DownloadAndLoadFlorence2Model as DownloadAndLoadFlorence2Model_v1, Florence2Run as Florence2Run_v1
@@ -72,14 +74,21 @@ NODE_CLASS_MAPPINGS = {
     f"{NAMESPACE}TextConversion_StringToList_v1": TextConversion_StringToList_v1,
     f"{NAMESPACE}ImageToGradient_v1": ImageToGradient_v1,
     f"{NAMESPACE}DisplayInfo_v2": DisplayInfo_v2,
+    # f"{NAMESPACE}SeedAtlas_v1": SeedAtlas_v1,
     # f"{NAMESPACE}NSFWDetector_v1": NSFWDetector_v1,
 
     f"{NAMESPACE}GetModelBlocks_v1": GetModelBlocks_v1,
+    f"{NAMESPACE}IsFileExists_v1": IsFileExists_v1,
+    f"{NAMESPACE}LoadFile_v1": LoadFile_v1,
+    f"{NAMESPACE}SaveFile_v1": SaveFile_v1,
+    f"{NAMESPACE}StringProcessor_v1": StringProcessor_v1,
+    f"{NAMESPACE}ComboProcessor_v1": ComboProcessor_v1,
+    f"{NAMESPACE}TextJoiner_v1": TextJoiner_v1,
 
     f"{NAMESPACE}LoadImage_v1": LoadImage_v1,
-    f"{NAMESPACE}LoadImageByUrlOrPath_v1": LoadImageByUrlOrPath_v1,
 
     f"{NAMESPACE}JsonList2JsonObj_v1": JsonList2JsonObj_v1,
+
 }
 
 VENDOR_NODE_CLASS_MAPPINGS = {
