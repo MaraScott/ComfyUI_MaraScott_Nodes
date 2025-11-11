@@ -10,8 +10,6 @@
 from .py.utils.constants import NAMESPACE, get_name, get_category
 
 from .py.nodes.Image.LoadImage_v1 import LoadImage_v1
-from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
-from .py.nodes.Bus.AnyBus_v3 import AnyBus_v3
 from .py.nodes.Info.DisplayInfo_v2 import DisplayInfo_v2
 # from .py.nodes.Info.SeedAtlas_v1 import SeedAtlas_v1
 # from .py.nodes.Info.NSFWDetector_v1 import NSFWDetector_v1
@@ -42,8 +40,6 @@ WEB_DIRECTORY = "./web/assets/js"
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
 
-    f"{NAMESPACE}AnyBus_v2": AnyBus_v2,
-    f"{NAMESPACE}AnyBus_v3": AnyBus_v3,
     f"{NAMESPACE}Tiler_v1": Mara_Tiler_v1,
     f"{NAMESPACE}Untiler_v1": Mara_Untiler_v1,
     f"{NAMESPACE}McBoaty_v6": Mara_McBoaty_v6,
