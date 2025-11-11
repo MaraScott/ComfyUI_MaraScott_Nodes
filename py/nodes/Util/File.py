@@ -260,9 +260,10 @@ class IsFileExists_v1:
 
     @classmethod
     def IS_CHANGED(cls, filename, search_mode, directory, return_type, recursive=True, extension=""):
-        # This method can be used to determine if the node should be re-executed
-        # For file existence checks, we might want to re-execute when inputs change
-        return f"{filename}_{search_mode}_{directory}_{return_type}_{recursive}_{extension}"
+        # Always re-execute file existence checks to get real-time file system state
+        # This ensures the node detects when files are added or deleted between runs
+        import time
+        return f"{filename}_{search_mode}_{directory}_{return_type}_{recursive}_{extension}_{time.time()}"
 
 
 class LoadFile_v1:
