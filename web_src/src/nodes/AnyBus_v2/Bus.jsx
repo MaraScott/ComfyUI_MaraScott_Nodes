@@ -49,7 +49,7 @@ export function syncConnectedNodesLabelsAndTypes(node) {
     const connectedNodeIds = getBusConnectedNodes(node);
 
     // Collect all slot information from all connected nodes
-    const slotInfo = {}; // slotIndex -> { type, label, hasConnection }
+    const slotInfo = {}; // slotIndex -> { type, label, hasConnection, customLabel }
 
     for (const nodeId of connectedNodeIds) {
         const connectedNode = node.graph?.getNodeById(nodeId);
@@ -59,7 +59,7 @@ export function syncConnectedNodesLabelsAndTypes(node) {
             const input = connectedNode.inputs[i];
 
             if (!slotInfo[i]) {
-                slotInfo[i] = { type: "*", label: null, hasConnection: false };
+                slotInfo[i] = { type: "*", label: null, hasConnection: false, customLabel: null };
             }
 
             // Track if this slot has a connection
@@ -73,7 +73,10 @@ export function syncConnectedNodesLabelsAndTypes(node) {
                     if (sourceNode && sourceNode.outputs) {
                         const sourceOutput = sourceNode.outputs[link.origin_slot];
                         if (sourceOutput && sourceOutput.type && sourceOutput.type !== "*") {
-                            slotInfo[i].type = sourceOutput.type;
+                            // Prioritize non-wildcard types
+                            if (slotInfo[i].type === "*" || slotInfo[i].type === sourceOutput.type) {
+                                slotInfo[i].type = sourceOutput.type;
+                            }
                         }
                     }
                 }
@@ -81,13 +84,21 @@ export function syncConnectedNodesLabelsAndTypes(node) {
 
             // Collect labels - prioritize custom labels over type names
             if (input.label) {
-                // Check if it's a custom label (not a default "* XX" pattern and not just the type)
+                // Check if it's a custom label (not a default "* XX" pattern)
                 const isDefaultLabel = input.label.match(/^\* \d{2}$/);
-                const isTypeLabel = input.label === input.type;
 
                 if (!isDefaultLabel) {
-                    // Use this label (could be custom or type name)
-                    slotInfo[i].label = input.label;
+                    // Check if it's a custom label (different from the type name)
+                    const isCustomLabel = input.label !== input.type;
+
+                    if (isCustomLabel && !slotInfo[i].customLabel) {
+                        // Prioritize custom labels
+                        slotInfo[i].customLabel = input.label;
+                        slotInfo[i].label = input.label;
+                    } else if (!slotInfo[i].label) {
+                        // Store type-based label as fallback
+                        slotInfo[i].label = input.label;
+                    }
                 }
             }
         }
@@ -110,10 +121,12 @@ export function syncConnectedNodesLabelsAndTypes(node) {
                         input.type = info.type;
                     }
 
-                    // Update label: use custom label if exists, otherwise use type, otherwise default
+                    // Update label: prioritize custom label > type > default
                     let newLabel;
-                    if (info.label) {
-                        newLabel = info.label; // Use synced custom label
+                    if (info.customLabel) {
+                        newLabel = info.customLabel; // Use synced custom label
+                    } else if (info.label) {
+                        newLabel = info.label; // Use type-based label
                     } else if (info.type !== "*") {
                         newLabel = info.type; // Use type as label
                     } else {
