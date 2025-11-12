@@ -98,23 +98,11 @@ The sidebar tab is the primary interface for managing AnyBus flows. Users should
 
 ### JavaScript Frontend Architecture
 
-**Registration Architecture** (`web_src/src/js/AnyBus_v3.js`):
-
-Create a registration file that imports and registers both the node extension and sidebar tab:
-
-```javascript
-import { app } from "../../scripts/app.js";
-import { MaraScottAnyBusNodeExtension, MaraScottAnyBusNodeSidebarTab } from "./nodes/AnyBus_v3.js";
-
-app.registerExtension(MaraScottAnyBusNodeExtension());
-app.extensionManager.registerSidebarTab(MaraScottAnyBusNodeSidebarTab());
-```
-
 **Module Organization** (`web_src/src/nodes/AnyBus_v3/`):
 
 Implement modular structure with the following components:
 
-1. **AnyBus_v3.jsx** (Main Entry Point & Exports)
+1. **AnyBus_v3.jsx** (Main Entry Point)
    - Export NODE_CLASS constant matching Python registration
    - Implement beforeRegisterNodeDef hook for node type extension
    - Implement onNodeCreated callback for initialization
@@ -122,8 +110,6 @@ Implement modular structure with the following components:
    - Register node in global registry for sidebar access
    - Setup widget callbacks with sidebar event notifications
    - Provide getAvailableGetSetSources method for dropdown population
-   - **Export MaraScottAnyBusNodeExtension()**: Returns extension object for app.registerExtension()
-   - **Export MaraScottAnyBusNodeSidebarTab()**: Returns sidebar tab configuration object
 
 2. **State.jsx** (Global State Management)
    - Maintain global registries:
@@ -192,11 +178,13 @@ Implement modular structure with the following components:
    - Ensure single React instance across all modules
 
 7. **SidebarTab.jsx** (PRIMARY UI - Centralized Management)
-   - Export registerAnyBusFlowSidebar(container) function
-   - Function receives container element from sidebar tab render callback
-   - Render React-based UI directly into provided container
-   - Subscribe to event emitter for real-time updates
-   - Implement the following UI sections:
+   - Register sidebar tab using official Sidebar Tabs API
+   - Tab properties:
+     * Unique ID for tab identification
+     * Icon for visual identification
+     * Title displayed in sidebar
+     * Tooltip for user guidance
+   - Render React-based UI with the following sections:
 
    **a) Flow Overview Panel**
    - Display statistics: total nodes, profile count, connection summary
@@ -364,21 +352,17 @@ custom_nodes/ComfyUI_MaraScott_Nodes/
 ├── web_src/
 │   ├── vite.config.js        [Existing - No changes needed]
 │   ├── package.json          [Existing - No changes needed]
-│   └── src/
-│       ├── js/
-│       │   ├── AnyBus_v2.js  [Existing registration]
-│       │   └── AnyBus_v3.js  [NEW - Create registration file]
-│       └── nodes/
-│           ├── AnyBus_v2.jsx     [Existing]
-│           ├── AnyBus_v2/        [Existing modules]
-│           ├── AnyBus_v3.jsx     [NEW - Create this]
-│           └── AnyBus_v3/        [NEW - Create these modules]
-│               ├── State.jsx
-│               ├── Node.jsx
-│               ├── Bus.jsx
-│               ├── Widget.jsx
-│               ├── React.jsx
-│               └── SidebarTab.jsx
+│   └── src/nodes/
+│       ├── AnyBus_v2.jsx     [Existing]
+│       ├── AnyBus_v2/        [Existing modules]
+│       ├── AnyBus_v3.jsx     [NEW - Create this]
+│       └── AnyBus_v3/        [NEW - Create these modules]
+│           ├── State.jsx
+│           ├── Node.jsx
+│           ├── Bus.jsx
+│           ├── Widget.jsx
+│           ├── React.jsx
+│           └── SidebarTab.jsx
 └── web/assets/js/
     ├── nodes/
     │   ├── AnyBus_v2.js      [Existing compiled]
@@ -388,18 +372,16 @@ custom_nodes/ComfyUI_MaraScott_Nodes/
 
 **Build Steps**:
 1. Create Python backend file in `py/nodes/Bus/AnyBus_v3.py`
-2. Create JavaScript registration file in `web_src/src/js/AnyBus_v3.js`
-3. Create JavaScript main module in `web_src/src/nodes/AnyBus_v3.jsx`
-4. Create JavaScript sub-modules in `web_src/src/nodes/AnyBus_v3/` directory
-5. Run build command from `web_src` directory:
+2. Create JavaScript main file in `web_src/src/nodes/AnyBus_v3.jsx`
+3. Create JavaScript module files in `web_src/src/nodes/AnyBus_v3/` directory
+4. Run build command from `web_src` directory:
    ```powershell
    npm run build
    ```
-6. Vite will automatically discover and compile new files
-7. Output appears in `web/assets/js/nodes/AnyBus_v3.js`
-8. Registration file imports from compiled node modules
-9. Supporting modules bundled or code-split as appropriate
-10. No manual configuration changes required
+5. Vite will automatically discover and compile new files
+6. Output appears in `web/assets/js/nodes/AnyBus_v3.js`
+7. Supporting modules bundled or code-split as appropriate
+8. No manual configuration changes required
 
 **Build Configuration Notes**:
 - Existing Vite config handles both app and nodes builds
@@ -410,14 +392,6 @@ custom_nodes/ComfyUI_MaraScott_Nodes/
 - Direct output to `web/assets/js/` (no intermediate tmp directory)
 
 ## Implementation Guidelines
-
-### Registration Pattern
-- Create separate registration file in `web_src/src/js/AnyBus_v3.js`
-- Import MaraScottAnyBusNodeExtension and MaraScottAnyBusNodeSidebarTab from node module
-- Register extension with `app.registerExtension(MaraScottAnyBusNodeExtension())`
-- Register sidebar tab with `app.extensionManager.registerSidebarTab(MaraScottAnyBusNodeSidebarTab())`
-- Extension function returns object with name and beforeRegisterNodeDef hook
-- Sidebar tab function returns object with id, icon, title, tooltip, and render callback
 
 ### Node Registration
 - Use `beforeRegisterNodeDef` hook to extend node type
@@ -454,16 +428,13 @@ custom_nodes/ComfyUI_MaraScott_Nodes/
 - Use event types as constants for consistency
 
 ### Sidebar Integration Pattern
-- Export registerAnyBusFlowSidebar(container) function from SidebarTab.jsx
-- Function receives container element as parameter
-- Render React components directly into container
-- Subscribe to flowEventEmitter on function call
+- Use official Sidebar Tabs API for registration
+- Render React components in container element
 - Access global registries for data
-- Use ComfyUI canvas API (via app.graph) for navigation
+- Use ComfyUI canvas API for navigation
 - Implement bulk operations by iterating selected nodes
 - Export/import using JSON serialization
 - Handle errors gracefully with user feedback
-- Main entry point exports MaraScottAnyBusNodeSidebarTab() returning tab config
 
 ### Profile Synchronization Pattern
 - Maintain profile registry mapping profile names to node sets
