@@ -1,0 +1,1 @@
+const e=new Map,n=new Map;function r(t){return e.has(t)||e.set(t,new Set),e.get(t)}function s(t){return n.has(t)||n.set(t,{}),n.get(t)}export{r as getProfileEntry,s as getProfileSlotOrder,e as profileRegistry,n as profileSlotOrders};

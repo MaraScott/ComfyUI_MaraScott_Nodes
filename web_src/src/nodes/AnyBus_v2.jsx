@@ -1,218 +1,22 @@
 import { app } from "../../../scripts/app.js";
-import { ensureReactGlobals, mountJSX } from "./AnyBus_v3/React.jsx";
+import { ensureReactGlobals, mountJSX } from "./AnyBus_v2/React.jsx";
+import { getProfileEntry, getProfileSlotOrder, profileSlotOrders, profileRegistry } from "./AnyBus_v2/State.jsx";
+import { applySlotOrderToNode, updateNodeSlots, resetNodeDisconnectedSlots } from "./AnyBus_v2/Node.jsx";
+import {
+    getBusConnectedNodes,
+    syncConnectedNodesLabelsAndTypes,
+    updateConnectedNodesProfile,
+    updateConnectedNodesSlots,
+    resetProfileDisconnectedSlots
+} from "./AnyBus_v2/Bus.jsx";
+import { setupWidgets } from "./AnyBus_v2/Widget.jsx";
 
 // ---------- Extension exports ----------
-const nodeName = "Comfy.MaraScott.AnyBus_v3";
+const nodeName = "Comfy.MaraScott.AnyBus_v2";
 const nodeId = nodeName.replace(/\./g, '-');
-const NODE_CLASS = "MaraScott::AnyBus_v3";
-const NODE_DISPLAY_NAME = "🐰 AnyBus v3";
+const NODE_CLASS = "MaraScott::AnyBus_v2";
+const NODE_DISPLAY_NAME = "🐰 AnyBus v2";
 
-// Global profile registry to track all AnyBus nodes by profile
-const profileRegistry = new Map();
-
-// Global slot order registry by profile
-// Stores the slot mapping: { profile -> { originalIndex -> newIndex } }
-const profileSlotOrders = new Map();
-
-// Helper: Get or create profile entry
-function getProfileEntry(profile) {
-    if (!profileRegistry.has(profile)) {
-        profileRegistry.set(profile, new Set());
-    }
-    return profileRegistry.get(profile);
-}
-
-// Helper: Get or create slot order for profile
-function getProfileSlotOrder(profile) {
-    if (!profileSlotOrders.has(profile)) {
-        profileSlotOrders.set(profile, {});
-    }
-    return profileSlotOrders.get(profile);
-}
-
-// Helper: Apply slot order to a node
-function applySlotOrderToNode(node, slotOrder) {
-    if (!node || !node.inputs || !node.outputs) return;
-
-    // Skip if no custom order
-    if (Object.keys(slotOrder).length === 0) return;
-
-    // Create new arrays for reordered inputs/outputs
-    const newInputs = [node.inputs[0]]; // Keep BUS input at position 0
-    const newOutputs = [node.outputs[0]]; // Keep BUS output at position 0
-
-    // Build reverse mapping (newIndex -> originalIndex)
-    const reverseOrder = {};
-    for (const [orig, newIdx] of Object.entries(slotOrder)) {
-        reverseOrder[newIdx] = parseInt(orig);
-    }
-
-    // Reorder inputs/outputs based on slot order
-    for (let i = 1; i < node.inputs.length; i++) {
-        const originalIndex = reverseOrder[i] || i;
-        if (node.inputs[originalIndex]) {
-            newInputs[i] = { ...node.inputs[originalIndex] };
-        }
-        if (node.outputs[originalIndex]) {
-            newOutputs[i] = { ...node.outputs[originalIndex] };
-        }
-    }
-
-    // Update node
-    node.inputs = newInputs;
-    node.outputs = newOutputs;
-    node.setDirtyCanvas(true, true);
-}
-
-// Helper: Update node's slot count
-function updateNodeSlots(node, numSlots) {
-    if (!node || numSlots === undefined) return;
-
-    // Initialize inputs array if it doesn't exist
-    if (!node.inputs) {
-        node.inputs = [];
-    }
-
-    // Initialize outputs array if it doesn't exist
-    if (!node.outputs) {
-        node.outputs = [];
-    }
-
-    // Expected: 1 BUS input + numSlots any-type inputs
-    const expectedInputs = 1 + parseInt(numSlots);
-    const expectedOutputs = 1 + parseInt(numSlots);
-
-    // Add missing inputs
-    while (node.inputs.length < expectedInputs) {
-        const slotNum = node.inputs.length; // 0 = BUS, 1+ = slots
-        if (slotNum === 0) {
-            node.addInput("bus_input", "ANYBUS_v3");
-        } else {
-            const label = `* ${String(slotNum).padStart(2, '0')}`;
-            node.addInput(`input_${String(slotNum).padStart(2, '0')}`, "*", { label });
-        }
-    }
-
-    // Remove extra inputs (keep BUS + numSlots)
-    while (node.inputs.length > expectedInputs) {
-        node.removeInput(node.inputs.length - 1);
-    }
-
-    // Add missing outputs
-    while (node.outputs.length < expectedOutputs) {
-        const slotNum = node.outputs.length;
-        if (slotNum === 0) {
-            node.addOutput("bus_output", "ANYBUS_v3");
-        } else {
-            const label = `* ${String(slotNum).padStart(2, '0')}`;
-            node.addOutput(label, "*");
-        }
-    }
-
-    // Remove extra outputs
-    while (node.outputs.length > expectedOutputs) {
-        node.removeOutput(node.outputs.length - 1);
-    }
-
-    node.setDirtyCanvas(true, true);
-}
-
-// Helper: Synchronize labels and types across BUS-connected nodes
-function syncConnectedNodesLabelsAndTypes(node) {
-    const connectedNodeIds = getBusConnectedNodes(node);
-
-    // Collect all slot information from all connected nodes
-    const slotInfo = {}; // slotIndex -> { type, label, hasConnection }
-
-    for (const nodeId of connectedNodeIds) {
-        const connectedNode = node.graph?.getNodeById(nodeId);
-        if (!connectedNode || !connectedNode.inputs) continue;
-
-        for (let i = 1; i < connectedNode.inputs.length; i++) {
-            const input = connectedNode.inputs[i];
-
-            if (!slotInfo[i]) {
-                slotInfo[i] = { type: "*", label: null, hasConnection: false };
-            }
-
-            // Track if this slot has a connection
-            if (input.link) {
-                slotInfo[i].hasConnection = true;
-
-                // Get the connected type
-                const link = connectedNode.graph?.links[input.link];
-                if (link) {
-                    const sourceNode = connectedNode.graph?.getNodeById(link.origin_id);
-                    if (sourceNode && sourceNode.outputs) {
-                        const sourceOutput = sourceNode.outputs[link.origin_slot];
-                        if (sourceOutput && sourceOutput.type && sourceOutput.type !== "*") {
-                            slotInfo[i].type = sourceOutput.type;
-                        }
-                    }
-                }
-            }
-
-            // Collect custom labels (not default ones)
-            if (input.label && !input.label.startsWith("* ")) {
-                slotInfo[i].label = input.label;
-            }
-        }
-    }
-
-    // Apply collected information to all connected nodes
-    for (const nodeId of connectedNodeIds) {
-        const connectedNode = node.graph?.getNodeById(nodeId);
-        if (!connectedNode) continue;
-
-        // Update inputs
-        if (connectedNode.inputs) {
-            for (let i = 1; i < connectedNode.inputs.length; i++) {
-                const input = connectedNode.inputs[i];
-                const info = slotInfo[i];
-
-                if (info) {
-                    // Update type
-                    if (input.type !== info.type) {
-                        input.type = info.type;
-                    }
-
-                    // Update label: show type if connected, otherwise custom label or default
-                    let newLabel;
-                    if (info.hasConnection && info.type !== "*") {
-                        newLabel = info.type; // Show the connected type as label
-                    } else if (info.label) {
-                        newLabel = info.label; // Use custom label
-                    } else {
-                        newLabel = `* ${String(i).padStart(2, '0')}`; // Default label
-                    }
-
-                    if (input.label !== newLabel) {
-                        input.label = newLabel;
-                    }
-                }
-            }
-        }
-
-        // Update outputs to match inputs
-        if (connectedNode.outputs) {
-            for (let i = 1; i < connectedNode.outputs.length; i++) {
-                const output = connectedNode.outputs[i];
-                const input = connectedNode.inputs ? connectedNode.inputs[i] : null;
-
-                if (input) {
-                    if (output.type !== input.type) {
-                        output.type = input.type;
-                    }
-                    if (output.label !== input.label) {
-                        output.label = input.label;
-                    }
-                }
-            }
-        }
-
-        connectedNode.setDirtyCanvas(true, true);
-    }
-}
 
 // Helper: Synchronize labels across nodes with same profile (legacy - now uses syncConnectedNodesLabelsAndTypes)
 function syncProfileLabels(node) {
@@ -239,102 +43,7 @@ function handleInputTypeChange(node, slotIndex, newType) {
     }
 }
 
-// Helper: Get all BUS-connected nodes recursively
-function getBusConnectedNodes(node, visited = new Set()) {
-    if (!node || visited.has(node.id)) return visited;
-    visited.add(node.id);
-
-    const nodes = [node];
-
-    // Check all inputs for BUS connections
-    if (node.inputs) {
-        for (let i = 0; i < node.inputs.length; i++) {
-            const input = node.inputs[i];
-            if (input.type === "ANYBUS_v3" && input.link) {
-                const link = node.graph?.links[input.link];
-                if (link) {
-                    const sourceNode = node.graph?.getNodeById(link.origin_id);
-                    if (sourceNode && !visited.has(sourceNode.id)) {
-                        getBusConnectedNodes(sourceNode, visited);
-                    }
-                }
-            }
-        }
-    }
-
-    // Check all outputs for BUS connections
-    if (node.outputs) {
-        for (let i = 0; i < node.outputs.length; i++) {
-            const output = node.outputs[i];
-            if (output.type === "ANYBUS_v3" && output.links) {
-                for (const linkId of output.links) {
-                    const link = node.graph?.links[linkId];
-                    if (link) {
-                        const targetNode = node.graph?.getNodeById(link.target_id);
-                        if (targetNode && !visited.has(targetNode.id)) {
-                            getBusConnectedNodes(targetNode, visited);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return visited;
-}
-
-// Helper: Update profile for all BUS-connected nodes
-function updateConnectedNodesProfile(node, newProfile) {
-    const connectedNodeIds = getBusConnectedNodes(node);
-
-    for (const nodeId of connectedNodeIds) {
-        const connectedNode = node.graph?.getNodeById(nodeId);
-        if (!connectedNode) continue;
-
-        const profileWidget = connectedNode.widgets?.find(w => w.name === "profile");
-        if (profileWidget && profileWidget.value !== newProfile) {
-            const oldProfile = profileWidget.value;
-
-            // Remove from old profile registry
-            if (oldProfile) {
-                getProfileEntry(oldProfile).delete(connectedNode);
-            }
-
-            // Update widget value
-            profileWidget.value = newProfile;
-            connectedNode._anybus_profile = newProfile;
-
-            // Add to new profile registry
-            getProfileEntry(newProfile).add(connectedNode);
-
-            // Mark node as dirty to update UI
-            connectedNode.setDirtyCanvas(true, true);
-        }
-    }
-
-    // Sync labels after all profile updates
-    syncProfileLabels(node);
-}
-
-// Helper: Update num_slots for all BUS-connected nodes
-function updateConnectedNodesSlots(node, newNumSlots) {
-    const connectedNodeIds = getBusConnectedNodes(node);
-
-    for (const nodeId of connectedNodeIds) {
-        const connectedNode = node.graph?.getNodeById(nodeId);
-        if (!connectedNode) continue;
-
-        const numSlotsWidget = connectedNode.widgets?.find(w => w.name === "num_slots");
-        if (numSlotsWidget && numSlotsWidget.value !== newNumSlots) {
-            // Update widget value
-            numSlotsWidget.value = newNumSlots;
-
-            // Update the node's inputs/outputs
-            updateNodeSlots(connectedNode, newNumSlots);
-        }
-    }
-}
-
+// ---------- Extension definition ----------
 const MaraScottAnyBusNodeExtension = () => {
     return {
         name: nodeName,
@@ -367,7 +76,7 @@ const MaraScottAnyBusNodeExtension = () => {
                         }]
                     },
                     optional: {
-                        bus_input: ["ANYBUS_v3", {
+                        bus_input: ["ANYBUS_v2", {
                             tooltip: "BUS input connection from another AnyBus node"
                         }],
                         // Add default 3 dynamic slots
@@ -376,7 +85,7 @@ const MaraScottAnyBusNodeExtension = () => {
                         input_03: ["*", { tooltip: "Slot 3" }],
                     }
                 },
-                output: ["ANYBUS_v3", "*", "*", "*"],
+                output: ["ANYBUS_v2", "*", "*", "*"],
                 output_name: ["bus_output", "* 01", "* 02", "* 03"],
                 output_node: false,
                 description: "Dynamic bus connection system with profile-based linking and type synchronization"
@@ -402,19 +111,6 @@ const MaraScottAnyBusNodeExtension = () => {
                 if (numSlotsWidget) {
                     // Initial setup
                     updateNodeSlots(this, numSlotsWidget.value);
-
-                    // Watch for changes - preserve the original callback and context
-                    const originalCallback = numSlotsWidget.callback;
-                    const node = this;
-                    numSlotsWidget.callback = function(value, ...args) {
-                        // Call original callback with proper context and all arguments
-                        const result = originalCallback?.apply(this, arguments);
-                        // Update this node's slots
-                        updateNodeSlots(node, value);
-                        // Update all BUS-connected nodes' slots
-                        updateConnectedNodesSlots(node, value);
-                        return result;
-                    };
                 }
 
                 if (profileWidget) {
@@ -422,22 +118,12 @@ const MaraScottAnyBusNodeExtension = () => {
                     const profile = profileWidget.value || "default";
                     getProfileEntry(profile).add(this);
 
-                    // Watch for profile changes - preserve the original callback and context
-                    const originalCallback = profileWidget.callback;
-                    const node = this;
-                    profileWidget.callback = function(value, ...args) {
-                        // Call original callback with proper context and all arguments
-                        const result = originalCallback?.apply(this, arguments);
-
-                        // Update all BUS-connected nodes with the new profile
-                        updateConnectedNodesProfile(node, value);
-
-                        return result;
-                    };
+                    // Store reference for cleanup
+                    this._anybus_profile = profile;
                 }
 
-                // Store reference for cleanup
-                this._anybus_profile = profileWidget?.value || "default";
+                // Setup widget callbacks using the Widget module
+                setupWidgets(this);
 
                 return r;
             };
@@ -459,9 +145,11 @@ const MaraScottAnyBusNodeExtension = () => {
                     if (connect && link_info) {
                         const sourceNode = this.graph?.getNodeById(link_info.origin_id);
                         const profileWidget = this.widgets?.find(w => w.name === "profile");
+                        const numSlotsWidget = this.widgets?.find(w => w.name === "num_slots");
 
                         if (sourceNode && profileWidget) {
                             const sourceProfile = sourceNode.widgets?.find(w => w.name === "profile")?.value;
+                            const sourceNumSlots = sourceNode.widgets?.find(w => w.name === "num_slots")?.value;
                             const currentProfile = profileWidget.value;
 
                             // If this node is "default", adopt the source profile
@@ -476,6 +164,12 @@ const MaraScottAnyBusNodeExtension = () => {
                                 getProfileEntry(sourceProfile).add(this);
                                 this._anybus_profile = sourceProfile;
                             }
+
+                            // Sync number of slots with source node
+                            if (numSlotsWidget && sourceNumSlots !== undefined && numSlotsWidget.value !== sourceNumSlots) {
+                                numSlotsWidget.value = sourceNumSlots;
+                                updateNodeSlots(this, sourceNumSlots);
+                            }
                         }
                     }
 
@@ -489,7 +183,7 @@ const MaraScottAnyBusNodeExtension = () => {
             // Override onConnectInput to validate connections
             nodeType.prototype.onConnectInput = function(targetSlot, type, output, originNode, originSlot) {
                 // Validate BUS connections (slot 0)
-                if (targetSlot === 0 && type === "ANYBUS_v3") {
+                if (targetSlot === 0 && type === "ANYBUS_v2") {
                     const profileWidget = this.widgets?.find(w => w.name === "profile");
                     const sourceProfileWidget = originNode?.widgets?.find(w => w.name === "profile");
 
@@ -564,8 +258,8 @@ const MaraScottAnyBusNodeSidebarTab = () => {
     return {
         id: nodeId,
         icon: "mdi mdi-transit-connection-variant",
-        title: "Any Bus v3",
-        tooltip: "Any Bus v3 Dashboard",
+        title: "Any Bus v2",
+        tooltip: "Any Bus v2 Dashboard",
         type: "custom",
         render: async (el) => {
             await ensureReactGlobals();
@@ -581,56 +275,78 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                 React.useEffect(() => {
                     const updateProfiles = () => {
                         const profileData = [];
+                        const processedNodes = new Set();
+
+                        // Iterate through all profiles
                         for (const [profile, nodes] of profileRegistry.entries()) {
-                            // Get first node to extract slot info
-                            const firstNode = Array.from(nodes)[0];
-                            const numSlotsWidget = firstNode?.widgets?.find(w => w.name === "num_slots");
-                            const numSlots = numSlotsWidget?.value || 3;
+                            // For each node in this profile, find its BUS-connected group
+                            for (const node of nodes) {
+                                if (processedNodes.has(node.id)) continue;
 
-                            // Extract slot information
-                            const slots = [];
-                            if (firstNode && firstNode.inputs) {
-                                for (let i = 1; i <= numSlots && i < firstNode.inputs.length; i++) {
-                                    const input = firstNode.inputs[i];
-                                    const output = firstNode.outputs[i];
-                                    slots.push({
-                                        index: i,
-                                        label: input?.label || `* ${String(i).padStart(2, '0')}`,
-                                        type: input?.type || "*",
-                                        hasConnection: input?.link ? true : false
-                                    });
-                                }
-                            }
+                                // Get all BUS-connected nodes for this node
+                                const connectedNodeIds = getBusConnectedNodes(node);
 
-                            const nodeList = Array.from(nodes).map(n => {
-                                let inputConnections = 0;
-                                let outputConnections = 0;
-                                if (n.inputs) {
-                                    inputConnections = n.inputs.filter(i => i.link).length;
-                                }
-                                if (n.outputs) {
-                                    for (const output of n.outputs) {
-                                        if (output.links && output.links.length > 0) {
-                                            outputConnections += output.links.length;
-                                        }
+                                // Filter to only nodes with the same profile
+                                const groupNodes = Array.from(connectedNodeIds)
+                                    .map(id => app.graph?._nodes_by_id?.[id])
+                                    .filter(n => n && n._anybus_profile === profile);
+
+                                // Mark all these nodes as processed
+                                groupNodes.forEach(n => processedNodes.add(n.id));
+
+                                // Get first node to extract slot info
+                                const firstNode = groupNodes[0];
+                                const numSlotsWidget = firstNode?.widgets?.find(w => w.name === "num_slots");
+                                const numSlots = numSlotsWidget?.value || 3;
+
+                                // Extract slot information
+                                const slots = [];
+                                if (firstNode && firstNode.inputs) {
+                                    for (let i = 1; i <= numSlots && i < firstNode.inputs.length; i++) {
+                                        const input = firstNode.inputs[i];
+                                        const output = firstNode.outputs[i];
+                                        slots.push({
+                                            index: i,
+                                            label: input?.label || `* ${String(i).padStart(2, '0')}`,
+                                            type: input?.type || "*",
+                                            hasConnection: input?.link ? true : false
+                                        });
                                     }
                                 }
 
-                                return {
-                                    id: n.id,
-                                    title: n.title || `Node ${n.id}`,
-                                    numSlots: numSlots,
-                                    inputConnections,
-                                    outputConnections,
-                                };
-                            });
+                                const nodeList = groupNodes.map(n => {
+                                    let inputConnections = 0;
+                                    let outputConnections = 0;
+                                    if (n.inputs) {
+                                        inputConnections = n.inputs.filter(i => i.link).length;
+                                    }
+                                    if (n.outputs) {
+                                        for (const output of n.outputs) {
+                                            if (output.links && output.links.length > 0) {
+                                                outputConnections += output.links.length;
+                                            }
+                                        }
+                                    }
 
-                            profileData.push({
-                                name: profile,
-                                nodeCount: nodes.size,
-                                nodes: nodeList,
-                                slots: slots
-                            });
+                                    return {
+                                        id: n.id,
+                                        numSlots: numSlots,
+                                        inputConnections,
+                                        outputConnections,
+                                    };
+                                });
+
+                                // Create a unique identifier for this group (profile + first node id)
+                                const groupId = `${profile}_${firstNode.id}`;
+
+                                profileData.push({
+                                    name: profile,
+                                    groupId: groupId,
+                                    nodeCount: groupNodes.length,
+                                    nodes: nodeList,
+                                    slots: slots
+                                });
+                            }
                         }
                         setProfiles(profileData);
                         setLastUpdate(new Date());
@@ -641,14 +357,14 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                     return () => clearInterval(interval);
                 }, []);
 
-                const handleReorderSlots = (profileName, fromIndex, toIndex) => {
+                const handleReorderSlots = (groupId, fromIndex, toIndex) => {
                     if (fromIndex === toIndex) return;
 
-                    // Update slot order for this profile
-                    const profile = profiles.find(p => p.name === profileName);
-                    if (!profile) return;
+                    // Find the profile group by groupId
+                    const profileGroup = profiles.find(p => p.groupId === groupId);
+                    if (!profileGroup) return;
 
-                    const newSlots = [...profile.slots];
+                    const newSlots = [...profileGroup.slots];
                     const [movedSlot] = newSlots.splice(fromIndex, 1);
                     newSlots.splice(toIndex, 0, movedSlot);
 
@@ -658,14 +374,23 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                         newOrder[slot.index] = newIdx + 1; // +1 because slot 0 is BUS
                     });
 
-                    // Store the order
-                    profileSlotOrders.set(profileName, newOrder);
+                    // Store the order using profile name (not groupId)
+                    profileSlotOrders.set(profileGroup.name, newOrder);
 
-                    // Apply to all nodes in this profile
-                    const profileNodes = profileRegistry.get(profileName);
-                    if (profileNodes) {
-                        for (const node of profileNodes) {
-                            applySlotOrderToNode(node, newOrder);
+                    // Apply to all nodes in this specific group
+                    // Get the first node from this group to find all BUS-connected nodes
+                    if (profileGroup.nodes.length > 0) {
+                        const firstNodeId = profileGroup.nodes[0].id;
+                        const firstNode = app.graph?._nodes_by_id?.[firstNodeId];
+
+                        if (firstNode) {
+                            const connectedNodeIds = getBusConnectedNodes(firstNode);
+                            for (const nodeId of connectedNodeIds) {
+                                const node = app.graph?._nodes_by_id?.[nodeId];
+                                if (node && node._anybus_profile === profileGroup.name) {
+                                    applySlotOrderToNode(node, newOrder);
+                                }
+                            }
                         }
                     }
 
@@ -673,8 +398,8 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                     setLastUpdate(new Date());
                 };
 
-                const handleDragStart = (e, profileName, slotIndex) => {
-                    setDraggedSlot({ profileName, slotIndex });
+                const handleDragStart = (e, groupId, slotIndex) => {
+                    setDraggedSlot({ groupId, slotIndex });
                     e.dataTransfer.effectAllowed = 'move';
                 };
 
@@ -683,48 +408,49 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                     e.dataTransfer.dropEffect = 'move';
                 };
 
-                const handleDrop = (e, profileName, dropIndex) => {
+                const handleDrop = (e, groupId, dropIndex) => {
                     e.preventDefault();
-                    if (draggedSlot && draggedSlot.profileName === profileName) {
-                        handleReorderSlots(profileName, draggedSlot.slotIndex, dropIndex);
+                    if (draggedSlot && draggedSlot.groupId === groupId) {
+                        handleReorderSlots(groupId, draggedSlot.slotIndex, dropIndex);
                     }
                     setDraggedSlot(null);
                 };
 
-                const handleResetNodeLabels = (nodeId) => {
-                    // Find the node in the graph
-                    const node = app.graph?._nodes_by_id?.[nodeId];
-                    if (!node || !node.inputs || !node.outputs) return;
+                const handleResetProfile = (groupId) => {
+                    // Find the profile group
+                    const profileGroup = profiles.find(p => p.groupId === groupId);
+                    if (!profileGroup || profileGroup.nodes.length === 0) return;
 
-                    // Reset labels for disconnected slots
-                    for (let i = 1; i < node.inputs.length; i++) {
-                        const input = node.inputs[i];
-                        // Only reset if not connected
-                        if (!input.link) {
-                            const defaultLabel = `* ${String(i).padStart(2, '0')}`;
-                            input.label = defaultLabel;
-                            input.type = "*";
+                    // Get first node to access the BUS-connected group
+                    const firstNodeId = profileGroup.nodes[0].id;
+                    const firstNode = app.graph?._nodes_by_id?.[firstNodeId];
 
-                            // Reset corresponding output
-                            if (node.outputs[i]) {
-                                node.outputs[i].label = defaultLabel;
-                                node.outputs[i].type = "*";
+                    if (!firstNode) return;
+
+                    // Reset only the BUS-connected nodes in this specific group
+                    const connectedNodeIds = getBusConnectedNodes(firstNode);
+                    let hasAnyChanges = false;
+
+                    for (const nodeId of connectedNodeIds) {
+                        const node = app.graph?._nodes_by_id?.[nodeId];
+                        if (node && node._anybus_profile === profileGroup.name) {
+                            const changed = resetNodeDisconnectedSlots(node);
+                            if (changed) {
+                                hasAnyChanges = true;
                             }
                         }
                     }
 
-                    node.setDirtyCanvas(true, true);
-
-                    // Sync changes across BUS-connected nodes
-                    syncConnectedNodesLabelsAndTypes(node);
-
-                    // Force UI update
-                    setLastUpdate(new Date());
+                    // Sync changes across the group if there were any changes
+                    if (hasAnyChanges) {
+                        syncConnectedNodesLabelsAndTypes(firstNode);
+                        setLastUpdate(new Date());
+                    }
                 };
 
                 return (
                     <div style={{ padding: '10px', fontFamily: 'system-ui', color: '#ccc', height: '100%', overflow: 'auto' }}>
-                        <h2 style={{ marginTop: 0, color: '#fff' }}>Any Bus v3 Dashboard</h2>
+                        <h2 style={{ marginTop: 0, color: '#fff' }}>Any Bus v2 Dashboard</h2>
                         <p style={{ fontSize: '0.9em', color: '#888' }}>
                             Live monitoring • Updated: {lastUpdate.toLocaleTimeString()}
                         </p>
@@ -735,7 +461,7 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                 <p style={{ color: '#888', fontStyle: 'italic' }}>No AnyBus nodes in workflow</p>
                             ) : (
                                 profiles.map(profile => (
-                                    <div key={profile.name} style={{
+                                    <div key={profile.groupId} style={{
                                         border: '1px solid #444',
                                         borderRadius: '6px',
                                         padding: '12px',
@@ -754,10 +480,10 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                                 justifyContent: 'space-between',
                                                 alignItems: 'center'
                                             }}
-                                            onClick={() => setSelectedProfile(selectedProfile === profile.name ? null : profile.name)}
+                                            onClick={() => setSelectedProfile(selectedProfile === profile.groupId ? null : profile.groupId)}
                                         >
                                             <span>
-                                                📦 {profile.name}
+                                                � Profile: <span style={{ color: '#6af' }}>{profile.name}</span>
                                                 <span style={{
                                                     marginLeft: '10px',
                                                     color: '#888',
@@ -768,33 +494,81 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                                 </span>
                                             </span>
                                             <span style={{ fontSize: '0.8em' }}>
-                                                {selectedProfile === profile.name ? '▼' : '▶'}
+                                                {selectedProfile === profile.groupId ? '▼' : '▶'}
                                             </span>
                                         </div>
 
-                                        {selectedProfile === profile.name && (
+                                        {selectedProfile === profile.groupId && (
                                             <>
+                                                <div style={{
+                                                    fontSize: '0.85em',
+                                                    color: '#999',
+                                                    fontStyle: 'italic',
+                                                    marginBottom: '12px',
+                                                    paddingTop: '8px',
+                                                    borderTop: '1px solid #333'
+                                                }}>
+                                                    Current settings for this profile group. Connected nodes sync these settings.
+                                                </div>
+
                                                 {/* Slot Reordering Section */}
                                                 <div style={{
                                                     borderTop: '1px solid #333',
                                                     paddingTop: '8px',
                                                     marginBottom: '12px'
                                                 }}>
-                                                    <div style={{ fontSize: '0.95em', fontWeight: 'bold', marginBottom: '8px', color: '#ddd' }}>
-                                                        📋 Slot Order (Drag to reorder)
+                                                    <div style={{
+                                                        fontSize: '0.95em',
+                                                        fontWeight: 'bold',
+                                                        marginBottom: '8px',
+                                                        color: '#ddd',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center'
+                                                    }}>
+                                                        <span>📋 Slot Order (Drag to reorder)</span>
+                                                        <button
+                                                            onClick={() => handleResetProfile(profile.groupId)}
+                                                            title="Reset all disconnected slots to default"
+                                                            style={{
+                                                                background: 'none',
+                                                                border: '1px solid #555',
+                                                                borderRadius: '3px',
+                                                                color: '#aaa',
+                                                                cursor: 'pointer',
+                                                                padding: '4px 8px',
+                                                                fontSize: '0.9em',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                fontWeight: 'normal'
+                                                            }}
+                                                            onMouseOver={(e) => {
+                                                                e.currentTarget.style.background = '#333';
+                                                                e.currentTarget.style.borderColor = '#777';
+                                                                e.currentTarget.style.color = '#fff';
+                                                            }}
+                                                            onMouseOut={(e) => {
+                                                                e.currentTarget.style.background = 'none';
+                                                                e.currentTarget.style.borderColor = '#555';
+                                                                e.currentTarget.style.color = '#aaa';
+                                                            }}
+                                                        >
+                                                            🔄 Reset
+                                                        </button>
                                                     </div>
                                                     {profile.slots && profile.slots.length > 0 ? (
                                                         profile.slots.map((slot, idx) => (
                                                             <div
                                                                 key={slot.index}
                                                                 draggable
-                                                                onDragStart={(e) => handleDragStart(e, profile.name, idx)}
+                                                                onDragStart={(e) => handleDragStart(e, profile.groupId, idx)}
                                                                 onDragOver={handleDragOver}
-                                                                onDrop={(e) => handleDrop(e, profile.name, idx)}
+                                                                onDrop={(e) => handleDrop(e, profile.groupId, idx)}
                                                                 style={{
                                                                     padding: '8px 10px',
                                                                     marginBottom: '4px',
-                                                                    backgroundColor: draggedSlot?.slotIndex === idx && draggedSlot?.profileName === profile.name ? '#2a4a6a' : '#252525',
+                                                                    backgroundColor: draggedSlot?.slotIndex === idx && draggedSlot?.groupId === profile.groupId ? '#2a4a6a' : '#252525',
                                                                     border: '1px solid #444',
                                                                     borderRadius: '4px',
                                                                     cursor: 'move',
@@ -844,8 +618,8 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                                             justifyContent: 'space-between',
                                                             alignItems: 'center'
                                                         }}>
-                                                            <span style={{ fontWeight: '500', flex: 1 }}>
-                                                                {node.title}
+                                                            <span style={{ fontWeight: '500', flex: 1, fontFamily: 'monospace', color: '#6a9eff' }}>
+                                                                #{node.id}
                                                             </span>
                                                             <div style={{
                                                                 fontSize: '0.85em',
@@ -863,32 +637,6 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                                                 <span title="Output connections">
                                                                     📤 {node.outputConnections}
                                                                 </span>
-                                                                <button
-                                                                    onClick={() => handleResetNodeLabels(node.id)}
-                                                                    title="Reset disconnected slots to default labels"
-                                                                    style={{
-                                                                        background: 'none',
-                                                                        border: '1px solid #555',
-                                                                        borderRadius: '3px',
-                                                                        color: '#aaa',
-                                                                        cursor: 'pointer',
-                                                                        padding: '2px 6px',
-                                                                        fontSize: '0.9em',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: '4px'
-                                                                    }}
-                                                                    onMouseOver={(e) => {
-                                                                        e.currentTarget.style.background = '#333';
-                                                                        e.currentTarget.style.borderColor = '#777';
-                                                                    }}
-                                                                    onMouseOut={(e) => {
-                                                                        e.currentTarget.style.background = 'none';
-                                                                        e.currentTarget.style.borderColor = '#555';
-                                                                    }}
-                                                                >
-                                                                    🔄
-                                                                </button>
                                                             </div>
                                                         </div>
                                                     ))}
