@@ -53,45 +53,6 @@ const MaraScottAnyBusNodeExtension = () => {
             { label: "GitHub - MaraScott", url: "https://github.com/MaraScott/ComfyUI_MaraScott_Nodes", icon: "pi pi-github" }
         ],
 
-        async addCustomNodeDefs(defs, app) {
-            // Define the custom node entirely in JavaScript
-            defs[NODE_CLASS] = {
-                name: NODE_CLASS,
-                display_name: NODE_DISPLAY_NAME,
-                category: "MaraScott/Bus",
-                input: {
-                    required: {
-                        num_slots: ["INT", {
-                            default: 3,
-                            min: 1,
-                            max: 20,
-                            step: 1,
-                            display: "number",
-                            tooltip: "Number of any-type input/output slots (excluding the BUS connection)"
-                        }],
-                        profile: ["STRING", {
-                            default: "default",
-                            multiline: false,
-                            tooltip: "Profile name for bus linking. Same profile nodes connect via BUS. 'default' can connect to any profile."
-                        }]
-                    },
-                    optional: {
-                        bus_input: ["ANYBUS_v2", {
-                            tooltip: "BUS input connection from another AnyBus node"
-                        }],
-                        // Add default 3 dynamic slots
-                        input_01: ["*", { tooltip: "Slot 1" }],
-                        input_02: ["*", { tooltip: "Slot 2" }],
-                        input_03: ["*", { tooltip: "Slot 3" }],
-                    }
-                },
-                output: ["ANYBUS_v2", "*", "*", "*"],
-                output_name: ["bus_output", "* 01", "* 02", "* 03"],
-                output_node: false,
-                description: "Dynamic bus connection system with profile-based linking and type synchronization"
-            };
-        },
-
         async beforeRegisterNodeDef(nodeType, nodeData, app) {
             if (nodeData.name !== NODE_CLASS) return;
 
@@ -107,6 +68,8 @@ const MaraScottAnyBusNodeExtension = () => {
                 // Initialize slots based on num_slots widget
                 const numSlotsWidget = this.widgets?.find(w => w.name === "num_slots");
                 const profileWidget = this.widgets?.find(w => w.name === "profile");
+                const modeWidget = this.widgets?.find(w => w.name === "mode");
+                const getsetWidget = this.widgets?.find(w => w.name === "getset_source");
 
                 if (numSlotsWidget) {
                     // Initial setup
@@ -121,6 +84,69 @@ const MaraScottAnyBusNodeExtension = () => {
                     // Store reference for cleanup
                     this._anybus_profile = profile;
                 }
+
+                // Setup mode widget callback
+                if (modeWidget && getsetWidget) {
+                    const originalCallback = modeWidget.callback;
+                    modeWidget.callback = (value) => {
+                        if (originalCallback) originalCallback.call(modeWidget, value);
+
+                        const mode = value;
+                        const busInput = this.inputs?.[0];
+
+                        if (mode === "getset") {
+                            // Hide bus input when in getset mode
+                            if (busInput && busInput.type === "ANYBUS_v2") {
+                                busInput.type = -1; // Hide input
+                            }
+                            // Show getset_source widget
+                            if (getsetWidget) {
+                                getsetWidget.type = "combo";
+                                getsetWidget.options = { values: () => this.getAvailableGetSetSources() };
+                            }
+                        } else {
+                            // Show bus input when in bus mode
+                            if (busInput && busInput.type === -1) {
+                                busInput.type = "ANYBUS_v2";
+                            }
+                            // Hide getset_source widget
+                            if (getsetWidget) {
+                                getsetWidget.type = "converted-widget";
+                            }
+                        }
+
+                        this.setSize(this.computeSize());
+                        this.setDirtyCanvas(true, true);
+                    };
+
+                    // Trigger initial callback to set up UI
+                    if (modeWidget.value) {
+                        modeWidget.callback(modeWidget.value);
+                    }
+                }
+
+                // Add method to get available Get/Set sources
+                this.getAvailableGetSetSources = function() {
+                    if (!this.graph) return [""];
+
+                    const sources = [""];
+                    const profileWidget = this.widgets?.find(w => w.name === "profile");
+                    const currentProfile = profileWidget?.value || "default";
+
+                    // Find all AnyBus_v2 nodes with the same profile
+                    for (const node of this.graph._nodes) {
+                        if (node.type === NODE_CLASS && node.id !== this.id) {
+                            const nodeProfile = node.widgets?.find(w => w.name === "profile")?.value;
+                            if (nodeProfile === currentProfile || nodeProfile === "default" || currentProfile === "default") {
+                                // Use node title as identifier
+                                const identifier = node.title || `Node ${node.id}`;
+                                sources.push(identifier);
+                            }
+                        }
+                    }
+
+                    return sources;
+                };
 
                 // Setup widget callbacks using the Widget module
                 setupWidgets(this);
@@ -291,6 +317,9 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                     .map(id => app.graph?._nodes_by_id?.[id])
                                     .filter(n => n && n._anybus_profile === profile);
 
+                                // Skip if no valid nodes found
+                                if (groupNodes.length === 0) continue;
+
                                 // Mark all these nodes as processed
                                 groupNodes.forEach(n => processedNodes.add(n.id));
 
@@ -448,7 +477,90 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                     }
                 };
 
-                return (
+                const handleLabelChange = (groupId, slotIndex, newLabel) => {
+                    // Find the profile group
+                    const profileGroup = profiles.find(p => p.groupId === groupId);
+                    if (!profileGroup || profileGroup.nodes.length === 0) return;
+
+                    // Get first node to access the BUS-connected group
+                    const firstNodeId = profileGroup.nodes[0].id;
+                    const firstNode = app.graph?._nodes_by_id?.[firstNodeId];
+
+                    if (!firstNode) return;
+
+                    // Update label for all BUS-connected nodes in this group
+                    const connectedNodeIds = getBusConnectedNodes(firstNode);
+
+                    for (const nodeId of connectedNodeIds) {
+                        const node = app.graph?._nodes_by_id?.[nodeId];
+                        if (node && node._anybus_profile === profileGroup.name) {
+                            // Update input label
+                            if (node.inputs && node.inputs[slotIndex]) {
+                                node.inputs[slotIndex].label = newLabel || node.inputs[slotIndex].type;
+                            }
+                            // Update output label
+                            if (node.outputs && node.outputs[slotIndex]) {
+                                node.outputs[slotIndex].label = newLabel || node.outputs[slotIndex].type;
+                            }
+                            node.setDirtyCanvas(true, true);
+                        }
+                    }
+
+                    // Force UI update
+                    setLastUpdate(new Date());
+                };
+
+                const handleProfileNameChange = (groupId, newProfileName) => {
+                    if (!newProfileName || newProfileName.trim() === '') return;
+
+                    // Find the profile group
+                    const profileGroup = profiles.find(p => p.groupId === groupId);
+                    if (!profileGroup || profileGroup.nodes.length === 0) return;
+
+                    // Get first node to access the BUS-connected group
+                    const firstNodeId = profileGroup.nodes[0].id;
+                    const firstNode = app.graph?._nodes_by_id?.[firstNodeId];
+
+                    if (!firstNode) return;
+
+                    // Update profile name for all nodes in this group
+                    updateConnectedNodesProfile(firstNode, newProfileName.trim());
+
+                    // Force UI update
+                    setLastUpdate(new Date());
+                };
+
+                const handleNumSlotsChange = (groupId, newNumSlots) => {
+                    const numSlots = parseInt(newNumSlots);
+                    if (isNaN(numSlots) || numSlots < 1 || numSlots > 20) return;
+
+                    // Find the profile group
+                    const profileGroup = profiles.find(p => p.groupId === groupId);
+                    if (!profileGroup || profileGroup.nodes.length === 0) return;
+
+                    // Get first node to access the BUS-connected group
+                    const firstNodeId = profileGroup.nodes[0].id;
+                    const firstNode = app.graph?._nodes_by_id?.[firstNodeId];
+
+                    if (!firstNode) return;
+
+                    // Update num_slots widget and slots for all nodes in this group
+                    const connectedNodeIds = getBusConnectedNodes(firstNode);
+
+                    for (const nodeId of connectedNodeIds) {
+                        const node = app.graph?._nodes_by_id?.[nodeId];
+                        if (node && node._anybus_profile === profileGroup.name) {
+                            const numSlotsWidget = node.widgets?.find(w => w.name === "num_slots");
+                            if (numSlotsWidget) {
+                                numSlotsWidget.value = numSlots;
+                                updateNodeSlots(node, numSlots);
+                            }
+                        }
+                    }
+
+                    // Force UI update
+                    setLastUpdate(new Date());
+                };                return (
                     <div style={{ padding: '10px', fontFamily: 'system-ui', color: '#ccc', height: '100%', overflow: 'auto' }}>
                         <h2 style={{ marginTop: 0, color: '#fff' }}>Any Bus v2 Dashboard</h2>
                         <p style={{ fontSize: '0.9em', color: '#888' }}>
@@ -509,6 +621,68 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                                     borderTop: '1px solid #333'
                                                 }}>
                                                     Current settings for this profile group. Connected nodes sync these settings.
+                                                </div>
+
+                                                {/* Profile Settings Section */}
+                                                <div style={{
+                                                    borderTop: '1px solid #333',
+                                                    paddingTop: '8px',
+                                                    marginBottom: '12px',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '8px'
+                                                }}>
+                                                    <div style={{ fontSize: '0.95em', fontWeight: 'bold', marginBottom: '4px', color: '#ddd' }}>
+                                                        ⚙️ Profile Settings
+                                                    </div>
+
+                                                    {/* Profile Name */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <label style={{ color: '#aaa', fontSize: '0.9em', minWidth: '80px' }}>
+                                                            Profile:
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={profile.name}
+                                                            onChange={(e) => handleProfileNameChange(profile.groupId, e.target.value)}
+                                                            style={{
+                                                                background: '#1a1a1a',
+                                                                border: '1px solid #555',
+                                                                borderRadius: '3px',
+                                                                color: '#ccc',
+                                                                padding: '4px 8px',
+                                                                fontSize: '0.9em',
+                                                                flex: 1
+                                                            }}
+                                                            placeholder="Profile name"
+                                                        />
+                                                    </div>
+
+                                                    {/* Number of Slots */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <label style={{ color: '#aaa', fontSize: '0.9em', minWidth: '80px' }}>
+                                                            Slots:
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max="20"
+                                                            value={profile.slots.length}
+                                                            onChange={(e) => handleNumSlotsChange(profile.groupId, e.target.value)}
+                                                            style={{
+                                                                background: '#1a1a1a',
+                                                                border: '1px solid #555',
+                                                                borderRadius: '3px',
+                                                                color: '#ccc',
+                                                                padding: '4px 8px',
+                                                                fontSize: '0.9em',
+                                                                width: '80px'
+                                                            }}
+                                                        />
+                                                        <span style={{ color: '#888', fontSize: '0.85em' }}>
+                                                            (1-20)
+                                                        </span>
+                                                    </div>
                                                 </div>
 
                                                 {/* Slot Reordering Section */}
@@ -575,14 +749,33 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                                                                     display: 'flex',
                                                                     justifyContent: 'space-between',
                                                                     alignItems: 'center',
-                                                                    fontSize: '0.9em'
+                                                                    fontSize: '0.9em',
+                                                                    gap: '8px'
                                                                 }}
                                                             >
-                                                                <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                                    <span style={{ color: '#888' }}>☰</span>
-                                                                    <span style={{ fontWeight: '500', color: '#ccc' }}>
-                                                                        {slot.label}
-                                                                    </span>
+                                                                <span style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1 }}>
+                                                                    <span style={{ color: '#888', cursor: 'grab' }}>☰</span>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={slot.label}
+                                                                        onChange={(e) => handleLabelChange(profile.groupId, slot.index, e.target.value)}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        onMouseDown={(e) => e.stopPropagation()}
+                                                                        placeholder={slot.type}
+                                                                        style={{
+                                                                            background: '#1a1a1a',
+                                                                            border: '1px solid #555',
+                                                                            borderRadius: '3px',
+                                                                            color: '#ccc',
+                                                                            padding: '4px 8px',
+                                                                            fontSize: '0.9em',
+                                                                            fontWeight: '500',
+                                                                            flex: 1,
+                                                                            minWidth: '100px',
+                                                                            cursor: 'text'
+                                                                        }}
+                                                                        title="Edit label (type remains unchanged)"
+                                                                    />
                                                                 </span>
                                                                 <span style={{
                                                                     fontSize: '0.85em',

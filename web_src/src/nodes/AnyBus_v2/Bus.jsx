@@ -79,9 +79,16 @@ export function syncConnectedNodesLabelsAndTypes(node) {
                 }
             }
 
-            // Collect custom labels (not default ones)
-            if (input.label && !input.label.startsWith("* ")) {
-                slotInfo[i].label = input.label;
+            // Collect labels - prioritize custom labels over type names
+            if (input.label) {
+                // Check if it's a custom label (not a default "* XX" pattern and not just the type)
+                const isDefaultLabel = input.label.match(/^\* \d{2}$/);
+                const isTypeLabel = input.label === input.type;
+
+                if (!isDefaultLabel) {
+                    // Use this label (could be custom or type name)
+                    slotInfo[i].label = input.label;
+                }
             }
         }
     }
@@ -103,12 +110,12 @@ export function syncConnectedNodesLabelsAndTypes(node) {
                         input.type = info.type;
                     }
 
-                    // Update label: show type if connected, otherwise custom label or default
+                    // Update label: use custom label if exists, otherwise use type, otherwise default
                     let newLabel;
-                    if (info.hasConnection && info.type !== "*") {
-                        newLabel = info.type; // Show the connected type as label
-                    } else if (info.label) {
-                        newLabel = info.label; // Use custom label
+                    if (info.label) {
+                        newLabel = info.label; // Use synced custom label
+                    } else if (info.type !== "*") {
+                        newLabel = info.type; // Use type as label
                     } else {
                         newLabel = `* ${String(i).padStart(2, '0')}`; // Default label
                     }
@@ -216,4 +223,99 @@ export function resetProfileDisconnectedSlots(profileName, graphApp) {
     }
 
     return hasAnyChanges;
+}
+
+// Helper: Forward data through BUS-connected nodes by creating slot connections
+export function forwardDataThroughBus(node) {
+    if (!node || !node.graph) return;
+
+    const connectedNodeIds = getBusConnectedNodes(node);
+    const nodes = Array.from(connectedNodeIds).map(id => node.graph.getNodeById(id)).filter(n => n);
+
+    if (nodes.length < 2) return; // Need at least 2 nodes to forward
+
+    // For each slot (excluding BUS slot 0), find if any node has an input connection
+    // and forward it to outputs of other nodes in the profile
+    const numSlots = Math.max(...nodes.map(n => n.inputs?.length || 0));
+
+    for (let slotIdx = 1; slotIdx < numSlots; slotIdx++) {
+        // Find nodes with input connections at this slot
+        const sourceConnections = [];
+
+        for (const busNode of nodes) {
+            if (busNode.inputs && busNode.inputs[slotIdx] && busNode.inputs[slotIdx].link) {
+                const link = busNode.graph.links[busNode.inputs[slotIdx].link];
+                if (link && link.origin_id !== busNode.id) { // Not a self-connection
+                    sourceConnections.push({
+                        node: busNode,
+                        link: link,
+                        sourceNodeId: link.origin_id,
+                        sourceSlot: link.origin_slot
+                    });
+                }
+            }
+        }
+
+        // If we have input connections, forward them to outputs of other BUS nodes
+        if (sourceConnections.length > 0) {
+            // Use the first source connection for forwarding
+            const source = sourceConnections[0];
+            const sourceNode = node.graph.getNodeById(source.sourceNodeId);
+
+            if (!sourceNode) continue;
+
+            // Connect this source to all other BUS nodes' outputs at the same slot
+            for (const targetBusNode of nodes) {
+                // Skip if it's the node that already has the input
+                if (targetBusNode.id === source.node.id) continue;
+
+                // Check if output slot exists and is not already connected to this source
+                if (targetBusNode.outputs && targetBusNode.outputs[slotIdx]) {
+                    const output = targetBusNode.outputs[slotIdx];
+
+                    // Check if already connected to the same source
+                    let alreadyConnected = false;
+                    if (output.links) {
+                        for (const linkId of output.links) {
+                            const existingLink = node.graph.links[linkId];
+                            if (existingLink && existingLink.origin_id === source.sourceNodeId &&
+                                existingLink.origin_slot === source.sourceSlot) {
+                                alreadyConnected = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!alreadyConnected) {
+                        // Create a virtual connection from the source to this output
+                        // We connect the sourceNode output to an input of targetBusNode, then
+                        // targetBusNode output can be used downstream
+                        // Actually, we just mark the output as having the same data by connecting
+                        // the original source to any nodes connected to this output
+
+                        // Forward the connection: if targetBusNode.outputs[slotIdx] has links,
+                        // replace them to point to sourceNode instead
+                        if (output.links && output.links.length > 0) {
+                            for (const linkId of [...output.links]) {
+                                const downstreamLink = node.graph.links[linkId];
+                                if (downstreamLink) {
+                                    // Reconnect downstream nodes directly to the source
+                                    const downstreamNode = node.graph.getNodeById(downstreamLink.target_id);
+                                    const downstreamSlot = downstreamLink.target_slot;
+
+                                    if (downstreamNode) {
+                                        // Remove old link
+                                        targetBusNode.disconnectOutput(slotIdx, downstreamNode);
+
+                                        // Create new link from source
+                                        sourceNode.connect(source.sourceSlot, downstreamNode, downstreamSlot);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
