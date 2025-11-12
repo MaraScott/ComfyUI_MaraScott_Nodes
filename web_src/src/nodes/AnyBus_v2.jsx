@@ -205,22 +205,48 @@ const MaraScottAnyBusNodeExtension = () => {
                             const sourceNumSlots = sourceNode.widgets?.find(w => w.name === "num_slots")?.value;
                             const currentProfileId = this._anybus_profileId;
 
-                            // Unify profiles when BUS connection is made
-                            if (sourceProfileId && currentProfileId && sourceProfileId !== currentProfileId) {
-                                // Remove this node from its current profile
-                                getProfileEntry(currentProfileId).delete(this);
+                            // Unify ALL BUS-connected nodes to use the same profile ID
+                            if (sourceProfileId && currentProfileId) {
+                                // Get ALL nodes in the entire BUS-connected network
+                                const allConnectedNodeIds = getBusConnectedNodes(sourceNode);
 
-                                // Adopt source profile ID
-                                this._anybus_profileId = sourceProfileId;
+                                // Collect all unique profile IDs in this network
+                                const profileIds = new Set();
+                                const allNodes = [];
 
-                                // Add to source profile
-                                getProfileEntry(sourceProfileId).add(this);
+                                for (const nodeId of allConnectedNodeIds) {
+                                    const node = this.graph?.getNodeById(nodeId);
+                                    if (node && node._anybus_profileId) {
+                                        profileIds.add(node._anybus_profileId);
+                                        allNodes.push(node);
+                                    }
+                                }
 
-                                // Update title
-                                const metadata = getProfileMetadata(sourceProfileId);
-                                this.title = `AnyBus : ${metadata.label}`;
+                                // If there are multiple profile IDs, unify them all to the source profile
+                                if (profileIds.size > 1) {
+                                    console.log(`[AnyBus] Unifying ${profileIds.size} profiles into "${sourceProfileId}"`);
 
-                                console.log(`[AnyBus] Node ${this.id} adopted profile ID "${sourceProfileId}" (${metadata.label})`);
+                                    for (const node of allNodes) {
+                                        const oldProfileId = node._anybus_profileId;
+
+                                        if (oldProfileId !== sourceProfileId) {
+                                            // Remove from old profile
+                                            getProfileEntry(oldProfileId).delete(node);
+
+                                            // Adopt source profile ID
+                                            node._anybus_profileId = sourceProfileId;
+
+                                            // Add to source profile
+                                            getProfileEntry(sourceProfileId).add(node);
+
+                                            // Update title
+                                            const metadata = getProfileMetadata(sourceProfileId);
+                                            node.title = `AnyBus : ${metadata.label}`;
+                                        }
+                                    }
+
+                                    console.log(`[AnyBus] Unified ${allNodes.length} nodes to profile "${sourceProfileId}"`);
+                                }
                             }
 
                             // Sync number of slots with source node

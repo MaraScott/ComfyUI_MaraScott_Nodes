@@ -23,6 +23,11 @@ const stateChangeListeners = new Set();
 // Counter for generating unique profile IDs
 let profileIdCounter = 1;
 
+// Debounce for initialization to prevent excessive calls
+let initializationTimeout = null;
+let lastInitializationTime = 0;
+const INITIALIZATION_DEBOUNCE_MS = 100;
+
 /**
  * Generate a new unique profile ID
  */
@@ -325,6 +330,27 @@ function notifyStateChange(profile, state) {
 export function initializeCentralizedState(graph, getBusConnectedNodesFn = null) {
     if (!graph || !graph._nodes) return;
 
+    // Debounce: Prevent excessive initialization calls
+    const now = Date.now();
+    if (now - lastInitializationTime < INITIALIZATION_DEBOUNCE_MS) {
+        // Clear existing timeout and schedule new one
+        if (initializationTimeout) {
+            clearTimeout(initializationTimeout);
+        }
+        initializationTimeout = setTimeout(() => {
+            initializeCentralizedStateInternal(graph, getBusConnectedNodesFn);
+        }, INITIALIZATION_DEBOUNCE_MS);
+        return;
+    }
+
+    lastInitializationTime = now;
+    initializeCentralizedStateInternal(graph, getBusConnectedNodesFn);
+}
+
+/**
+ * Internal initialization function (called after debounce)
+ */
+function initializeCentralizedStateInternal(graph, getBusConnectedNodesFn) {
     console.log('[AnyBus] Initializing centralized state from workflow...');
 
     // First pass: Find all AnyBus nodes

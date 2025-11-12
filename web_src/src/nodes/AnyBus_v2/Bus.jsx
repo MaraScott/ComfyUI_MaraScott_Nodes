@@ -4,7 +4,8 @@ import {
     profileSlotOrders,
     getProfileMasterState,
     syncNodeToMasterState,
-    propagateMasterStateToNodes
+    propagateMasterStateToNodes,
+    getProfileMetadata
 } from "./State.jsx";
 import { applySlotOrderToNode, resetNodeDisconnectedSlots, updateNodeSlots } from "./Node.jsx";
 
@@ -235,18 +236,33 @@ export function updateGetSetConnection(getsetNode) {
         }
 
         // Update getset node's profile to match source
+        // Unify ALL nodes in the getset node's profile with the source profile
         const oldProfileId = getsetNode._anybus_profileId;
         if (oldProfileId !== sourceProfileId) {
-            // Remove from old profile
-            if (oldProfileId) {
-                getProfileEntry(oldProfileId).delete(getsetNode);
+            // Get all nodes in the getset node's current profile
+            const currentProfileNodes = getProfileEntry(oldProfileId);
+
+            // Move all nodes from getset profile to source profile
+            if (currentProfileNodes && currentProfileNodes.size > 0) {
+                const nodesToMove = Array.from(currentProfileNodes);
+
+                for (const nodeToMove of nodesToMove) {
+                    // Remove from current profile
+                    currentProfileNodes.delete(nodeToMove);
+
+                    // Adopt source profile ID
+                    nodeToMove._anybus_profileId = sourceProfileId;
+
+                    // Add to source profile
+                    getProfileEntry(sourceProfileId).add(nodeToMove);
+
+                    // Update title
+                    const metadata = getProfileMetadata(sourceProfileId);
+                    nodeToMove.title = `AnyBus : ${metadata.label}`;
+                }
+
+                console.log(`[AnyBus] GetSet unified ${nodesToMove.length} nodes from profile "${oldProfileId}" to "${sourceProfileId}"`);
             }
-
-            // Assign source's profile ID
-            getsetNode._anybus_profileId = sourceProfileId;
-
-            // Add to source's profile
-            getProfileEntry(sourceProfileId).add(getsetNode);
         }
 
         // Sync number of slots with source
@@ -271,17 +287,19 @@ export function updateGetSetConnection(getsetNode) {
 // Helper: Synchronize labels and types across BUS-connected nodes
 // NOW USES CENTRALIZED STATE: Updates master state then propagates to all nodes
 export function syncConnectedNodesLabelsAndTypes(node) {
-    if (!node || !node._anybus_profileId) return;
+    if (!node || !node._anybus_profileId || !node.graph) return;
 
     const profileId = node._anybus_profileId;
-    const connectedNodeIds = getBusConnectedNodes(node);
     const masterState = getProfileMasterState(profileId);
 
-    // STEP 1: Collect information from all connected nodes and update master state
+    // STEP 1: Collect information from ALL nodes in this profile (not just BUS-connected)
+    // This ensures all branches (via wires, getset mode, or separate getset nodes) are synced
+    const profileNodes = getProfileEntry(profileId);
+    if (!profileNodes || profileNodes.size === 0) return;
+
     let masterStateChanged = false;
 
-    for (const nodeId of connectedNodeIds) {
-        const connectedNode = node.graph?.getNodeById(nodeId);
+    for (const connectedNode of profileNodes) {
         if (!connectedNode || !connectedNode.inputs) continue;
 
         for (let i = 1; i < connectedNode.inputs.length; i++) {
