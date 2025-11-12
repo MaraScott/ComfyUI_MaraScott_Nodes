@@ -70,8 +70,19 @@ The sidebar tab is the primary interface for managing AnyBus flows. Users should
 
 **Node Class**:
 - Class name: `Mara_AnyBus_v3`
-- Category: `MaraScott/Bus`
+- Category: Use `get_category("Bus")` helper function (resolves to `MaraScott/Bus`)
 - Registration: Use `f"{NAMESPACE}AnyBus_v3"` format where NAMESPACE='MaraScott'
+- Class Attributes:
+  - `NAME = "AnyBus v3"` (display name)
+  - `SHORTCUT = "b"` (keyboard shortcut identifier)
+
+**Imports Required**:
+```python
+from ...utils.constants import get_category
+from ...utils.helper import AlwaysEqualProxy
+
+any_type = AlwaysEqualProxy("*")
+```
 
 **Input Configuration**:
 - **Required Widget Inputs**:
@@ -82,19 +93,21 @@ The sidebar tab is the primary interface for managing AnyBus flows. Users should
 - **Optional Data Inputs**:
   - `bus`: ANYBUS_v3 type with forceInput=True
   - `getset_source`: STRING type with forceInput=True (for Get/Set mode source selection)
-  - Slot inputs: `* 01` through `* 24` (all type "*" with forceInput=True)
+  - Slot inputs: `* 01` through `* 24` (all use `any_type` with forceInput=True)
 
 **Output Configuration**:
 - `bus`: ANYBUS_v3 type
-- Slot outputs: `* 01` through `* 24` (all type "*")
+- Slot outputs: `* 01` through `* 24` (all use `any_type`)
 - Total: 25 outputs (1 ANYBUS_v3 + 24 ANY slots)
 - Return names: tuple starting with "bus" followed by zero-padded slot names
 
-**Execute Function**:
-- Accept num_slots, profile, mode as required parameters
-- Extract all slot values from kwargs using zero-padded keys
-- Return tuple containing bus data followed by all slot values
+**Function Implementation**:
+- Function name: `fn` (set via `FUNCTION = "fn"`)
+- Parameters: Accept num_slots, profile, mode as required, plus **kwargs
+- Extract all slot values from kwargs using zero-padded keys (`* 01`, `* 02`, etc.)
+- Return tuple containing bus data dict followed by all slot values
 - Handle missing/None values appropriately
+- Bus data structure: `{"profile": str, "mode": str, "slots": int}`
 
 ### JavaScript Frontend Architecture
 
@@ -115,6 +128,7 @@ app.extensionManager.registerSidebarTab(MaraScottAnyBusNodeSidebarTab());
 Implement modular structure with the following components:
 
 1. **AnyBus_v3.jsx** (Main Entry Point & Exports)
+   - Import from `"../../../scripts/app.js"` (correct relative path from nodes directory)
    - Export NODE_CLASS constant matching Python registration
    - Implement beforeRegisterNodeDef hook for node type extension
    - Implement onNodeCreated callback for initialization
@@ -192,6 +206,7 @@ Implement modular structure with the following components:
    - Ensure single React instance across all modules
 
 7. **SidebarTab.jsx** (PRIMARY UI - Centralized Management)
+   - Import from `/scripts/app.js` (absolute path for runtime)
    - Export registerAnyBusFlowSidebar(container) function
    - Function receives container element from sidebar tab render callback
    - Render React-based UI directly into provided container
@@ -411,6 +426,87 @@ custom_nodes/ComfyUI_MaraScott_Nodes/
 
 ## Implementation Guidelines
 
+### Python Backend Pattern
+Complete Python backend structure:
+
+```python
+from ...utils.constants import get_category
+from ...utils.helper import AlwaysEqualProxy
+
+any_type = AlwaysEqualProxy("*")
+
+class Mara_AnyBus_v3:
+    """
+    AnyBus v3 - Dynamic bus system with profile-based synchronization and Get/Set mode
+    """
+
+    NAME = "AnyBus v3"
+    SHORTCUT = "b"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        # Generate slot inputs dynamically (* 01 through * 24)
+        slot_inputs = {f"* {i:02d}": (any_type, {"forceInput": True}) for i in range(1, 25)}
+
+        return {
+            "required": {
+                "num_slots": ("INT", {"default": 2, "min": 1, "max": 24, "step": 1}),
+                "profile": ("STRING", {"default": "default"}),
+                "mode": (["bus", "getset"], {"default": "bus"}),
+            },
+            "optional": {
+                "bus": ("ANYBUS_v3", {"forceInput": True}),
+                "getset_source": ("STRING", {"forceInput": True}),
+                **slot_inputs
+            }
+        }
+
+    RETURN_TYPES = ("ANYBUS_v3",) + (any_type,) * 24
+    RETURN_NAMES = ("bus",) + tuple(f"* {i:02d}" for i in range(1, 25))
+    FUNCTION = "fn"
+    CATEGORY = get_category("Bus")
+
+    def fn(self, num_slots, profile, mode, **kwargs):
+        # Extract bus data
+        bus_data = kwargs.get("bus", {"profile": profile, "mode": mode, "slots": num_slots})
+
+        # Update bus data with current settings
+        bus_data.update({
+            "profile": profile,
+            "mode": mode,
+            "slots": num_slots
+        })
+
+        # Extract slot values
+        slot_values = []
+        for i in range(1, 25):
+            key = f"* {i:02d}"
+            value = kwargs.get(key, None)
+            slot_values.append(value)
+
+        # Return bus data followed by all slot values
+        return (bus_data,) + tuple(slot_values)
+```
+
+### JavaScript Import Paths
+Critical import path patterns:
+
+**In `web_src/src/nodes/AnyBus_v3.jsx`** (main node module):
+```javascript
+import { app } from "../../../scripts/app.js";  // Relative path from src/nodes/
+```
+
+**In `web_src/src/nodes/AnyBus_v3/SidebarTab.jsx`** (sub-module):
+```javascript
+import { app } from '/scripts/app.js';  // Absolute path for runtime
+```
+
+**In `web_src/src/js/AnyBus_v3.js`** (registration file):
+```javascript
+import { app } from "../../scripts/app.js";
+import { MaraScottAnyBusNodeExtension, MaraScottAnyBusNodeSidebarTab } from "./nodes/AnyBus_v3.js";
+```
+
 ### Registration Pattern
 - Create separate registration file in `web_src/src/js/AnyBus_v3.js`
 - Import MaraScottAnyBusNodeExtension and MaraScottAnyBusNodeSidebarTab from node module
@@ -567,6 +663,29 @@ custom_nodes/ComfyUI_MaraScott_Nodes/
 10. **Regex-Based Numbering**: Always extract slot numbers from names, never use array indices
 11. **Proper Cleanup**: Unregister nodes, unsubscribe events, prevent memory leaks
 12. **Error Handling**: Graceful degradation, user feedback, no silent failures
+
+---
+
+## Key Implementation Details
+
+### Python Backend Specifics
+1. **Use AlwaysEqualProxy**: Import `AlwaysEqualProxy` from utils.helper and use `any_type = AlwaysEqualProxy("*")` for dynamic typing
+2. **Use get_category helper**: Import `get_category` from utils.constants and use `CATEGORY = get_category("Bus")`
+3. **Add NAME and SHORTCUT**: Class attributes for display name and keyboard shortcut
+4. **Function name is "fn"**: Set `FUNCTION = "fn"` and implement `def fn(self, ...)` method
+5. **Zero-padded slot keys**: Always use `f"* {i:02d}"` format for slot keys (e.g., `* 01`, `* 02`)
+
+### JavaScript Import Paths
+1. **Main node module** (`src/nodes/AnyBus_v3.jsx`): Use `"../../../scripts/app.js"` (relative from nodes directory)
+2. **Sub-modules** (`src/nodes/AnyBus_v3/*.jsx`): Use `'/scripts/app.js'` (absolute path for runtime)
+3. **Registration file** (`src/js/AnyBus_v3.js`): Use `"../../scripts/app.js"` (relative from js directory)
+
+### Build Configuration
+- **Do NOT modify vite.config.js** - It already has proper externalization for `/scripts/` imports
+- **Two-stage build**: Run `npm run build:nodes` first, then `npm run build:app`
+- **Output locations**:
+  - Node modules: `web/assets/js/nodes/AnyBus_v3.js` + `web/assets/js/nodes/AnyBus_v3/*.js`
+  - Registration file: `web/assets/js/AnyBus_v3.[timestamp].js`
 
 ---
 
