@@ -10,7 +10,9 @@ class Mara_AnyBus_v2:
 
     This node acts as a data hub that can receive multiple inputs and forward them
     to its outputs, while also passing through a BUS connection that carries all
-    slot values as a tuple for profile-based synchronization.
+    slot values as a tuple.
+
+    Profile management is handled automatically by the frontend based on BUS connections.
     """
 
     NAME = "AnyBus v2"
@@ -40,10 +42,6 @@ class Mara_AnyBus_v2:
                     "step": 1,
                     "display": "number",
                 }),
-                "profile": ("STRING", {
-                    "default": "default",
-                    "multiline": False,
-                }),
                 "mode": (["bus", "getset"], {
                     "default": "bus",
                 }),
@@ -56,7 +54,7 @@ class Mara_AnyBus_v2:
     FUNCTION = "execute"
     CATEGORY = get_category("Bus")
 
-    def execute(self, num_slots, profile, mode="bus", bus=None, getset_source="", **kwargs):
+    def execute(self, num_slots, mode="bus", bus=None, getset_source="", **kwargs):
         """
         Execute the bus node:
         1. Collect all input values from slots
@@ -65,6 +63,8 @@ class Mara_AnyBus_v2:
         Mode:
         - bus: Use direct BUS connections
         - getset: Use virtual Get/Set connections (getset_source specifies the source node)
+
+        Note: Profile management is now handled entirely in the frontend
         """
 
         # Collect input values from all slots

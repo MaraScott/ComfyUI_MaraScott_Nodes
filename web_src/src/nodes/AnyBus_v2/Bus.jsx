@@ -227,23 +227,26 @@ export function updateGetSetConnection(getsetNode) {
     }
 
     if (sourceNode) {
-        // Get source node's profile
-        const sourceProfile = sourceNode._anybus_profile || sourceNode.widgets?.find(w => w.name === "profile")?.value || "default";
-        const profileWidget = getsetNode.widgets?.find(w => w.name === "profile");
+        // Get source node's profile ID
+        const sourceProfileId = sourceNode._anybus_profileId;
+        if (!sourceProfileId) {
+            console.warn('[AnyBus] Source node has no profile ID');
+            return;
+        }
 
         // Update getset node's profile to match source
-        if (profileWidget && profileWidget.value !== sourceProfile) {
+        const oldProfileId = getsetNode._anybus_profileId;
+        if (oldProfileId !== sourceProfileId) {
             // Remove from old profile
-            if (getsetNode._anybus_profile) {
-                getProfileEntry(getsetNode._anybus_profile).delete(getsetNode);
+            if (oldProfileId) {
+                getProfileEntry(oldProfileId).delete(getsetNode);
             }
 
-            // Update to source's profile
-            profileWidget.value = sourceProfile;
-            getsetNode._anybus_profile = sourceProfile;
+            // Assign source's profile ID
+            getsetNode._anybus_profileId = sourceProfileId;
 
             // Add to source's profile
-            getProfileEntry(sourceProfile).add(getsetNode);
+            getProfileEntry(sourceProfileId).add(getsetNode);
         }
 
         // Sync number of slots with source
@@ -268,11 +271,11 @@ export function updateGetSetConnection(getsetNode) {
 // Helper: Synchronize labels and types across BUS-connected nodes
 // NOW USES CENTRALIZED STATE: Updates master state then propagates to all nodes
 export function syncConnectedNodesLabelsAndTypes(node) {
-    if (!node || !node._anybus_profile) return;
+    if (!node || !node._anybus_profileId) return;
 
-    const profile = node._anybus_profile;
+    const profileId = node._anybus_profileId;
     const connectedNodeIds = getBusConnectedNodes(node);
-    const masterState = getProfileMasterState(profile);
+    const masterState = getProfileMasterState(profileId);
 
     // STEP 1: Collect information from all connected nodes and update master state
     let masterStateChanged = false;
@@ -365,33 +368,31 @@ export function syncConnectedNodesLabelsAndTypes(node) {
     // STEP 2: If master state changed, propagate to all nodes in profile
     if (masterStateChanged) {
         masterState.lastUpdate = Date.now();
-        propagateMasterStateToNodes(profile);
+        propagateMasterStateToNodes(profileId);
     }
 }
 
 // Helper: Update profile for all BUS-connected nodes
-export function updateConnectedNodesProfile(node, newProfile) {
+export function updateConnectedNodesProfile(node, newProfileId) {
     const connectedNodeIds = getBusConnectedNodes(node);
 
     for (const nodeId of connectedNodeIds) {
         const connectedNode = node.graph?.getNodeById(nodeId);
         if (!connectedNode) continue;
 
-        const profileWidget = connectedNode.widgets?.find(w => w.name === "profile");
-        if (profileWidget && profileWidget.value !== newProfile) {
-            const oldProfile = profileWidget.value;
+        if (connectedNode._anybus_profileId !== newProfileId) {
+            const oldProfileId = connectedNode._anybus_profileId;
 
             // Remove from old profile registry
-            if (oldProfile) {
-                getProfileEntry(oldProfile).delete(connectedNode);
+            if (oldProfileId) {
+                getProfileEntry(oldProfileId).delete(connectedNode);
             }
 
-            // Update widget value
-            profileWidget.value = newProfile;
-            connectedNode._anybus_profile = newProfile;
+            // Update profile ID
+            connectedNode._anybus_profileId = newProfileId;
 
             // Add to new profile registry
-            getProfileEntry(newProfile).add(connectedNode);
+            getProfileEntry(newProfileId).add(connectedNode);
 
             // Mark node as dirty to update UI
             connectedNode.setDirtyCanvas(true, true);
