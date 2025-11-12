@@ -1,8 +1,18 @@
 // Bus operations for AnyBus_v2
-import { getProfileEntry, profileSlotOrders } from "./State.jsx";
-import { applySlotOrderToNode, resetNodeDisconnectedSlots } from "./Node.jsx";
+import {
+    getProfileEntry,
+    profileSlotOrders,
+    getProfileMasterState,
+    syncNodeToMasterState,
+    propagateMasterStateToNodes
+} from "./State.jsx";
+import { applySlotOrderToNode, resetNodeDisconnectedSlots, updateNodeSlots } from "./Node.jsx";
 
-// Helper: Get all BUS-connected nodes recursively
+// Track hidden getset connections
+// Map: nodeId -> { sourceNodeId, hiddenLink }
+const hiddenGetSetConnections = new Map();
+
+// Helper: Get all BUS-connected nodes recursively (including hidden getset connections)
 export function getBusConnectedNodes(node, visited = new Set()) {
     if (!node || visited.has(node.id)) return visited;
     visited.add(node.id);
@@ -41,15 +51,231 @@ export function getBusConnectedNodes(node, visited = new Set()) {
         }
     }
 
+    // Check for hidden getset connections (nodes connected to this node)
+    for (const [getsetNodeId, connection] of hiddenGetSetConnections.entries()) {
+        if (connection.sourceNodeId === node.id && !visited.has(getsetNodeId)) {
+            const getsetNode = node.graph?.getNodeById(getsetNodeId);
+            if (getsetNode) {
+                getBusConnectedNodes(getsetNode, visited);
+            }
+        }
+    }
+
+    // Check if this node itself has a hidden connection to another node
+    const myHiddenConnection = hiddenGetSetConnections.get(node.id);
+    if (myHiddenConnection && !visited.has(myHiddenConnection.sourceNodeId)) {
+        const sourceNode = node.graph?.getNodeById(myHiddenConnection.sourceNodeId);
+        if (sourceNode) {
+            getBusConnectedNodes(sourceNode, visited);
+        }
+    }
+
     return visited;
 }
 
-// Helper: Synchronize labels and types across BUS-connected nodes
-export function syncConnectedNodesLabelsAndTypes(node) {
-    const connectedNodeIds = getBusConnectedNodes(node);
+/**
+ * Create a hidden BUS connection for getset mode
+ * This allows getset nodes to sync with their source without visible links
+ */
+export function createHiddenGetSetConnection(getsetNode, sourceNode) {
+    if (!getsetNode || !sourceNode || !getsetNode.graph) return false;
 
-    // Collect all slot information from all connected nodes
-    const slotInfo = {}; // slotIndex -> { type, label, hasConnection, customLabel }
+    // Check if already connected
+    const existing = hiddenGetSetConnections.get(getsetNode.id);
+    if (existing && existing.sourceNodeId === sourceNode.id) {
+        return true; // Already connected
+    }
+
+    // Remove any existing hidden connection
+    removeHiddenGetSetConnection(getsetNode);
+
+    // Find BUS output slot (slot 0) on source node
+    const sourceOutput = sourceNode.outputs?.[0];
+    const getsetInput = getsetNode.inputs?.[0];
+
+    if (!sourceOutput || !getsetInput || sourceOutput.type !== "ANYBUS_v2") {
+        console.warn('[AnyBus] Cannot create hidden connection: invalid BUS slots');
+        return false;
+    }
+
+    // Create a real internal link in the graph
+    // This makes ComfyUI aware of the connection for execution purposes
+    // but we'll hide it from the UI
+    const linkId = getsetNode.graph.last_link_id + 1;
+    getsetNode.graph.last_link_id = linkId;
+
+    const link = {
+        id: linkId,
+        origin_id: sourceNode.id,
+        origin_slot: 0,
+        target_id: getsetNode.id,
+        target_slot: 0,
+        type: "ANYBUS_v2"
+    };
+
+    // Add to graph links
+    getsetNode.graph.links[linkId] = link;
+
+    // Connect the nodes
+    getsetInput.link = linkId;
+    if (!sourceOutput.links) {
+        sourceOutput.links = [];
+    }
+    sourceOutput.links.push(linkId);
+
+    // Store the hidden connection info
+    hiddenGetSetConnections.set(getsetNode.id, {
+        sourceNodeId: sourceNode.id,
+        linkId: linkId
+    });
+
+    // Mark the link as hidden so we can style it differently or hide it
+    getsetNode._anybus_hidden_connection = true;
+    getsetNode._anybus_hidden_link_id = linkId;
+
+    console.log(`[AnyBus] Created hidden connection: ${sourceNode.id} -> ${getsetNode.id} (link ${linkId})`);
+
+    return true;
+}
+
+/**
+ * Remove hidden BUS connection for getset node
+ */
+export function removeHiddenGetSetConnection(getsetNode) {
+    if (!getsetNode) return;
+
+    const existing = hiddenGetSetConnections.get(getsetNode.id);
+    if (existing) {
+        const { sourceNodeId, linkId } = existing;
+
+        // Remove the real link from the graph
+        if (getsetNode.graph && linkId) {
+            const link = getsetNode.graph.links[linkId];
+            if (link) {
+                // Remove from source node's output links
+                const sourceNode = getsetNode.graph.getNodeById(sourceNodeId);
+                if (sourceNode && sourceNode.outputs && sourceNode.outputs[0]) {
+                    const output = sourceNode.outputs[0];
+                    if (output.links) {
+                        const idx = output.links.indexOf(linkId);
+                        if (idx !== -1) {
+                            output.links.splice(idx, 1);
+                        }
+                    }
+                }
+
+                // Remove from getset node's input
+                if (getsetNode.inputs && getsetNode.inputs[0]) {
+                    getsetNode.inputs[0].link = null;
+                }
+
+                // Remove from graph
+                delete getsetNode.graph.links[linkId];
+            }
+        }
+
+        hiddenGetSetConnections.delete(getsetNode.id);
+        delete getsetNode._anybus_hidden_connection;
+        delete getsetNode._anybus_hidden_link_id;
+        console.log(`[AnyBus] Removed hidden connection for node ${getsetNode.id}`);
+    }
+}
+
+/**
+ * Get source node for a getset node (via hidden connection)
+ */
+export function getHiddenGetSetSource(getsetNode) {
+    if (!getsetNode) return null;
+
+    const connection = hiddenGetSetConnections.get(getsetNode.id);
+    if (!connection) return null;
+
+    return getsetNode.graph?.getNodeById(connection.sourceNodeId);
+}
+
+/**
+ * Update hidden connection when getset_source widget changes
+ */
+export function updateGetSetConnection(getsetNode) {
+    if (!getsetNode || !getsetNode.graph) return;
+
+    const getsetWidget = getsetNode.widgets?.find(w => w.name === "getset_source");
+    const modeWidget = getsetNode.widgets?.find(w => w.name === "mode");
+
+    // Only process if in getset mode
+    if (modeWidget?.value !== "getset") {
+        removeHiddenGetSetConnection(getsetNode);
+        return;
+    }
+
+    const sourceIdentifier = getsetWidget?.value;
+    if (!sourceIdentifier || sourceIdentifier === "") {
+        removeHiddenGetSetConnection(getsetNode);
+        return;
+    }
+
+    // Find source node by identifier (title or "Node X")
+    let sourceNode = null;
+    for (const node of getsetNode.graph._nodes) {
+        if (node.type === "MaraScottAnyBus_v2" && node.id !== getsetNode.id) {
+            const nodeIdentifier = node.title || `Node ${node.id}`;
+            if (nodeIdentifier === sourceIdentifier) {
+                sourceNode = node;
+                break;
+            }
+        }
+    }
+
+    if (sourceNode) {
+        // Get source node's profile
+        const sourceProfile = sourceNode._anybus_profile || sourceNode.widgets?.find(w => w.name === "profile")?.value || "default";
+        const profileWidget = getsetNode.widgets?.find(w => w.name === "profile");
+
+        // Update getset node's profile to match source
+        if (profileWidget && profileWidget.value !== sourceProfile) {
+            // Remove from old profile
+            if (getsetNode._anybus_profile) {
+                getProfileEntry(getsetNode._anybus_profile).delete(getsetNode);
+            }
+
+            // Update to source's profile
+            profileWidget.value = sourceProfile;
+            getsetNode._anybus_profile = sourceProfile;
+
+            // Add to source's profile
+            getProfileEntry(sourceProfile).add(getsetNode);
+        }
+
+        // Sync number of slots with source
+        const sourceNumSlots = sourceNode.widgets?.find(w => w.name === "num_slots")?.value;
+        const getsetNumSlots = getsetNode.widgets?.find(w => w.name === "num_slots");
+
+        if (sourceNumSlots && getsetNumSlots && getsetNumSlots.value !== sourceNumSlots) {
+            getsetNumSlots.value = sourceNumSlots;
+            updateNodeSlots(getsetNode, sourceNumSlots);
+        }
+
+        // Create hidden connection
+        createHiddenGetSetConnection(getsetNode, sourceNode);
+
+        // Sync this node with the source's profile
+        syncConnectedNodesLabelsAndTypes(sourceNode);
+    } else {
+        removeHiddenGetSetConnection(getsetNode);
+    }
+}
+
+// Helper: Synchronize labels and types across BUS-connected nodes
+// NOW USES CENTRALIZED STATE: Updates master state then propagates to all nodes
+export function syncConnectedNodesLabelsAndTypes(node) {
+    if (!node || !node._anybus_profile) return;
+
+    const profile = node._anybus_profile;
+    const connectedNodeIds = getBusConnectedNodes(node);
+    const masterState = getProfileMasterState(profile);
+
+    // STEP 1: Collect information from all connected nodes and update master state
+    let masterStateChanged = false;
 
     for (const nodeId of connectedNodeIds) {
         const connectedNode = node.graph?.getNodeById(nodeId);
@@ -58,106 +284,88 @@ export function syncConnectedNodesLabelsAndTypes(node) {
         for (let i = 1; i < connectedNode.inputs.length; i++) {
             const input = connectedNode.inputs[i];
 
-            if (!slotInfo[i]) {
-                slotInfo[i] = { type: "*", label: null, hasConnection: false, customLabel: null };
-            }
+            // Extract actual slot number from input name (e.g., "* 04" -> 4)
+            const match = input.name?.match(/\* (\d+)/);
+            if (!match) continue;
+
+            const slotNum = parseInt(match[1]);
+            const currentSlot = masterState.slots[slotNum] || {};
 
             // Track if this slot has a connection
-            if (input.link) {
-                slotInfo[i].hasConnection = true;
+            const hasConnection = !!input.link;
 
-                // Get the connected type
+            // Get connected type if available
+            let connectedType = "*";
+            if (input.link) {
                 const link = connectedNode.graph?.links[input.link];
                 if (link) {
                     const sourceNode = connectedNode.graph?.getNodeById(link.origin_id);
                     if (sourceNode && sourceNode.outputs) {
                         const sourceOutput = sourceNode.outputs[link.origin_slot];
                         if (sourceOutput && sourceOutput.type && sourceOutput.type !== "*") {
-                            // Prioritize non-wildcard types
-                            if (slotInfo[i].type === "*" || slotInfo[i].type === sourceOutput.type) {
-                                slotInfo[i].type = sourceOutput.type;
-                            }
+                            connectedType = sourceOutput.type;
                         }
                     }
                 }
             }
 
-            // Collect labels - prioritize custom labels over type names
-            if (input.label) {
-                // Check if it's a custom label (not a default "* XX" pattern)
-                const isDefaultLabel = input.label.match(/^\* \d{2}$/);
+            // Determine if label is custom (not a default "* XX" pattern and not just the type name)
+            const isDefaultLabel = input.label?.match(/^\* \d{2}$/);
+            const isTypeLabel = input.label === input.type;
+            const isCustomLabel = input.label && !isDefaultLabel && !isTypeLabel;
 
-                if (!isDefaultLabel) {
-                    // Check if it's a custom label (different from the type name)
-                    const isCustomLabel = input.label !== input.type;
+            // Build new slot state with priority:
+            // 1. Keep existing custom label (highest priority)
+            // 2. If this input has custom label and master doesn't, use it
+            // 3. Update type if we have connected non-wildcard type
+            // 4. Update generic label as fallback
 
-                    if (isCustomLabel && !slotInfo[i].customLabel) {
-                        // Prioritize custom labels
-                        slotInfo[i].customLabel = input.label;
-                        slotInfo[i].label = input.label;
-                    } else if (!slotInfo[i].label) {
-                        // Store type-based label as fallback
-                        slotInfo[i].label = input.label;
-                    }
-                }
+            const newSlot = {
+                type: currentSlot.type || "*",
+                label: currentSlot.label || null,
+                customLabel: currentSlot.customLabel || null,
+                hasConnection: currentSlot.hasConnection || hasConnection
+            };
+
+            // Update custom label - only if this node has one and master doesn't
+            if (isCustomLabel && !newSlot.customLabel) {
+                newSlot.customLabel = input.label;
+            }
+
+            // Update type - prioritize non-wildcard types
+            if (connectedType !== "*" && (newSlot.type === "*" || newSlot.type === connectedType)) {
+                newSlot.type = connectedType;
+            }
+
+            // Update label based on priority:
+            // 1. Custom label (highest priority)
+            // 2. Type label (if type is known and not wildcard)
+            // 3. Default pattern "* XX"
+            if (newSlot.customLabel) {
+                newSlot.label = newSlot.customLabel;
+            } else if (newSlot.type !== "*") {
+                newSlot.label = newSlot.type;
+            } else {
+                newSlot.label = `* ${String(slotNum).padStart(2, '0')}`;
+            }
+
+            // Update hasConnection flag
+            if (hasConnection) {
+                newSlot.hasConnection = true;
+            }
+
+            // Check if state actually changed
+            if (JSON.stringify(currentSlot) !== JSON.stringify(newSlot)) {
+                masterState.slots[slotNum] = newSlot;
+                masterStateChanged = true;
             }
         }
     }
 
-    // Apply collected information to all connected nodes
-    for (const nodeId of connectedNodeIds) {
-        const connectedNode = node.graph?.getNodeById(nodeId);
-        if (!connectedNode) continue;
-
-        // Update inputs
-        if (connectedNode.inputs) {
-            for (let i = 1; i < connectedNode.inputs.length; i++) {
-                const input = connectedNode.inputs[i];
-                const info = slotInfo[i];
-
-                if (info) {
-                    // Update type
-                    if (input.type !== info.type) {
-                        input.type = info.type;
-                    }
-
-                    // Update label: prioritize custom label > type > default
-                    let newLabel;
-                    if (info.customLabel) {
-                        newLabel = info.customLabel; // Use synced custom label
-                    } else if (info.label) {
-                        newLabel = info.label; // Use type-based label
-                    } else if (info.type !== "*") {
-                        newLabel = info.type; // Use type as label
-                    } else {
-                        newLabel = `* ${String(i).padStart(2, '0')}`; // Default label
-                    }
-
-                    if (input.label !== newLabel) {
-                        input.label = newLabel;
-                    }
-                }
-            }
-        }
-
-        // Update outputs to match inputs
-        if (connectedNode.outputs) {
-            for (let i = 1; i < connectedNode.outputs.length; i++) {
-                const output = connectedNode.outputs[i];
-                const input = connectedNode.inputs ? connectedNode.inputs[i] : null;
-
-                if (input) {
-                    if (output.type !== input.type) {
-                        output.type = input.type;
-                    }
-                    if (output.label !== input.label) {
-                        output.label = input.label;
-                    }
-                }
-            }
-        }
-
-        connectedNode.setDirtyCanvas(true, true);
+    // STEP 2: If master state changed, propagate to all nodes in profile
+    if (masterStateChanged) {
+        masterState.lastUpdate = Date.now();
+        propagateMasterStateToNodes(profile);
     }
 }
 

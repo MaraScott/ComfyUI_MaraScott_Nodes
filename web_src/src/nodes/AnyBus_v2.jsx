@@ -1,13 +1,25 @@
 import { app } from "../../../scripts/app.js";
 import { ensureReactGlobals, mountJSX } from "./AnyBus_v2/React.jsx";
-import { getProfileEntry, getProfileSlotOrder, profileSlotOrders, profileRegistry } from "./AnyBus_v2/State.jsx";
+import {
+    getProfileEntry,
+    getProfileSlotOrder,
+    profileSlotOrders,
+    profileRegistry,
+    getProfileMasterState,
+    updateProfileMasterState,
+    propagateMasterStateToNodes,
+    addStateChangeListener
+} from "./AnyBus_v2/State.jsx";
 import { applySlotOrderToNode, updateNodeSlots, resetNodeDisconnectedSlots } from "./AnyBus_v2/Node.jsx";
 import {
     getBusConnectedNodes,
     syncConnectedNodesLabelsAndTypes,
     updateConnectedNodesProfile,
     updateConnectedNodesSlots,
-    resetProfileDisconnectedSlots
+    resetProfileDisconnectedSlots,
+    createHiddenGetSetConnection,
+    removeHiddenGetSetConnection,
+    updateGetSetConnection
 } from "./AnyBus_v2/Bus.jsx";
 import { setupWidgets } from "./AnyBus_v2/Widget.jsx";
 
@@ -102,6 +114,8 @@ const MaraScottAnyBusNodeExtension = () => {
                                 getsetWidget.type = "combo";
                                 getsetWidget.options = { values: () => this.getAvailableGetSetSources() };
                             }
+                            // Create hidden connection if source is selected
+                            updateGetSetConnection(this);
                         } else {
                             // Show bus input when in bus mode
                             if (busInput && busInput.type === -1) {
@@ -111,10 +125,23 @@ const MaraScottAnyBusNodeExtension = () => {
                             if (getsetWidget) {
                                 getsetWidget.type = "converted-widget";
                             }
+                            // Remove hidden connection
+                            removeHiddenGetSetConnection(this);
                         }
 
                         this.setSize(this.computeSize());
                         this.setDirtyCanvas(true, true);
+                    };
+
+                    // Setup getset_source widget callback
+                    const originalGetSetCallback = getsetWidget.callback;
+                    getsetWidget.callback = (value) => {
+                        if (originalGetSetCallback) originalGetSetCallback.call(getsetWidget, value);
+
+                        // Update hidden connection when source changes
+                        if (modeWidget.value === "getset") {
+                            updateGetSetConnection(this);
+                        }
                     };
 
                     // Trigger initial callback to set up UI
@@ -268,6 +295,9 @@ const MaraScottAnyBusNodeExtension = () => {
                 if (this._anybus_profile) {
                     getProfileEntry(this._anybus_profile).delete(this);
                 }
+                // Remove hidden getset connection
+                removeHiddenGetSetConnection(this);
+
                 return onRemoved?.apply(this, arguments);
             };
         },
@@ -480,29 +510,27 @@ const MaraScottAnyBusNodeSidebarTab = () => {
                     const profileGroup = profiles.find(p => p.groupId === groupId);
                     if (!profileGroup || profileGroup.nodes.length === 0) return;
 
-                    // Get first node to access the BUS-connected group
-                    const firstNodeId = profileGroup.nodes[0].id;
-                    const firstNode = app.graph?._nodes_by_id?.[firstNodeId];
+                    // CENTRALIZED STATE UPDATE: Update master state first
+                    const profile = profileGroup.name;
+                    const masterState = getProfileMasterState(profile);
 
-                    if (!firstNode) return;
+                    // Determine if this is a custom label
+                    const currentSlot = masterState.slots[slotIndex] || {};
+                    const isCustomLabel = newLabel && newLabel !== currentSlot.type;
 
-                    // Update label for all BUS-connected nodes in this group
-                    const connectedNodeIds = getBusConnectedNodes(firstNode);
-
-                    for (const nodeId of connectedNodeIds) {
-                        const node = app.graph?._nodes_by_id?.[nodeId];
-                        if (node && node._anybus_profile === profileGroup.name) {
-                            // Update input label
-                            if (node.inputs && node.inputs[slotIndex]) {
-                                node.inputs[slotIndex].label = newLabel || node.inputs[slotIndex].type;
+                    // Update master state with new label
+                    updateProfileMasterState(profile, {
+                        slots: {
+                            [slotIndex]: {
+                                ...currentSlot,
+                                label: newLabel || currentSlot.type || `* ${String(slotIndex).padStart(2, '0')}`,
+                                customLabel: isCustomLabel ? newLabel : null
                             }
-                            // Update output label
-                            if (node.outputs && node.outputs[slotIndex]) {
-                                node.outputs[slotIndex].label = newLabel || node.outputs[slotIndex].type;
-                            }
-                            node.setDirtyCanvas(true, true);
                         }
-                    }
+                    });
+
+                    // Propagate to all nodes in profile
+                    propagateMasterStateToNodes(profile);
 
                     // Force UI update
                     setLastUpdate(new Date());
