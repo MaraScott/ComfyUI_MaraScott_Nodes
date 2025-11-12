@@ -14,8 +14,8 @@ import { setupWidgets } from "./AnyBus_v2/Widget.jsx";
 // ---------- Extension exports ----------
 const nodeName = "Comfy.MaraScott.AnyBus_v2";
 const nodeId = nodeName.replace(/\./g, '-');
-const NODE_CLASS = "MaraScott::AnyBus_v2";
-const NODE_DISPLAY_NAME = "🐰 AnyBus v2";
+const NODE_CLASS = "MaraScottAnyBus_v2";  // Matches Python registration
+const NODE_DISPLAY_NAME = "AnyBus v2";
 
 
 // Helper: Synchronize labels across nodes with same profile (legacy - now uses syncConnectedNodesLabelsAndTypes)
@@ -59,9 +59,7 @@ const MaraScottAnyBusNodeExtension = () => {
             // Store original methods
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             const onConnectionsChange = nodeType.prototype.onConnectionsChange;
-            const onConnectInput = nodeType.prototype.onConnectInput;
-
-            // Override onNodeCreated
+            const onConnectInput = nodeType.prototype.onConnectInput;            // Override onNodeCreated
             nodeType.prototype.onNodeCreated = function() {
                 const r = onNodeCreated?.apply(this, arguments);
 

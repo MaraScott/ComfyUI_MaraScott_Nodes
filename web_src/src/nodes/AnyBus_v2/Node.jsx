@@ -38,90 +38,108 @@ export function applySlotOrderToNode(node, slotOrder) {
 export function updateNodeSlots(node, numSlots) {
     if (!node || numSlots === undefined) return;
 
-    // Initialize inputs array if it doesn't exist
-    if (!node.inputs) {
-        node.inputs = [];
+    const expectedSlots = parseInt(numSlots);
+
+    if (!node.inputs || !node.outputs) return;
+
+    // Expected structure:
+    // Inputs: bus (optional) + getset_source (optional) + slot inputs (1 to numSlots)
+    // Outputs: bus + slot outputs (1 to numSlots)
+
+    // Collect information about existing slot inputs
+    const slotInputs = [];
+    for (let i = 0; i < node.inputs.length; i++) {
+        const input = node.inputs[i];
+        if (input.widget) continue; // Skip widgets
+        if (input.name === "bus" || input.name === "getset_source") continue;
+
+        const match = input.name.match(/\* (\d+)/);
+        if (match) {
+            const slotNum = parseInt(match[1]);
+            slotInputs.push({ index: i, slotNum: slotNum, input: input });
+        }
     }
 
-    // Initialize outputs array if it doesn't exist
-    if (!node.outputs) {
-        node.outputs = [];
+    // Sort by slot number
+    slotInputs.sort((a, b) => a.slotNum - b.slotNum);
+
+    // Calculate how many slot inputs we currently have
+    const currentSlotInputs = slotInputs.length;
+
+    // Remove extra slot inputs (from the highest slot number down)
+    if (currentSlotInputs > expectedSlots) {
+        for (let i = slotInputs.length - 1; i >= expectedSlots; i--) {
+            node.removeInput(slotInputs[i].index);
+        }
     }
 
-    // Expected: 1 BUS input + numSlots any-type inputs
-    const expectedInputs = 1 + parseInt(numSlots);
-    const expectedOutputs = 1 + parseInt(numSlots);
-
-    // Ensure BUS input exists
-    if (node.inputs.length === 0) {
-        node.addInput("bus", "ANYBUS_v2");
+    // Add missing slot inputs
+    if (currentSlotInputs < expectedSlots) {
+        for (let slotNum = currentSlotInputs + 1; slotNum <= expectedSlots; slotNum++) {
+            const slotName = `* ${String(slotNum).padStart(2, '0')}`;
+            const slotLabel = `* ${String(slotNum).padStart(2, '0')}`;
+            // addInput(name, type, extra_info)
+            node.addInput(slotName, "*", { label: slotLabel });
+        }
     }
 
-    // Ensure BUS output exists
-    if (node.outputs.length === 0) {
-        node.addOutput("bus", "ANYBUS_v2");
-    }
+    // Handle outputs: BUS (slot 0) + slot outputs (1 to numSlots)
+    const expectedOutputs = 1 + expectedSlots;
 
-    // Add missing inputs (start from current length)
-    while (node.inputs.length < expectedInputs) {
-        const slotNum = node.inputs.length; // Current length gives us the next slot number
-        const label = `* ${String(slotNum).padStart(2, '0')}`;
-        node.addInput(label, "*", { label });
-    }
-
-    // Remove extra inputs (but keep BUS input at slot 0)
-    while (node.inputs.length > expectedInputs) {
-        node.removeInput(node.inputs.length - 1);
-    }
-
-    // Add missing outputs
-    while (node.outputs.length < expectedOutputs) {
-        const slotNum = node.outputs.length;
-        const label = `* ${String(slotNum).padStart(2, '0')}`;
-        node.addOutput(label, "*");
-    }
-
-    // Remove extra outputs (but keep BUS output at slot 0)
+    // Remove extra outputs
     while (node.outputs.length > expectedOutputs) {
         node.removeOutput(node.outputs.length - 1);
     }
 
+    // Add missing outputs
+    while (node.outputs.length < expectedOutputs) {
+        const slotNum = node.outputs.length; // 0 = BUS, 1+ = slots
+        if (slotNum === 0) {
+            node.addOutput("bus", "ANYBUS_v2");
+        } else {
+            const slotLabel = `* ${String(slotNum).padStart(2, '0')}`;
+            node.addOutput(slotLabel, "*");
+        }
+    }
+
     node.setSize(node.computeSize());
     node.setDirtyCanvas(true, true);
-}
-
-// Helper: Reset disconnected slots to default labels
+}// Reset labels for disconnected slot inputs/outputs to default
 export function resetNodeDisconnectedSlots(node) {
-    if (!node || !node.inputs || !node.outputs) return false;
+    if (!node) return;
 
-    let hasChanges = false;
+    // Reset slot input labels
+    if (node.inputs) {
+        for (let i = 0; i < node.inputs.length; i++) {
+            const input = node.inputs[i];
+            if (input.widget) continue;
+            if (input.name === "bus" || input.name === "getset_source") continue;
 
-    // Reset labels for disconnected slots
-    for (let i = 1; i < node.inputs.length; i++) {
-        const input = node.inputs[i];
-        // Only reset if not connected
-        if (!input.link) {
-            const defaultLabel = `* ${String(i).padStart(2, '0')}`;
-            if (input.label !== defaultLabel || input.type !== "*") {
-                input.label = defaultLabel;
-                input.type = "*";
-                hasChanges = true;
-            }
-
-            // Reset corresponding output
-            if (node.outputs[i]) {
-                if (node.outputs[i].label !== defaultLabel || node.outputs[i].type !== "*") {
-                    node.outputs[i].label = defaultLabel;
-                    node.outputs[i].type = "*";
-                    hasChanges = true;
+            const match = input.name.match(/\* (\d+)/);
+            if (match) {
+                const slotNum = parseInt(match[1]);
+                // If no connection, reset label to default
+                if (!input.link) {
+                    input.label = `* ${String(slotNum).padStart(2, '0')}`;
                 }
             }
         }
     }
 
-    if (hasChanges) {
-        node.setDirtyCanvas(true, true);
-    }
+    // Reset slot output labels
+    if (node.outputs) {
+        for (let i = 0; i < node.outputs.length; i++) {
+            const output = node.outputs[i];
+            if (output.name === "bus") continue;
 
-    return hasChanges;
+            const match = output.name.match(/\* (\d+)/);
+            if (match) {
+                const slotNum = parseInt(match[1]);
+                // If no connections, reset label to default
+                if (!output.links || output.links.length === 0) {
+                    output.label = `* ${String(slotNum).padStart(2, '0')}`;
+                }
+            }
+        }
+    }
 }

@@ -4,7 +4,7 @@ from ...utils.helper import AlwaysEqualProxy
 any_type = AlwaysEqualProxy("*")
 
 
-class AnyBus_v2:
+class Mara_AnyBus_v2:
     """
     AnyBus v2 - Dynamic bus connection system
 
@@ -13,7 +13,7 @@ class AnyBus_v2:
     slot values as a tuple for profile-based synchronization.
     """
 
-    NAME = "🐰 AnyBus v2"
+    NAME = "AnyBus v2"
     SHORTCUT = "ab"
 
     @classmethod

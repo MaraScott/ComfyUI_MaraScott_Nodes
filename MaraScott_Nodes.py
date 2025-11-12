@@ -27,7 +27,7 @@ from .py.nodes.Util.Model import GetModelBlocks_v1
 from .py.nodes.Util.Json import JsonList2JsonObj_v1
 from .py.nodes.Util.File import IsFileExists_v1, LoadFile_v1, SaveFile_v1
 from .py.nodes.Util.StringProcessor import StringProcessor_v1, ComboProcessor_v1, TextJoiner_v1
-from .py.nodes.Bus.AnyBus_v2 import AnyBus_v2
+from .py.nodes.Bus.AnyBus_v2 import Mara_AnyBus_v2
 
 from .py.vendor.ComfyUI_JNodes.blob.main.py.prompting_nodes import TokenCounter as TokenCounter_v1
 from .py.vendor.ComfyUI_Florence2.nodes import DownloadAndLoadFlorence2Model as DownloadAndLoadFlorence2Model_v1, Florence2Run as Florence2Run_v1
@@ -88,7 +88,7 @@ NODE_CLASS_MAPPINGS = {
 
     f"{NAMESPACE}JsonList2JsonObj_v1": JsonList2JsonObj_v1,
 
-    f"{NAMESPACE}AnyBus_v2": AnyBus_v2,
+    f"{NAMESPACE}AnyBus_v2": Mara_AnyBus_v2,
 
 }
 
