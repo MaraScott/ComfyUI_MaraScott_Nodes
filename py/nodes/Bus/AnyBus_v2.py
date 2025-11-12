@@ -18,12 +18,25 @@ class AnyBus_v2:
 
     @classmethod
     def INPUT_TYPES(cls):
+        # Define all 24 slots in optional
+        optional_inputs = {
+            "bus": ("ANYBUS_v2",),
+            "getset_source": ("STRING", {
+                "default": "",
+                "multiline": False,
+            }),
+        }
+
+        # Add 24 dynamic slots
+        for i in range(1, 25):
+            optional_inputs[f"* {str(i).zfill(2)}"] = (any_type,)
+
         return {
             "required": {
                 "num_slots": ("INT", {
                     "default": 3,
                     "min": 1,
-                    "max": 20,
+                    "max": 24,
                     "step": 1,
                     "display": "number",
                 }),
@@ -35,21 +48,11 @@ class AnyBus_v2:
                     "default": "bus",
                 }),
             },
-            "optional": {
-                "bus": ("ANYBUS_v2",),
-                "getset_source": ("STRING", {
-                    "default": "",
-                    "multiline": False,
-                }),
-                # Dynamic slots will be handled by frontend
-                "* 01": (any_type,),
-                "* 02": (any_type,),
-                "* 03": (any_type,),
-            }
+            "optional": optional_inputs
         }
 
-    RETURN_TYPES = ("ANYBUS_v2",) + (any_type,) * 20
-    RETURN_NAMES = ("bus",) + tuple(f"* {str(i).zfill(2)}" for i in range(1, 21))
+    RETURN_TYPES = ("ANYBUS_v2",) + (any_type,) * 24
+    RETURN_NAMES = ("bus",) + tuple(f"* {str(i).zfill(2)}" for i in range(1, 25))
     FUNCTION = "execute"
     CATEGORY = get_category("Bus")
 
@@ -84,8 +87,8 @@ class AnyBus_v2:
         # Prepare return values: bus_output + individual slot values + None for unused slots
         return_values = [bus_output]
 
-        # Add slot values
-        for i in range(20):
+        # Add slot values (24 slots)
+        for i in range(24):
             if i < len(slot_values):
                 return_values.append(slot_values[i])
             else:

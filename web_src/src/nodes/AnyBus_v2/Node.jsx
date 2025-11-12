@@ -52,18 +52,24 @@ export function updateNodeSlots(node, numSlots) {
     const expectedInputs = 1 + parseInt(numSlots);
     const expectedOutputs = 1 + parseInt(numSlots);
 
-    // Add missing inputs
-    while (node.inputs.length < expectedInputs) {
-        const slotNum = node.inputs.length; // 0 = BUS, 1+ = slots
-        if (slotNum === 0) {
-            node.addInput("bus_input", "ANYBUS_v3");
-        } else {
-            const label = `* ${String(slotNum).padStart(2, '0')}`;
-            node.addInput(`input_${String(slotNum).padStart(2, '0')}`, "*", { label });
-        }
+    // Ensure BUS input exists
+    if (node.inputs.length === 0) {
+        node.addInput("bus", "ANYBUS_v2");
     }
 
-    // Remove extra inputs (keep BUS + numSlots)
+    // Ensure BUS output exists
+    if (node.outputs.length === 0) {
+        node.addOutput("bus", "ANYBUS_v2");
+    }
+
+    // Add missing inputs (start from current length)
+    while (node.inputs.length < expectedInputs) {
+        const slotNum = node.inputs.length; // Current length gives us the next slot number
+        const label = `* ${String(slotNum).padStart(2, '0')}`;
+        node.addInput(label, "*", { label });
+    }
+
+    // Remove extra inputs (but keep BUS input at slot 0)
     while (node.inputs.length > expectedInputs) {
         node.removeInput(node.inputs.length - 1);
     }
@@ -71,19 +77,16 @@ export function updateNodeSlots(node, numSlots) {
     // Add missing outputs
     while (node.outputs.length < expectedOutputs) {
         const slotNum = node.outputs.length;
-        if (slotNum === 0) {
-            node.addOutput("bus_output", "ANYBUS_v3");
-        } else {
-            const label = `* ${String(slotNum).padStart(2, '0')}`;
-            node.addOutput(label, "*");
-        }
+        const label = `* ${String(slotNum).padStart(2, '0')}`;
+        node.addOutput(label, "*");
     }
 
-    // Remove extra outputs
+    // Remove extra outputs (but keep BUS output at slot 0)
     while (node.outputs.length > expectedOutputs) {
         node.removeOutput(node.outputs.length - 1);
     }
 
+    node.setSize(node.computeSize());
     node.setDirtyCanvas(true, true);
 }
 
