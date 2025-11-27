@@ -1,1 +1,0 @@
-import{app as e}from"../../scripts/app.js";import{MaraScottAnyBusNodeExtension as r,MaraScottAnyBusNodeSidebarTab as a}from"./nodes/AnyBus_v2.js";e.registerExtension(r());e.extensionManager.registerSidebarTab(a());
